@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.zazalng</groupId>
+    <artifactId>prickcal</artifactId>
+    <version>0.0.1-indev</version>
+    <packaging>pom</packaging>
+    <name>Trickcal for Pudel</name>
+    <description>A Pudel's Plugin for collecting Trickcal's personal tracking.</description>
+    <url>https://github.com/Zazalng/Prickcal</url>
+
+    <licenses>
+        <license>
+            <name>GNU Affero General Public License v3</name>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>zazalng</id>
+            <name>Napapon Kamanee</name>
+            <email>zazalng.founder@worldstandard.group</email>
+            <roles>
+                <role>Founder</role>
+            </roles>
+            <organization>World Standard Group</organization>
+            <organizationUrl>https://github.com/World-Standard-Group</organizationUrl>
+        </developer>
+    </developers>
+    <modules>
+        <module>global</module>
+        <module>korea</module>
+    </modules>
+
+    <scm>
+        <connection>scm:git:https://github.com/Zazalng/Prickcal.git</connection>
+        <developerConnection>scm:git:ssh://github.com:Zazalng/Prickcal.git</developerConnection>
+        <url>https://github.com/Zazalng/Prickcal</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/World-Standard-Group/Prickcal/issues</url>
+    </issueManagement>
+
+    <properties>
+        <maven.compiler.release>25</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <jda.version>6.4.2</jda.version>
+        <pudel.version>2.3.1</pudel.version>
+        <log.version>2.0.18</log.version>
+        <shade.version>3.6.2</shade.version>
+
+        <jackson.version>3.2.0</jackson.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.dv8tion</groupId>
+            <artifactId>JDA</artifactId>
+            <version>${jda.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>group.worldstandard</groupId>
+            <artifactId>pudel-api</artifactId>
+            <version>${pudel.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${log.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
