@@ -1,6 +1,6 @@
-package io.github.zazalng.prickcal.global.contract.trickcal;
+package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-public enum AposlteStats {
+public enum ApostleStats {
     PATK(1, "Physical Damage"),
     MATK(2, "Magical Damage"),
     PDEF(3, "Physical Defense"),
