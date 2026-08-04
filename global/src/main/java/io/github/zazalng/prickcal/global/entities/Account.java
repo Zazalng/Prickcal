@@ -4,7 +4,7 @@ import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
-public class User {
+public class Account {
     @Column
     private Long id;
 

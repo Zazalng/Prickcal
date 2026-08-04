@@ -11,6 +11,9 @@ public class Hashtag {
     @Column
     private String name;
 
+    @Column
+    private int claim;
+
     public Long getId() {
         return id;
     }
@@ -25,5 +28,13 @@ public class Hashtag {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public int getClaim() {
+        return claim;
+    }
+
+    public void setClaim(int claim) {
+        this.claim = claim;
     }
 }

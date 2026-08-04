@@ -20,7 +20,7 @@ public class Apostle {
     @Column
     private boolean elydn;
     @Column
-    private Long[] hashtag;
+    private String hashtag;
 
     public Long getId() {
         return id;
@@ -78,11 +78,11 @@ public class Apostle {
         this.elydn = elydn;
     }
 
-    public Long[] getHashtag() {
+    public String getHashtag() {
         return hashtag;
     }
 
-    public void setHashtag(Long[] hashtag) {
+    public void setHashtag(String hashtag) {
         this.hashtag = hashtag;
     }
 }

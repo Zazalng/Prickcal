@@ -5,7 +5,8 @@ public enum CrayonStats {
     HP(2,"HP"),
     DEF(3,"DEF"),
     CRIT(4,"Crit Rate"),
-    CRES(5,"Crit Resistance");
+    CRES(5,"Crit Resistance"),
+    UNKNOWN(0, "Unknown");
 
     private final int no;
     private final String name;
@@ -29,6 +30,6 @@ public enum CrayonStats {
                 return stat;
             }
         }
-        return null;
+        return UNKNOWN;
     }
 }
