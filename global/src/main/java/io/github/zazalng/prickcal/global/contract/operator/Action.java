@@ -1,14 +1,39 @@
+/*
+ * Prickcal - A Trickcal's procession tracker for Pudel Bot
+ * Copyright (C) 2026 Napapon Kamanee
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.github.zazalng.prickcal.global.contract.operator;
 
-public enum Action {
-    CREATE,
-    UPDATE,
-    DELETE,
-    UNKNOWN;
+import java.util.Objects;
 
-    public static Action fromString(String action) {
+public enum Action {
+    CREATE(1),
+    UPDATE(0),
+    DELETE(-1),
+    UNKNOWN(null);
+
+    private final Integer val;
+
+    Action(Integer i){
+        this.val = i;
+    }
+
+    public static Action fromValue(Integer i) {
         for (Action a : Action.values()) {
-            if (a.name().equalsIgnoreCase(action)) {
+            if (Objects.equals(a.val, i)) {
                 return a;
             }
         }

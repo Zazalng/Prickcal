@@ -21,62 +21,15 @@ import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
-public class StageGearDrop {
+public class ApostleRemarkable {
     @Column
     private Long id;
     @Column
-    private int stage;
+    private Long apostleId;
     @Column
-    private int map;
+    private Long uid;
     @Column
-    private float initTier;
-    @Column
-    private int lowGrade;
-    @Column
-    private int highGrade;
-
-    public StageGearDrop() {
-    }
-
-    public int getStage() {
-        return stage;
-    }
-
-    public void setStage(int stage) {
-        this.stage = stage;
-    }
-
-    public int getMap() {
-        return map;
-    }
-
-    public void setMap(int map) {
-        this.map = map;
-    }
-
-    public float getInitTier() {
-        return initTier;
-    }
-
-    public void setInitTier(float initTier) {
-        this.initTier = initTier;
-    }
-
-    public int getLowGrade() {
-        return lowGrade;
-    }
-
-    public void setLowGrade(int lowGrade) {
-        this.lowGrade = lowGrade;
-    }
-
-    public int getHighGrade() {
-        return highGrade;
-    }
-
-    public void setHighGrade(int highGrade) {
-        this.highGrade = highGrade;
-    }
+    private String msg;
 
     public Long getId() {
         return id;
@@ -84,5 +37,29 @@ public class StageGearDrop {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getApostleId() {
+        return apostleId;
+    }
+
+    public void setApostleId(Long apostleId) {
+        this.apostleId = apostleId;
+    }
+
+    public Long getUid() {
+        return uid;
+    }
+
+    public void setUid(Long uid) {
+        this.uid = uid;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
     }
 }

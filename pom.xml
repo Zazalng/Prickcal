@@ -50,12 +50,12 @@
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <jda.version>6.4.2</jda.version>
+        <jda.version>6.5.0</jda.version>
         <pudel.version>2.4.0</pudel.version>
         <log.version>2.0.18</log.version>
         <shade.version>3.6.2</shade.version>
 
-        <jackson.version>3.2.0</jackson.version>
+        <jackson.version>3.2.2</jackson.version>
     </properties>
 
     <dependencies>

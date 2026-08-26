@@ -15,7 +15,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.zazalng.prickcal.global.builder;
+package io.github.zazalng.prickcal.global.exception;
 
-public class PanelBuilder {
+public class ApostleException extends RuntimeException {
+    private final ApostleEnum exceptionType;
+
+    public ApostleException(ApostleEnum title, String injector) {
+        exceptionType = title;
+        super(title.getErrMsg(injector));
+    }
+
+    public int getErrorCode(){
+        return exceptionType.getErrCode();
+    }
 }

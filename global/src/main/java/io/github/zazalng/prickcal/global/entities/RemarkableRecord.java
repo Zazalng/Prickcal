@@ -21,62 +21,19 @@ import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
-public class StageGearDrop {
+public class RemarkableRecord {
     @Column
     private Long id;
     @Column
-    private int stage;
+    private Long uid;
     @Column
-    private int map;
+    private String table;
     @Column
-    private float initTier;
+    private Long markId;
     @Column
-    private int lowGrade;
+    private Boolean voide;
     @Column
-    private int highGrade;
-
-    public StageGearDrop() {
-    }
-
-    public int getStage() {
-        return stage;
-    }
-
-    public void setStage(int stage) {
-        this.stage = stage;
-    }
-
-    public int getMap() {
-        return map;
-    }
-
-    public void setMap(int map) {
-        this.map = map;
-    }
-
-    public float getInitTier() {
-        return initTier;
-    }
-
-    public void setInitTier(float initTier) {
-        this.initTier = initTier;
-    }
-
-    public int getLowGrade() {
-        return lowGrade;
-    }
-
-    public void setLowGrade(int lowGrade) {
-        this.lowGrade = lowGrade;
-    }
-
-    public int getHighGrade() {
-        return highGrade;
-    }
-
-    public void setHighGrade(int highGrade) {
-        this.highGrade = highGrade;
-    }
+    private String reason;
 
     public Long getId() {
         return id;
@@ -84,5 +41,45 @@ public class StageGearDrop {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getUid() {
+        return uid;
+    }
+
+    public void setUid(Long uid) {
+        this.uid = uid;
+    }
+
+    public String getTable() {
+        return table;
+    }
+
+    public void setTable(String table) {
+        this.table = table;
+    }
+
+    public Long getMarkId() {
+        return markId;
+    }
+
+    public void setMarkId(Long markId) {
+        this.markId = markId;
+    }
+
+    public Boolean getVoide() {
+        return voide;
+    }
+
+    public void setVoide(Boolean voide) {
+        this.voide = voide;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

@@ -15,7 +15,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.zazalng.prickcal.global.builder;
+package io.github.zazalng.prickcal.global.exception;
 
-public class PanelBuilder {
+public enum ApostleEnum {
+    INVALID_APOSTLE(404, "Invalid Apostle Index of %s"),
+    INVALID_CRAYONLINEUP(404, "Invalid Crayon Line Up Index of %s"),
+    ARGS_EXCEPTION(100, "%s");
+
+    private final int errCode;
+    private final String errMsg;
+
+    ApostleEnum(int errCode, String errMsg){
+        this.errCode = errCode;
+        this.errMsg = errMsg;
+    }
+
+    public int getErrCode() {
+        return errCode;
+    }
+
+    public String getErrMsg(String injector) {
+        return errMsg.formatted(injector);
+    }
 }
