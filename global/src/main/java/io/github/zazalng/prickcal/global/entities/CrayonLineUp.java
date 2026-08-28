@@ -20,27 +20,60 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Entity
 public class CrayonLineUp {
+    /**
+     * Key record column require by API (as well as using for tracking from {@link Apostle}.crayon)
+     */
     @Column
     private Long id;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house1A;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house1B;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house2A;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house2B;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house2C;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house3A;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house3B;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house3C;
-    @Column
+    /**
+     * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    @Column(defaultValue = "0")
     private int house3D;
 
     public Long getId() {
@@ -123,7 +156,20 @@ public class CrayonLineUp {
         this.house3D = house3D;
     }
 
-    public int[] getLineUp(){
-        return new int[]{getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D()};
+    /**
+     * A line-up of crayon must always return in this standard
+     * {@code {getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D()}}
+     *
+     * @return Line Up Array
+     */
+    public List<Integer> getLineUp() {
+        return Arrays.asList(getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D());
+    }
+
+    /**
+     * Check if any Line-Up contain value of 0 which is mark for Invalid in {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
+     */
+    public boolean isValid() {
+        return getLineUp().contains(0);
     }
 }

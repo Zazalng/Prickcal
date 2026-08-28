@@ -18,15 +18,24 @@
 package io.github.zazalng.prickcal.global.entities;
 
 import group.worldstandard.pudel.api.database.Column;
+import group.worldstandard.pudel.api.database.Entity;
 
+@Entity
 public class GiftAcquired {
+    /**
+     * Key record column require by API
+     */
     @Column
     private Long id;
-
-    @Column
+    /**
+     * Belong to {@link Account}.uid
+     */
+    @Column(unique = true, nullable = false)
     private String uid;
-
-    @Column
+    /**
+     * Belong to {@link GiftCode}.id
+     */
+    @Column(unique = true, nullable = false)
     private Long codeId;
 
     public Long getId() {

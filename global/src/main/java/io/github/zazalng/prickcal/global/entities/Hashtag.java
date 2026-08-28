@@ -22,13 +22,20 @@ import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
 public class Hashtag {
+    /**
+     * Key record column require by API (as well as using for tracking from {@link Apostle}.hashTag)
+     */
     @Column
     private Long id;
-
-    @Column
+    /**
+     * A title of hashtag to display
+     */
+    @Column(nullable = false, unique = true)
     private String name;
-
-    @Column
+    /**
+     * A claim number of pros/cons of this hashtag that relate from {@link io.github.zazalng.prickcal.global.contract.trickcal.HashtagClaim}
+     */
+    @Column(defaultValue = "0")
     private int claim;
 
     public Long getId() {

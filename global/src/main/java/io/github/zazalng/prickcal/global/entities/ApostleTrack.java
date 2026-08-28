@@ -20,21 +20,39 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 public class ApostleTrack {
+    /**
+     * Key record column require by API
+     */
     @Column
     private Long id;
-
-    @Column
+    /**
+     * Belongs to {@link Apostle}.id
+     */
+    @Column(unique = true, nullable = false)
     private Long apostleId;
-
-    @Column
+    /**
+     * Belongs to {@link Account}.uid
+     */
+    @Column(unique = true, nullable = false)
     private String uid;
-
+    /**
+     * Character of {@code Apostle.id} from {@code Account.uid}'s star level (cannot below {@code Apostle.init} or above {@code Apostle.max})
+     */
     @Column
     private int currentStar;
-
-    @Column
+    /**
+     * Crayon record for this Character of {@code Apostle.id} from {@code Account.uid}
+     * In database this value will record in String but maintain Array convertable by using String.split(",", 9)
+     * <p>
+     * Example
+     * {@code "true,false,true,false,true,false,true,false,true"}
+     */
+    @Column(nullable = false, defaultValue = "false,false,false,false,false,false,false,false,false")
     private String crayon;
 
     public Long getId() {
@@ -77,9 +95,12 @@ public class ApostleTrack {
         this.crayon = crayon;
     }
 
-    /**
-     * Custom Method for Logic
-     */
+    public List<Boolean> getCrayons() {
+        List<Boolean> crayons = new ArrayList<>();
+        for (String c : getCrayon().split(",")) {
+            crayons.addLast(Boolean.parseBoolean(c.toLowerCase()));
+        }
 
-
+        return crayons;
+    }
 }

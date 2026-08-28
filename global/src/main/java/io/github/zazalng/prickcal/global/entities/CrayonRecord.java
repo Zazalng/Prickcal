@@ -21,32 +21,17 @@ import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
-public class Log {
-    /**
-     * Key record column require by API
-     */
+public class CrayonRecord {
     @Column
     private Long id;
-    /**
-     * Belong to {@link Account}.uid
-     */
-    @Column(index = true, nullable = false)
+    @Column(nullable = false, index = true)
     private String uid;
-    /**
-     * Which table of database get invoice
-     */
-    @Column(index = true, nullable = false)
-    private String table;
-    /**
-     * Which action this log do (match {@link io.github.zazalng.prickcal.global.contract.operator.Action})
-     */
-    @Column(index = true, nullable = false)
-    private String action;
-    /**
-     * What it does in plaintext
-     */
-    @Column(nullable = false)
-    private String toString;
+    @Column
+    private String imgUrl;
+    @Column
+    private int spent;
+    @Column
+    private int crayon;
 
     public Long getId() {
         return id;
@@ -64,27 +49,27 @@ public class Log {
         this.uid = uid;
     }
 
-    public String getTable() {
-        return table;
+    public String getImgUrl() {
+        return imgUrl;
     }
 
-    public void setTable(String table) {
-        this.table = table;
+    public void setImgUrl(String imgUrl) {
+        this.imgUrl = imgUrl;
     }
 
-    public String getAction() {
-        return action;
+    public int getSpent() {
+        return spent;
     }
 
-    public void setAction(String action) {
-        this.action = action;
+    public void setSpent(int spent) {
+        this.spent = spent;
     }
 
-    public String getToString() {
-        return toString;
+    public int getCrayon() {
+        return crayon;
     }
 
-    public void setToString(String toString) {
-        this.toString = toString;
+    public void setCrayon(int crayon) {
+        this.crayon = crayon;
     }
 }

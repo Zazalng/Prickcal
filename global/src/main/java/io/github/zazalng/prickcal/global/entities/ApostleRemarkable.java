@@ -22,13 +22,25 @@ import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
 public class ApostleRemarkable {
+    /**
+     * Key record column require by API (as well using for tracking from {@link RemarkableRecord})
+     */
     @Column
     private Long id;
-    @Column
+    /**
+     * Belong to {@link Apostle}.id
+     */
+    @Column(unique = true, nullable = false)
     private Long apostleId;
-    @Column
-    private Long uid;
-    @Column
+    /**
+     * Belong to {@link Account}.uid
+     */
+    @Column(unique = true, nullable = false)
+    private String uid;
+    /**
+     * A message that uid post about this character (by {@code ApostleRemarkable.apostleId})
+     */
+    @Column(nullable = false)
     private String msg;
 
     public Long getId() {
@@ -47,11 +59,11 @@ public class ApostleRemarkable {
         this.apostleId = apostleId;
     }
 
-    public Long getUid() {
+    public String getUid() {
         return uid;
     }
 
-    public void setUid(Long uid) {
+    public void setUid(String uid) {
         this.uid = uid;
     }
 

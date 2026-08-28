@@ -22,16 +22,34 @@ import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
 public class RemarkableRecord {
+    /**
+     * Key record column require by API
+     */
     @Column
     private Long id;
-    @Column
-    private Long uid;
-    @Column
+    /**
+     * Belong to {@link Account}.uid
+     */
+    @Column(unique = true)
+    private String uid;
+    /**
+     * Which table of database get invoice
+     */
+    @Column(unique = true)
     private String table;
-    @Column
+    /**
+     * Which id of {@code table} from database get invoice
+     */
+    @Column(unique = true)
     private Long markId;
+    /**
+     * Is this remarkable get void?
+     */
     @Column
     private Boolean voide;
+    /**
+     * Given reason to void this remarkable by {@link Operator.ADMIN}
+     */
     @Column
     private String reason;
 
@@ -43,11 +61,11 @@ public class RemarkableRecord {
         this.id = id;
     }
 
-    public Long getUid() {
+    public String getUid() {
         return uid;
     }
 
-    public void setUid(Long uid) {
+    public void setUid(String uid) {
         this.uid = uid;
     }
 

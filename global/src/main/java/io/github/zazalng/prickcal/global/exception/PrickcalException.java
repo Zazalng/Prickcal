@@ -17,12 +17,18 @@
  */
 package io.github.zazalng.prickcal.global.exception;
 
-public class ApostleException extends RuntimeException {
-    private final ApostleEnum exceptionType;
+public class PrickcalException extends RuntimeException {
+    private final PrickcalEnum exceptionType;
 
-    public ApostleException(ApostleEnum title, String injector) {
+    public PrickcalException(PrickcalEnum title, String injector) {
         exceptionType = title;
         super(title.getErrMsg(injector));
+    }
+
+    public PrickcalException(int code, String injector) {
+        PrickcalEnum exceptionType = PrickcalEnum.fromCode(code);
+        super(exceptionType.getErrMsg(injector));
+        this.exceptionType = exceptionType;
     }
 
     public int getErrorCode(){

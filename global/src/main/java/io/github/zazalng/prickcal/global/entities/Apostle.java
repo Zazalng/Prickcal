@@ -20,26 +20,60 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.time.Instant;
+
 @Entity
 public class Apostle {
+    /**
+     * Key record column require by API (as well as using for tracking via apostle_id from other table)
+     */
     @Column
     private Long id;
-    @Column
+    /**
+     * Character's name.
+     */
+    @Column(nullable = false, unique = true)
     private String name;
+    /**
+     * Character's in-game image.
+     */
     @Column
     private String pic;
+    /**
+     * An initialize star that character gain.
+     */
     @Column
     private int init;
+    /**
+     * A maximum star that character can reach.
+     */
     @Column
     private int max;
-    @Column
+    /**
+     * Belong to {@link CrayonLineUp}.id
+     */
+    @Column(nullable = false)
     private Long crayon;
+    /**
+     * Character's race number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace}
+     */
     @Column
     private int race;
+    /**
+     * Is character had elydn title?
+     */
     @Column
-    private boolean elydn;
-    @Column
+    private String elydn;
+    /**
+     * A String in Array format of {@link Hashtag}.id that this character had.
+     */
+    @Column(nullable = false)
     private String hashtag;
+    /**
+     * A release date of character use for check before or after now() to mark character for leak.
+     */
+    @Column(nullable = false)
+    private Instant releaseDate;
 
     public Long getId() {
         return id;
@@ -97,11 +131,15 @@ public class Apostle {
         this.race = race;
     }
 
-    public boolean isElydn() {
+    public String getElydn() {
         return elydn;
     }
 
-    public void setElydn(boolean elydn) {
+    public boolean isElydn() {
+        return getElydn() != null && getElydn().isEmpty();
+    }
+
+    public void setElydn(String elydn) {
         this.elydn = elydn;
     }
 

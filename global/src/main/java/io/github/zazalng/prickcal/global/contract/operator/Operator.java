@@ -17,10 +17,49 @@
  */
 package io.github.zazalng.prickcal.global.contract.operator;
 
+/**
+ * An enum to document & describe which enum can do which thing
+ */
 public enum Operator {
+    /**
+     * A Level that had ability to
+     * <ul>
+     *     <li>inherit ability from Operator that had its value + 1</li>
+     *     <li>Create/Delete any row in Apostle record</li>
+     *     <li>Create/Delete any row in CrayonLineUp record</li>
+     *     <li>Create any row in GiftCode record</li>
+     *     <li>Create any row in HashTag record</li>
+     *     <li>Update any row in Remarkable record</li>
+     *     <li>Create/Delete any row in StageGearDrop record</li>
+     * </ul>
+     */
     ADMIN(0),
+    /**
+     * A Level that had ability to
+     * <ul>
+     *     <li>inherit ability from Operator that had its value + 1</li>
+     *     <li>Update any row in Apostle record</li>
+     *     <li>Update any row in CrayonLineUp record</li>
+     *     <li>Update/Delete any row in GiftCode record</li>
+     *     <li>Update/Delete any row in HashTag record</li>
+     *     <li>Update any row in StageGearDrop record</li>
+     * </ul>
+     */
     EDITOR(1),
+    /**
+     * A Level that had ability to
+     * <ul>
+     *     <li>Update own uid match in Account record</li>
+     *     <li>Update own uid match in ApostleTrack record</li>
+     *     <li>Create/Update/Delete own uid match in CrayonRecord record</li>
+     *     <li>Create/Delete own uid match in GiftAcquired record</li>
+     *     <li>Create/Update/Delete own uid match in ApostleRemarkable record</li>
+     * </ul>
+     */
     USER(2),
+    /**
+     * A level that had 0 ability to do anything
+     */
     UNKNOWN(-1);
 
     private final int value;

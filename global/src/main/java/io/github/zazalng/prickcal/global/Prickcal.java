@@ -19,7 +19,6 @@ package io.github.zazalng.prickcal.global;
 
 import group.worldstandard.pudel.api.PluginContext;
 import group.worldstandard.pudel.api.annotation.*;
-import group.worldstandard.pudel.api.database.ColumnType;
 import group.worldstandard.pudel.api.database.PluginDatabaseManager;
 import group.worldstandard.pudel.api.database.PluginRepository;
 import group.worldstandard.pudel.api.database.TableSchema;
@@ -93,101 +92,62 @@ public class Prickcal {
 
     private void migrateDatabase(PluginDatabaseManager db){
         db.migrate(0, _ -> {
-            TableSchema tb = TableSchema.builder("apostle")
-                    .column("name", ColumnType.STRING, false, "Unrecognized")
-                    .column("pic", ColumnType.STRING, true)
-                    .column("init", ColumnType.SMALLINT, 1, false, "0")
-                    .column("crayon", ColumnType.BIGINT, false, "0")
-                    .column("race", ColumnType.SMALLINT, 1, false, "0")
-                    .column("elyde", ColumnType.BOOLEAN, false, "false")
-                    .column("hash_tag", ColumnType.STRING, true)
-                    .column("release_date", ColumnType.DATE, false)
+            TableSchema tb = TableSchema.builder("accounts").fromEntity(Account.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
 
-            tb = TableSchema.builder("apostle_track")
-                    .column("apostle_id", ColumnType.BIGINT, false, "0")
-                    .column("uid", ColumnType.STRING, false)
-                    .column("current_star", ColumnType.SMALLINT, false, "0")
-                    .column("crayon", ColumnType.STRING, false)
-                    .uniqueIndex("apostle_id", "uid")
+            tb = TableSchema.builder("apostles").fromEntity(Apostle.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
 
-            tb = TableSchema.builder("crayon_line_up")
-                    .column("house_1a", ColumnType.SMALLINT, false, "0")
-                    .column("house_1b", ColumnType.SMALLINT, false, "0")
-                    .column("house_2a", ColumnType.SMALLINT, false, "0")
-                    .column("house_2b", ColumnType.SMALLINT, false, "0")
-                    .column("house_2c", ColumnType.SMALLINT, false, "0")
-                    .column("house_3a", ColumnType.SMALLINT, false, "0")
-                    .column("house_3b", ColumnType.SMALLINT, false, "0")
-                    .column("house_3c", ColumnType.SMALLINT, false, "0")
-                    .column("house_3d", ColumnType.SMALLINT, false, "0")
+            tb = TableSchema.builder("apostle_reviews").fromEntity(ApostleRemarkable.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
 
-            tb = TableSchema.builder("gift_acquired")
-                    .column("uid", ColumnType.STRING, false)
-                    .column("code_id", ColumnType.BIGINT, false, "0")
-                    .uniqueIndex("uid", "code_id")
+            tb = TableSchema.builder("apostle_tracks").fromEntity(ApostleTrack.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
 
-            tb = TableSchema.builder("gift_code")
-                    .column("code", ColumnType.STRING, false)
-                    .column("description", ColumnType.TEXT, true)
-                    .column("expire_at", ColumnType.TIMESTAMP, true)
-                    .uniqueIndex("code")
+            tb = TableSchema.builder("crayon_line_ups").fromEntity(CrayonLineUp.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
 
-            tb = TableSchema.builder("hash_tag")
-                    .column("name", ColumnType.STRING, false)
-                    .column("claim", ColumnType.SMALLINT, false, "0")
-                    .uniqueIndex("name")
+            tb = TableSchema.builder("gift_acquired").fromEntity(GiftAcquired.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
 
-            tb = TableSchema.builder("log")
-                    .column("uid", ColumnType.STRING, false)
-                    .column("table", ColumnType.STRING, false)
-                    .column("action", ColumnType.SMALLINT, true)
-                    .column("to_string", ColumnType.STRING, false)
-                    .index("uid", "table", "action")
+            tb = TableSchema.builder("gift_codes").fromEntity(GiftCode.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
 
-            tb = TableSchema.builder("stage_gear_drop")
-                    .column("stage", ColumnType.SMALLINT, false)
-                    .column("map", ColumnType.SMALLINT, false)
-                    .column("init_tier", ColumnType.FLOAT, false)
-                    .column("lowGrade", ColumnType.SMALLINT, false)
-                    .column("highGrade", ColumnType.SMALLINT, true)
-                    .uniqueIndex("stage", "map")
+            tb = TableSchema.builder("hash_tags").fromEntity(Hashtag.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
 
-            tb = TableSchema.builder("account")
-                    .column("uid", ColumnType.STRING, false)
-                    .column("ops", ColumnType.SMALLINT, false, "-1")
-                    .column("leak", ColumnType.BOOLEAN, false, "false")
-                    .uniqueIndex("uid")
+            tb = TableSchema.builder("logs").fromEntity(Log.class)
+                    .build();
+            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
+
+            tb = TableSchema.builder("remarkable_records").fromEntity(RemarkableRecord.class)
+                    .build();
+            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
+
+            tb = TableSchema.builder("stage_gear_drops").fromEntity(StageGearDrop.class)
                     .build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
         });
     }
 
     private void createRepositories(PluginDatabaseManager db){
-        apostles = db.getRepository("apostle", Apostle.class);
-        apostleTrackers = db.getRepository("apostle_track", ApostleTrack.class);
-        crayonLineups = db.getRepository("crayon_line_up", CrayonLineUp.class);
+        apostles = db.getRepository("apostles", Apostle.class);
+        apostleTrackers = db.getRepository("apostle_tracks", ApostleTrack.class);
+        crayonLineups = db.getRepository("crayon_line_ups", CrayonLineUp.class);
         giftAcquires = db.getRepository("gift_acquired", GiftAcquired.class);
-        giftCodes = db.getRepository("gift_code", GiftCode.class);
-        hashTags = db.getRepository("hash_tag", Hashtag.class);
-        logs = db.getRepository("log", Log.class);
-        stageGears = db.getRepository("stage_gear_drop", StageGearDrop.class);
-        accounts = db.getRepository("account", Account.class);
+        giftCodes = db.getRepository("gift_codes", GiftCode.class);
+        hashTags = db.getRepository("hash_tags", Hashtag.class);
+        logs = db.getRepository("logs", Log.class);
+        stageGears = db.getRepository("stage_gear_drops", StageGearDrop.class);
+        accounts = db.getRepository("accounts", Account.class);
     }
 
     @SlashCommand(

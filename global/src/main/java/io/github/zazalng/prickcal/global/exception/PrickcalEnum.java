@@ -17,17 +17,27 @@
  */
 package io.github.zazalng.prickcal.global.exception;
 
-public enum ApostleEnum {
+public enum PrickcalEnum {
     INVALID_APOSTLE(404, "Invalid Apostle Index of %s"),
     INVALID_CRAYONLINEUP(404, "Invalid Crayon Line Up Index of %s"),
-    ARGS_EXCEPTION(100, "%s");
+    ARGS_EXCEPTION(100, "%s"),
+
+    UNCATEGORY(-1, "Who da heck cause this exception without proper tell what cause error");
 
     private final int errCode;
     private final String errMsg;
 
-    ApostleEnum(int errCode, String errMsg){
+    PrickcalEnum(int errCode, String errMsg) {
         this.errCode = errCode;
         this.errMsg = errMsg;
+    }
+
+    public static PrickcalEnum fromCode(int code) {
+        for (PrickcalEnum ex : PrickcalEnum.values()) {
+            if (ex.errCode == code) return ex;
+        }
+
+        return UNCATEGORY;
     }
 
     public int getErrCode() {

@@ -22,20 +22,54 @@ import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
 public class Account {
+    /**
+     * Key record column require by API
+     */
     @Column
     private Long id;
-
-    @Column
+    /**
+     * User's discord id number
+     */
+    @Column(nullable = false, unique = true)
     private String uid;
-
+    /**
+     * User's in-game name
+     */
     @Column
+    private String ign;
+    /**
+     * User's in-game friend code
+     */
+    @Column
+    private String friendCode;
+    /**
+     * User's operation level in {@link io.github.zazalng.prickcal.global.contract.operator.Operator}
+     */
+    @Column(defaultValue = "2")
     private int ops;
-
-    @Column
+    /**
+     * User's consult to seeing hidden/unrelease content of in-game data on plugin database
+     */
+    @Column(defaultValue = "false")
     private boolean leak;
-
-    @Column
+    /**
+     * User's contribution point
+     */
+    @Column(defaultValue = "0")
     private int cp;
+    /**
+     * A String of format that user using to let's Pudel auto-detect and recording to {@link CrayonRecord} when user using though context command on message in discord.
+     * <ul>
+     *     <li>%dd = date day (Integer valid with 0[1-9] or 1 to 31)</li>
+     *     <li>%dm = date month (Integer valid with 0[1-9] or 1 to 12)</li>
+     *     <li>%dy = date year (Integer valid with \d{2,4} for \d{2} added 2000 to it)</li>
+     *     <li>%cs = candy spent (Integer valid only when mod by 20 and result is 0)</li>
+     *     <li>%ca = crayon acquired (Integer valid with any >= 0)</li>
+     * </ul>
+     * Format %dd, %dm, %dy, %cs, %ca MUST EXIST to called it valid format
+     */
+    @Column(nullable = false, defaultValue = "%dd/%dm/%dy %cs %ca")
+    private String crayonFormat;
 
     public Long getId() {
         return id;
@@ -51,6 +85,14 @@ public class Account {
 
     public void setUid(String uid) {
         this.uid = uid;
+    }
+
+    public String getIgn() {
+        return ign;
+    }
+
+    public void setIgn(String ign) {
+        this.ign = ign;
     }
 
     public int getOps() {
@@ -75,5 +117,21 @@ public class Account {
 
     public void setCp(int cp) {
         this.cp = cp;
+    }
+
+    public String getCrayonFormat() {
+        return crayonFormat;
+    }
+
+    public void setCrayonFormat(String crayonFormat) {
+        this.crayonFormat = crayonFormat;
+    }
+
+    public String getFriendCode() {
+        return friendCode;
+    }
+
+    public void setFriendCode(String friendCode) {
+        this.friendCode = friendCode;
     }
 }

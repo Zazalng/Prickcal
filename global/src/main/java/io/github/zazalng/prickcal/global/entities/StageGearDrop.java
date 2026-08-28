@@ -22,16 +22,34 @@ import group.worldstandard.pudel.api.database.Entity;
 
 @Entity
 public class StageGearDrop {
+    /**
+     * Key record column require by API
+     */
     @Column
     private Long id;
-    @Column
+    /**
+     * Which stage number
+     */
+    @Column(unique = true)
     private int stage;
-    @Column
+    /**
+     * Which map in stage number
+     */
+    @Column(unique = true)
     private int map;
+    /**
+     * Which Tier number of this stage hold (can be only \d+\.[0,5] as valid value)
+     */
     @Column
     private float initTier;
+    /**
+     * Which gear type id from {@link io.github.zazalng.prickcal.global.contract.trickcal.GearType}
+     */
     @Column
     private int lowGrade;
+    /**
+     * Which gear type id from {@link io.github.zazalng.prickcal.global.contract.trickcal.GearType}
+     */
     @Column
     private int highGrade;
 

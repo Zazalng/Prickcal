@@ -24,15 +24,24 @@ import java.time.Instant;
 
 @Entity
 public class GiftCode {
+    /**
+     * Key record column require by API (as well as using for tracking from {@link GiftAcquired}.codeId)
+     */
     @Column
     private Long id;
-
-    @Column
+    /**
+     * A code of gift
+     */
+    @Column(nullable = false, unique = true)
     private String code;
-
+    /**
+     * A describe of gift reward
+     */
     @Column
     private String description;
-
+    /**
+     * An expiry timestamp of gift code
+     */
     @Column
     private Instant expireAt;
 

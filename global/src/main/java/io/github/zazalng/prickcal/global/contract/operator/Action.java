@@ -20,9 +20,21 @@ package io.github.zazalng.prickcal.global.contract.operator;
 import java.util.Objects;
 
 public enum Action {
+    /**
+     * Any action that result to create new row from any table
+     */
     CREATE(1),
+    /**
+     * Any action that result to any row to change data
+     */
     UPDATE(0),
+    /**
+     * Any action that result to delete row from any table
+     */
     DELETE(-1),
+    /**
+     * Any action that getting this result must reject an action
+     */
     UNKNOWN(null);
 
     private final Integer val;
