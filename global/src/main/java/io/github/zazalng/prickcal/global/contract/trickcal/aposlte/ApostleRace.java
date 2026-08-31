@@ -18,10 +18,10 @@
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
 public enum ApostleRace {
-    UNKNOWN(0, "Unknown"),
+    UNKNOWN(0, "Invalid"),
     SPRITE(1, "Sprite"),
     ELEMENTAL(2, "Elemental"),
-    BEASTMEN(3, "Beastmen"),
+    BEASTMEN(3, "Werebeast"),
     DRAGON(4, "Dragon"),
     PHANTOM(5, "Phantom"),
     ELF(6, "Elf"),

@@ -158,12 +158,12 @@ public class CrayonLineUp {
 
     /**
      * A line-up of crayon must always return in this standard
-     * {@code {getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D()}}
+     * {@code {getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse2C(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D()}}
      *
      * @return Line Up Array
      */
     public List<Integer> getLineUp() {
-        return Arrays.asList(getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D());
+        return Arrays.asList(getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse2C(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D());
     }
 
     /**

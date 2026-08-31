@@ -36,7 +36,7 @@ public class RemarkableRecord {
      * Which table of database get invoice
      */
     @Column(unique = true)
-    private String table;
+    private String tableName;
     /**
      * Which id of {@code table} from database get invoice
      */
@@ -69,12 +69,12 @@ public class RemarkableRecord {
         this.uid = uid;
     }
 
-    public String getTable() {
-        return table;
+    public String getTableName() {
+        return tableName;
     }
 
-    public void setTable(String table) {
-        this.table = table;
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 
     public Long getMarkId() {

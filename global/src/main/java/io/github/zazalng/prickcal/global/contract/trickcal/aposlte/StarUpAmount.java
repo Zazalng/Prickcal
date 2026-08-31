@@ -17,23 +17,45 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
+import java.util.Objects;
+
 public enum StarUpAmount{
-    S1(25),
-    S2(12),
-    S3(20),
-    S4(25),
-    S5(50),
-    S6(0),
-    S7(40),
-    S8(60);
+    S8(8, 60, null),
+    S7(7, 40, S8),
+    S6(6, 0, S7),
+    S5(5, 50, S6),
+    S4(4, 25, S5),
+    S3(3, 20, S4),
+    S2(2, 12, S3),
+    S1(1, 25, S2);
 
+    private final int star;
     private final int piece;
+    private final StarUpAmount nextStar;
 
-    StarUpAmount(int piece){
+    StarUpAmount(int star, int piece, StarUpAmount nextStar) {
+        this.star = star;
         this.piece = piece;
+        this.nextStar = nextStar;
+    }
+
+    public static StarUpAmount fromStar(int star) {
+        for (StarUpAmount s : StarUpAmount.values()) {
+            if (Objects.equals(star, s.star)) return s;
+        }
+
+        return null;
     }
 
     public int getPiece() {
         return piece;
+    }
+
+    public int getStar() {
+        return star;
+    }
+
+    public StarUpAmount getNextStar() {
+        return nextStar;
     }
 }

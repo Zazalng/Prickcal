@@ -68,6 +68,10 @@ public enum Operator {
         this.value = value;
     }
 
+    public int getValue() {
+        return value;
+    }
+
     public static Operator fromString(int operator) {
         for (Operator o : Operator.values()) {
             if (o.value == operator) {

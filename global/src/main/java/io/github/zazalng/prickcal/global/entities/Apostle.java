@@ -35,7 +35,7 @@ public class Apostle {
     @Column(nullable = false, unique = true)
     private String name;
     /**
-     * Character's in-game image.
+     * Character's in-game image (url).
      */
     @Column
     private String pic;
@@ -60,10 +60,20 @@ public class Apostle {
     @Column
     private int race;
     /**
+     * Character's personality (color) number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor}
+     */
+    @Column
+    private int color;
+    /**
      * Is character had elydn title?
      */
     @Column
     private String elydn;
+    /**
+     * Character's position number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition}
+     */
+    @Column
+    private short position;
     /**
      * A String in Array format of {@link Hashtag}.id that this character had.
      */
@@ -149,5 +159,13 @@ public class Apostle {
 
     public void setHashtag(String hashtag) {
         this.hashtag = hashtag;
+    }
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
     }
 }

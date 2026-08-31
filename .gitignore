@@ -2,3 +2,4 @@
 /.agentbridge/
 /.ignore/
 /example/
+*/target/*

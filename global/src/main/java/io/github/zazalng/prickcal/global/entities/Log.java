@@ -36,7 +36,7 @@ public class Log {
      * Which table of database get invoice
      */
     @Column(index = true, nullable = false)
-    private String table;
+    private String tableName;
     /**
      * Which action this log do (match {@link io.github.zazalng.prickcal.global.contract.operator.Action})
      */
@@ -64,12 +64,12 @@ public class Log {
         this.uid = uid;
     }
 
-    public String getTable() {
-        return table;
+    public String getTableName() {
+        return tableName;
     }
 
-    public void setTable(String table) {
-        this.table = table;
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 
     public String getAction() {

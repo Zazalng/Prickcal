@@ -17,30 +17,38 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal;
 
+import java.util.Objects;
+
 public enum GearType {
-    PATK(1),
-    MATK(2),
-    PDEF(3),
-    MDEF(4),
-    CRIT(5),
-    CRES(6),
-    HP(7),
-    UNKNOWN(0);
+    PDEF(1, "Pysical Defense"),
+    MDEF(2, "Magical Defense"),
+    CRIT(3, "Crit Rate/Dmg"),
+    CRES(4, "Crit Resistance"),
+    HP(5, "Health Point"),
+    PATK(61, "Pysical Attack"),
+    MATK(62, "Magical Attack"),
+    UNKNOWN(0, "Invalid");
 
-    private final int id;
+    private final int no;
+    private final String name;
 
-    GearType(int id) {
-        this.id = id;
+    GearType(int no, String name) {
+        this.no = no;
+        this.name = name;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public static GearType fromId(int id){
+    public static GearType fromId(int no) {
         for(GearType g:GearType.values()){
-            if(g.id == id) return g;
+            if (Objects.equals(no, g.no)) return g;
         }
         return UNKNOWN;
+    }
+
+    public int getNo() {
+        return no;
+    }
+
+    public String getName() {
+        return name;
     }
 }
