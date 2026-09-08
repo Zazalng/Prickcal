@@ -23,7 +23,7 @@ import group.worldstandard.pudel.api.database.Entity;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
+@Entity(tableName = "apostle_tracks")
 public class ApostleTrack {
     /**
      * Key record column require by API

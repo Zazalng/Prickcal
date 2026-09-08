@@ -20,7 +20,7 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
-@Entity
+@Entity(tableName = "gift_acquired")
 public class GiftAcquired {
     /**
      * Key record column require by API

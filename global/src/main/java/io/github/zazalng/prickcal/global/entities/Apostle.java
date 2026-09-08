@@ -22,7 +22,7 @@ import group.worldstandard.pudel.api.database.Entity;
 
 import java.time.Instant;
 
-@Entity
+@Entity(tableName = "apostles")
 public class Apostle {
     /**
      * Key record column require by API (as well as using for tracking via apostle_id from other table)

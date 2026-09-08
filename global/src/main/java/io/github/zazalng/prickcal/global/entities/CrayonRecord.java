@@ -20,7 +20,7 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
-@Entity
+@Entity(tableName = "crayon_records")
 public class CrayonRecord {
     @Column
     private Long id;

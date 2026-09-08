@@ -1,9 +1,9 @@
 package io.github.zazalng.prickcal.global.contract.trickcal.crayon;
 
 public enum CrayonCosts {
-    HOUSE_1(1, 2, 2),
-    HOUSE_2(2, 4, 3),
-    HOUSE_3(3, 6, 4),
+    HOUSE_1(1, 2, 3),
+    HOUSE_2(2, 4, 4),
+    HOUSE_3(3, 6, 5),
     UNKNOWN(0, -1, -1);
 
     private final int level;

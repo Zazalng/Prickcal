@@ -20,8 +20,10 @@ package io.github.zazalng.prickcal.global.handler;
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
 import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.Apostle;
-import io.github.zazalng.prickcal.global.entities.ApostleTrack;
 import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
+import io.github.zazalng.prickcal.global.manager.AccountManager;
+import io.github.zazalng.prickcal.global.manager.ApostleManager;
+import io.github.zazalng.prickcal.global.manager.RepositoryProvider;
 import io.github.zazalng.prickcal.global.session.SessionManager;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -30,23 +32,29 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * Handles StringSelectMenu interactions for the Prickcal plugin.
+ * Thin StringSelectMenu interaction router.
+ * Delegates all business logic to the Manager layer.
  */
 public class PrickcalSelectMenuHandler {
 
     private final String stringMenuPrefix;
     private final SessionManager sessionManager;
     private final PanelBuilder panelBuilder;
-    private final PrickcalButtonHandler.PluginRepoProvider repos;
+    private final AccountManager accountManager;
+    private final ApostleManager apostleManager;
+    private final RepositoryProvider repos;
 
     public PrickcalSelectMenuHandler(String stringMenuPrefix, SessionManager sessionManager,
-                                     PanelBuilder panelBuilder, PrickcalButtonHandler.PluginRepoProvider repos) {
+                                     PanelBuilder panelBuilder,
+                                     AccountManager accountManager, ApostleManager apostleManager,
+                                     RepositoryProvider repos) {
         this.stringMenuPrefix = stringMenuPrefix;
         this.sessionManager = sessionManager;
         this.panelBuilder = panelBuilder;
+        this.accountManager = accountManager;
+        this.apostleManager = apostleManager;
         this.repos = repos;
     }
 
@@ -63,59 +71,48 @@ public class PrickcalSelectMenuHandler {
         }
     }
 
+    // ==================== SELECT APOSTLE ====================
+
     private void handleSelectApostle(StringSelectInteractionEvent event, String userId, List<String> values) {
         if (values.isEmpty()) return;
         long apostleId = Long.parseLong(values.get(0));
 
-        Apostle apostle = repos.apostles().query()
-                .where("id", apostleId)
-                .findOne().orElse(null);
-        if (apostle == null) return;
+        var optApostle = apostleManager.findById(apostleId);
+        if (optApostle.isEmpty()) return;
 
+        Apostle apostle = optApostle.get();
         sessionManager.setCurrentApostle(userId, apostle);
 
-        Account account = repos.accounts().query()
-                .where("uid", userId)
-                .findOne().orElse(null);
+        var optAccount = accountManager.findByUid(userId);
+        var optTrack = apostleManager.findTrack(userId, apostle.getId());
+        CrayonLineUp lineUp = apostleManager.findLineUp(apostle).orElse(null);
 
-        ApostleTrack track = repos.apostleTrackers().query()
-                .where("uid", userId)
-                .where("apostleId", apostle.getId())
-                .findOne().orElse(null);
-
-        CrayonLineUp lineUp = apostle.getCrayon() != null
-                ? repos.crayonLineups().query()
-                .where("id", apostle.getCrayon())
-                .findOne().orElse(null)
-                : null;
-
-        if (track != null) {
-            List<Boolean> crayons = track.getCrayons();
-            boolean[] state = new boolean[crayons.size()];
-            for (int i = 0; i < crayons.size(); i++) {
-                state[i] = crayons.get(i);
-            }
+        // Restore toggle state from DB
+        optTrack.ifPresent(track -> {
+            boolean[] state = ApostleManager.listToState(track.getCrayons());
             sessionManager.setCrayonToggleState(userId, state);
-        }
+        });
 
         User discordUser = repos.getDiscordUser(userId);
-        Account displayAccount = account != null ? account : new Account();
-        if (displayAccount.getUid() == null) {
-            displayAccount.setUid(userId);
-        }
+        Account displayAccount = optAccount.orElseGet(() -> {
+            Account a = new Account();
+            a.setUid(userId);
+            return a;
+        });
 
         event.editMessage(
                 new MessageEditBuilder()
                         .useComponentsV2(true)
                         .setComponents(panelBuilder.buildApostleComponent(
-                                userId, apostle, track, lineUp,
+                                userId, apostle, optTrack.orElse(null), lineUp,
                                 sessionManager.getCrayonToggleState(userId)))
                         .build()
         ).queue();
 
         User displayUser = discordUser != null ? discordUser : event.getUser();
         event.getHook().sendMessageEmbeds(
-                panelBuilder.buildApostleEmbed(displayUser, displayAccount, apostle, track, lineUp)
+                panelBuilder.buildApostleEmbed(displayUser, displayAccount, apostle,
+                        optTrack.orElse(null), lineUp)
         ).queue(msg -> {
             List<Message> msgs = sessionManager.getApostleMessages(userId);
             if (msgs != null) {
@@ -131,19 +128,17 @@ public class PrickcalSelectMenuHandler {
         });
     }
 
+    // ==================== DEEP SEARCH FILTERS ====================
+
     private void handleDeepColorFilter(StringSelectInteractionEvent event, String userId, List<String> values) {
         List<Apostle> current = sessionManager.getDeepSearchResults(userId);
-        if (current == null) {
-            current = repos.apostles().query().list();
-        }
+        if (current == null) current = apostleManager.listAll();
         if (values.isEmpty()) {
             refreshDeepSearch(event, userId, current);
             return;
         }
         int colorNo = Integer.parseInt(values.get(0));
-        List<Apostle> filtered = current.stream()
-                .filter(a -> a.getColor() == colorNo)
-                .collect(Collectors.toList());
+        List<Apostle> filtered = apostleManager.filterByColor(current, colorNo);
         sessionManager.setDeepSearchResults(userId, filtered);
         sessionManager.setDeepSearchPage(userId, 0);
         refreshDeepSearch(event, userId, filtered);
@@ -151,35 +146,28 @@ public class PrickcalSelectMenuHandler {
 
     private void handleDeepPositionFilter(StringSelectInteractionEvent event, String userId, List<String> values) {
         List<Apostle> current = sessionManager.getDeepSearchResults(userId);
-        if (current == null) {
-            current = repos.apostles().query().list();
-        }
+        if (current == null) current = apostleManager.listAll();
         if (values.isEmpty()) {
             refreshDeepSearch(event, userId, current);
             return;
         }
-        int posNo = Integer.parseInt(values.get(0));
-        List<Apostle> filtered = current.stream()
-                .filter(a -> a.getRace() == posNo)
-                .collect(Collectors.toList());
+        int raceNo = Integer.parseInt(values.get(0));
+        List<Apostle> filtered = apostleManager.filterByRace(current, raceNo);
         sessionManager.setDeepSearchResults(userId, filtered);
         sessionManager.setDeepSearchPage(userId, 0);
         refreshDeepSearch(event, userId, filtered);
     }
 
     private void handleDeepRaceFilter(StringSelectInteractionEvent event, String userId, List<String> values) {
+        // "Race" in the entity maps to the same field as position filtering
         List<Apostle> current = sessionManager.getDeepSearchResults(userId);
-        if (current == null) {
-            current = repos.apostles().query().list();
-        }
+        if (current == null) current = apostleManager.listAll();
         if (values.isEmpty()) {
             refreshDeepSearch(event, userId, current);
             return;
         }
         int raceNo = Integer.parseInt(values.get(0));
-        List<Apostle> filtered = current.stream()
-                .filter(a -> a.getRace() == raceNo)
-                .collect(Collectors.toList());
+        List<Apostle> filtered = apostleManager.filterByRace(current, raceNo);
         sessionManager.setDeepSearchResults(userId, filtered);
         sessionManager.setDeepSearchPage(userId, 0);
         refreshDeepSearch(event, userId, filtered);

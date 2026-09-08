@@ -23,11 +23,11 @@ import group.worldstandard.pudel.api.database.PluginDatabaseManager;
 import group.worldstandard.pudel.api.database.PluginRepository;
 import group.worldstandard.pudel.api.database.TableSchema;
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
-import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
 import io.github.zazalng.prickcal.global.entities.*;
 import io.github.zazalng.prickcal.global.handler.PrickcalButtonHandler;
 import io.github.zazalng.prickcal.global.handler.PrickcalModalHandler;
 import io.github.zazalng.prickcal.global.handler.PrickcalSelectMenuHandler;
+import io.github.zazalng.prickcal.global.manager.*;
 import io.github.zazalng.prickcal.global.session.SessionManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.components.container.Container;
@@ -45,7 +45,6 @@ import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,6 +53,16 @@ import java.util.concurrent.TimeUnit;
  * <p>Provides Components V2 control panels for personally tracking
  * Trickcal progression including crayon records, apostle tracking,
  * and community features.
+ *
+ * <p>Architecture:
+ * <ul>
+ *   <li><b>Managers</b> ({@link AccountManager}, {@link ApostleManager},
+ *       {@link LogManager}, {@link PermissionManager}) — encapsulate
+ *       all business logic, repository access, and audit logging.</li>
+ *   <li><b>Handlers</b> — thin JDA event routers that delegate to managers.</li>
+ *   <li><b>SessionManager</b> — ephemeral per-user state.</li>
+ *   <li><b>PanelBuilder</b> — pure UI construction, no business logic.</li>
+ * </ul>
  */
 @Plugin(
         name = "Prickcal [Global]",
@@ -90,7 +99,12 @@ public class Prickcal {
     private PluginRepository<RemarkableRecord> remarkableRecords;
     private PluginRepository<StageGearDrop> stageGears;
 
-    // ==================== SERVICES ====================
+    // ==================== MANAGERS & SERVICES ====================
+    private RepositoryProvider repoProvider;
+    private LogManager logManager;
+    private AccountManager accountManager;
+    private ApostleManager apostleManager;
+    private PermissionManager permissionManager;
     private SessionManager sessionManager;
     private PanelBuilder panelBuilder;
     private PrickcalButtonHandler prickcalButtonHandler;
@@ -186,43 +200,52 @@ public class Prickcal {
             tb = TableSchema.builder("stage_gear_drops").fromEntity(StageGearDrop.class).build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
         });
-
-        db.migrate(2, _ -> {
-            db.autoMigrate(Apostle.class);
-        });
     }
 
     private void createRepositories(PluginDatabaseManager db) {
-        accounts = db.getRepository("accounts", Account.class);
-        apostles = db.getRepository("apostles", Apostle.class);
-        apostleRemarkables = db.getRepository("apostle_reviews", ApostleRemarkable.class);
-        apostleTrackers = db.getRepository("apostle_tracks", ApostleTrack.class);
-        crayonLineups = db.getRepository("crayon_line_ups", CrayonLineUp.class);
-        crayonRecords = db.getRepository("crayon_records", CrayonRecord.class);
-        giftAcquires = db.getRepository("gift_acquired", GiftAcquired.class);
-        giftCodes = db.getRepository("gift_codes", GiftCode.class);
-        hashTags = db.getRepository("hash_tags", Hashtag.class);
-        logs = db.getRepository("logs", Log.class);
-        remarkableRecords = db.getRepository("remarkable_records", RemarkableRecord.class);
-        stageGears = db.getRepository("stage_gear_drops", StageGearDrop.class);
+        accounts = db.getRepository(Account.class);
+        apostles = db.getRepository(Apostle.class);
+        apostleRemarkables = db.getRepository(ApostleRemarkable.class);
+        apostleTrackers = db.getRepository(ApostleTrack.class);
+        crayonLineups = db.getRepository(CrayonLineUp.class);
+        crayonRecords = db.getRepository(CrayonRecord.class);
+        giftAcquires = db.getRepository(GiftAcquired.class);
+        giftCodes = db.getRepository(GiftCode.class);
+        hashTags = db.getRepository(Hashtag.class);
+        logs = db.getRepository(Log.class);
+        remarkableRecords = db.getRepository(RemarkableRecord.class);
+        stageGears = db.getRepository(StageGearDrop.class);
     }
 
     private void initializeServices() {
+        // -- Standalone services --
         this.sessionManager = new SessionManager();
         this.panelBuilder = new PanelBuilder(btnPrefix, modalPrefix, stringMenuPrefix);
 
-        PrickcalButtonHandler.PluginRepoProvider repoProvider = createRepoProvider();
+        // -- RepositoryProvider (standalone interface, not an inner class) --
+        JDA jda = ctx.getJDA();
+        this.repoProvider = createRepoProvider(jda);
 
-        this.prickcalButtonHandler = new PrickcalButtonHandler(btnPrefix, modalPrefix, panelBuilder, sessionManager);
-        this.prickcalButtonHandler.setRepoProvider(repoProvider);
+        // -- Managers --
+        this.logManager = new LogManager(repoProvider);
+        this.accountManager = new AccountManager(repoProvider, logManager);
+        this.apostleManager = new ApostleManager(repoProvider, logManager);
+        this.permissionManager = new PermissionManager(repoProvider);
 
-        this.prickcalModalHandler = new PrickcalModalHandler(modalPrefix, panelBuilder, sessionManager, repoProvider);
-        this.prickcalSelectMenuHandler = new PrickcalSelectMenuHandler(stringMenuPrefix, sessionManager, panelBuilder, repoProvider);
+        // -- Handlers (thin routers) --
+        this.prickcalButtonHandler = new PrickcalButtonHandler(
+                btnPrefix, modalPrefix, panelBuilder, sessionManager,
+                accountManager, apostleManager, logManager, permissionManager, repoProvider);
+        this.prickcalModalHandler = new PrickcalModalHandler(
+                modalPrefix, panelBuilder, sessionManager,
+                accountManager, apostleManager, repoProvider);
+        this.prickcalSelectMenuHandler = new PrickcalSelectMenuHandler(
+                stringMenuPrefix, sessionManager, panelBuilder,
+                accountManager, apostleManager, repoProvider);
     }
 
-    private PrickcalButtonHandler.PluginRepoProvider createRepoProvider() {
-        JDA jda = ctx.getJDA();
-        return new PrickcalButtonHandler.PluginRepoProvider() {
+    private RepositoryProvider createRepoProvider(JDA jda) {
+        return new RepositoryProvider() {
             @Override
             public PluginRepository<Account> accounts() {
                 return accounts;
@@ -254,8 +277,33 @@ public class Prickcal {
             }
 
             @Override
+            public PluginRepository<GiftAcquired> giftAcquires() {
+                return giftAcquires;
+            }
+
+            @Override
+            public PluginRepository<GiftCode> giftCodes() {
+                return giftCodes;
+            }
+
+            @Override
+            public PluginRepository<Hashtag> hashTags() {
+                return hashTags;
+            }
+
+            @Override
             public PluginRepository<Log> logs() {
                 return logs;
+            }
+
+            @Override
+            public PluginRepository<RemarkableRecord> remarkableRecords() {
+                return remarkableRecords;
+            }
+
+            @Override
+            public PluginRepository<StageGearDrop> stageGears() {
+                return stageGears;
             }
 
             @Override
@@ -285,11 +333,8 @@ public class Prickcal {
     public void openMainControlPoint(SlashCommandInteractionEvent event) {
         String userId = event.getUser().getId();
 
-        Account account = accounts.query()
-                .where("uid", userId)
-                .findOne().orElse(null);
-
-        if (account == null) {
+        var optAccount = accountManager.findByUid(userId);
+        if (optAccount.isEmpty()) {
             event.reply(
                     new MessageCreateBuilder()
                             .useComponentsV2(true)
@@ -308,9 +353,8 @@ public class Prickcal {
                         .build()
         ).setEphemeral(true).queue(hook -> {
             hook.sendMessageEmbeds(
-                    panelBuilder.buildMainMenuEmbed(event.getUser(), account,
-                            List.of(CrayonStats.ATK, CrayonStats.HP, CrayonStats.CRIT,
-                                    CrayonStats.DEF, CrayonStats.CRES), null)
+                    panelBuilder.buildMainMenuEmbed(event.getUser(), optAccount.get(),
+                            ApostleManager.defaultCrayonStats(), null)
             ).setEphemeral(true).queue(msg -> {
                 sessionManager.putControlMessages(userId, Collections.singletonList(msg));
             });
@@ -328,17 +372,15 @@ public class Prickcal {
         User target = event.getTarget();
         String targetUid = target.getId();
 
-        Account account = accounts.query()
-                .where("uid", targetUid)
-                .findOne().orElse(null);
-
-        if (account == null) {
+        var optAccount = accountManager.findByUid(targetUid);
+        if (optAccount.isEmpty()) {
             event.reply("❌ This user doesn't have a Prickcal profile yet.")
                     .setEphemeral(true)
                     .queue(m -> m.deleteOriginal().queueAfter(5, TimeUnit.SECONDS));
             return;
         }
 
+        Account account = optAccount.get();
         Container panel = Container.of(
                 TextDisplay.of("# 👤 User Record: " + target.getName()),
                 Separator.create(true, Separator.Spacing.SMALL),

@@ -22,7 +22,7 @@ import group.worldstandard.pudel.api.database.Entity;
 
 import java.time.Instant;
 
-@Entity
+@Entity(tableName = "gift_codes")
 public class GiftCode {
     /**
      * Key record column require by API (as well as using for tracking from {@link GiftAcquired}.codeId)

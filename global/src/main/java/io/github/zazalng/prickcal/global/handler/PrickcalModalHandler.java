@@ -20,8 +20,10 @@ package io.github.zazalng.prickcal.global.handler;
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
 import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.Apostle;
-import io.github.zazalng.prickcal.global.entities.ApostleTrack;
 import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
+import io.github.zazalng.prickcal.global.manager.AccountManager;
+import io.github.zazalng.prickcal.global.manager.ApostleManager;
+import io.github.zazalng.prickcal.global.manager.RepositoryProvider;
 import io.github.zazalng.prickcal.global.session.SessionManager;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -34,20 +36,27 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Handles modal submissions for the Prickcal plugin.
+ * Thin modal-interaction router.
+ * Delegates all business logic to the Manager layer.
  */
 public class PrickcalModalHandler {
 
     private final String modalPrefix;
     private final PanelBuilder panelBuilder;
     private final SessionManager sessionManager;
-    private final PrickcalButtonHandler.PluginRepoProvider repos;
+    private final AccountManager accountManager;
+    private final ApostleManager apostleManager;
+    private final RepositoryProvider repos;
 
     public PrickcalModalHandler(String modalPrefix, PanelBuilder panelBuilder,
-                                SessionManager sessionManager, PrickcalButtonHandler.PluginRepoProvider repos) {
+                                SessionManager sessionManager,
+                                AccountManager accountManager, ApostleManager apostleManager,
+                                RepositoryProvider repos) {
         this.modalPrefix = modalPrefix;
         this.panelBuilder = panelBuilder;
         this.sessionManager = sessionManager;
+        this.accountManager = accountManager;
+        this.apostleManager = apostleManager;
         this.repos = repos;
     }
 
@@ -60,6 +69,8 @@ public class PrickcalModalHandler {
             case "deep_name_search" -> handleDeepNameSearch(event, userId);
         }
     }
+
+    // ==================== SWITCH APOSTLE SEARCH ====================
 
     private void handleSwitchApostleSearch(ModalInteractionEvent event, String userId) {
         String searchName = Optional.ofNullable(event.getValue("search_name"))
@@ -79,72 +90,28 @@ public class PrickcalModalHandler {
                         .collect(Collectors.toList()))
                 .orElse(List.of());
 
-        List<Apostle> allApostles = repos.apostles().query().list();
-        List<Apostle> results;
+        List<Apostle> allApostles = apostleManager.listAll();
+        List<Apostle> results = apostleManager.deepFilter(allApostles, searchName,
+                colorFilters, positionFilters);
 
-        if (searchName != null) {
-            results = searchByName(allApostles, searchName);
-            if (results.size() == 1) {
-                selectAndShowApostle(event, userId, results.get(0));
-                return;
-            }
-        } else {
-            results = new ArrayList<>(allApostles);
+        if (results.size() == 1) {
+            selectAndShowApostle(event, userId, results.get(0));
+            return;
         }
 
-        if (!colorFilters.isEmpty() && results.size() != 1) {
-            List<Apostle> filtered = results.stream()
-                    .filter(a -> colorFilters.contains(a.getColor()))
-                    .collect(Collectors.toList());
-            if (!filtered.isEmpty()) {
-                results = filtered;
-                if (results.size() == 1) {
-                    selectAndShowApostle(event, userId, results.get(0));
-                    return;
-                }
-            }
-        }
+        // Store paginated results
+        sessionManager.setDeepSearchResults(userId, results);
+        sessionManager.setDeepSearchPage(userId, 0);
 
-        if (!positionFilters.isEmpty() && results.size() != 1) {
-            List<Apostle> filtered = results.stream()
-                    .filter(a -> positionFilters.contains(a.getRace()))
-                    .collect(Collectors.toList());
-            if (!filtered.isEmpty()) {
-                results = filtered;
-                if (results.size() == 1) {
-                    selectAndShowApostle(event, userId, results.get(0));
-                    return;
-                }
-            }
-        }
-
-        if (!colorFilters.isEmpty() && !positionFilters.isEmpty() && results.size() != 1) {
-            List<Apostle> filtered = results.stream()
-                    .filter(a -> colorFilters.contains(a.getColor()))
-                    .filter(a -> positionFilters.contains(a.getRace()))
-                    .collect(Collectors.toList());
-            if (!filtered.isEmpty()) {
-                results = filtered;
-                if (results.size() == 1) {
-                    selectAndShowApostle(event, userId, results.get(0));
-                    return;
-                }
-            }
-        }
-
-        if (results.size() != 1) {
-            sessionManager.setDeepSearchResults(userId, results);
-            sessionManager.setDeepSearchPage(userId, 0);
-
-            event.editMessage(
-                    new MessageEditBuilder()
-                            .useComponentsV2(true)
-                            .setComponents(panelBuilder.buildDeepSearchPanel(
-                                    userId, results, 0, 10))
-                            .build()
-            ).queue();
-        }
+        event.editMessage(
+                new MessageEditBuilder()
+                        .useComponentsV2(true)
+                        .setComponents(panelBuilder.buildDeepSearchPanel(userId, results, 0, 10))
+                        .build()
+        ).queue();
     }
+
+    // ==================== DEEP NAME SEARCH ====================
 
     private void handleDeepNameSearch(ModalInteractionEvent event, String userId) {
         String name = Optional.ofNullable(event.getValue("deep_name"))
@@ -153,12 +120,10 @@ public class PrickcalModalHandler {
 
         List<Apostle> currentResults = sessionManager.getDeepSearchResults(userId);
         if (currentResults == null) {
-            currentResults = repos.apostles().query().list();
+            currentResults = apostleManager.listAll();
         }
 
-        List<Apostle> filtered = currentResults.stream()
-                .filter(a -> a.getName() != null && a.getName().toLowerCase().contains(name))
-                .collect(Collectors.toList());
+        List<Apostle> filtered = apostleManager.searchByName(currentResults, name);
 
         if (filtered.size() == 1) {
             selectAndShowApostle(event, userId, filtered.get(0));
@@ -171,64 +136,51 @@ public class PrickcalModalHandler {
         event.editMessage(
                 new MessageEditBuilder()
                         .useComponentsV2(true)
-                        .setComponents(panelBuilder.buildDeepSearchPanel(
-                                userId, filtered, 0, 10))
+                        .setComponents(panelBuilder.buildDeepSearchPanel(userId, filtered, 0, 10))
                         .build()
         ).queue();
     }
 
-    private List<Apostle> searchByName(List<Apostle> apostles, String name) {
-        return apostles.stream()
-                .filter(a -> a.getName() != null
-                        && a.getName().toLowerCase().contains(name))
-                .collect(Collectors.toList());
-    }
+    // ==================== SHARED APOSTLE DISPLAY ====================
 
+    /**
+     * Shared display logic used by all three handlers.
+     * Selects the apostle, fetches account/track/lineup, updates the
+     * interaction message, and manages the embed message lifecycle.
+     */
     private void selectAndShowApostle(ModalInteractionEvent event, String userId, Apostle apostle) {
         sessionManager.setCurrentApostle(userId, apostle);
 
-        Account account = repos.accounts().query()
-                .where("uid", userId)
-                .findOne().orElse(null);
+        var optAccount = accountManager.findByUid(userId);
+        var optTrack = apostleManager.findTrack(userId, apostle.getId());
+        CrayonLineUp lineUp = apostleManager.findLineUp(apostle).orElse(null);
 
-        ApostleTrack track = repos.apostleTrackers().query()
-                .where("uid", userId)
-                .where("apostleId", apostle.getId())
-                .findOne().orElse(null);
-
-        CrayonLineUp lineUp = apostle.getCrayon() != null
-                ? repos.crayonLineups().query()
-                .where("id", apostle.getCrayon())
-                .findOne().orElse(null)
-                : null;
-
-        if (track != null) {
-            List<Boolean> crayons = track.getCrayons();
-            boolean[] state = new boolean[crayons.size()];
-            for (int i = 0; i < crayons.size(); i++) {
-                state[i] = crayons.get(i);
-            }
+        // Restore toggle state from DB
+        optTrack.ifPresent(track -> {
+            boolean[] state = ApostleManager.listToState(track.getCrayons());
             sessionManager.setCrayonToggleState(userId, state);
-        }
+        });
 
         User discordUser = repos.getDiscordUser(userId);
-        Account displayAccount = account != null ? account : new Account();
-        if (displayAccount.getUid() == null) {
-            displayAccount.setUid(userId);
-        }
+        Account displayAccount = optAccount.orElseGet(() -> {
+            Account a = new Account();
+            a.setUid(userId);
+            return a;
+        });
 
         event.editMessage(
                 new MessageEditBuilder()
                         .useComponentsV2(true)
                         .setComponents(panelBuilder.buildApostleComponent(
-                                userId, apostle, track, lineUp,
+                                userId, apostle, optTrack.orElse(null), lineUp,
                                 sessionManager.getCrayonToggleState(userId)))
                         .build()
         ).queue();
 
         User displayUser = discordUser != null ? discordUser : event.getUser();
         event.getHook().sendMessageEmbeds(
-                panelBuilder.buildApostleEmbed(displayUser, displayAccount, apostle, track, lineUp)
+                panelBuilder.buildApostleEmbed(displayUser, displayAccount, apostle,
+                        optTrack.orElse(null), lineUp)
         ).queue(msg -> {
             List<Message> msgs = sessionManager.getApostleMessages(userId);
             if (msgs != null) {

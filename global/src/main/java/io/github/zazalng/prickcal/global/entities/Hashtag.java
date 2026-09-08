@@ -20,7 +20,7 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
-@Entity
+@Entity(tableName = "hash_tags")
 public class Hashtag {
     /**
      * Key record column require by API (as well as using for tracking from {@link Apostle}.hashTag)

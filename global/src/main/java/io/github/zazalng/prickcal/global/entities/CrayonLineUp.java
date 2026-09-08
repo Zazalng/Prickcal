@@ -23,7 +23,7 @@ import group.worldstandard.pudel.api.database.Entity;
 import java.util.Arrays;
 import java.util.List;
 
-@Entity
+@Entity(tableName = "crayon_line_ups")
 public class CrayonLineUp {
     /**
      * Key record column require by API (as well as using for tracking from {@link Apostle}.crayon)

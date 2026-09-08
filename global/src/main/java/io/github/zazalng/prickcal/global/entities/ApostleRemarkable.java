@@ -20,7 +20,7 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
-@Entity
+@Entity(tableName = "apostle_reviews")
 public class ApostleRemarkable {
     /**
      * Key record column require by API (as well using for tracking from {@link RemarkableRecord})

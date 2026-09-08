@@ -29,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Encapsulates all per-user ephemeral state to avoid scattering maps across the main class.
  */
 public class SessionManager {
-
     /**
      * Control panel messages per user (userId -> {embedMessage, interactionMessage}).
      */
