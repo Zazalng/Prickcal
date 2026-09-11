@@ -17,14 +17,13 @@
  */
 package io.github.zazalng.prickcal.global.manager;
 
-import io.github.zazalng.prickcal.global.contract.operator.Action;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
-import io.github.zazalng.prickcal.global.entities.*;
+import io.github.zazalng.prickcal.global.entities.Apostle;
+import io.github.zazalng.prickcal.global.entities.ApostleTrack;
+import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
 import io.github.zazalng.prickcal.global.exception.PrickcalEnum;
 import io.github.zazalng.prickcal.global.exception.PrickcalException;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,36 +31,50 @@ import java.util.stream.Collectors;
 /**
  * Encapsulates all Apostle-related business logic:
  * lookup, tracking, crayon operations, deep search, and switch.
- * Every state change is logged through {@link LogManager}.
  */
-public class ApostleManager {
+public class ApostleManager extends AbstractManager {
+    protected ApostleManager(ManagerFactory factory) {
+        super(factory);
+    }
 
-    private final RepositoryProvider repos;
-    private final LogManager logManager;
+    @Override
+    public String getTableName() {
+        return "apostles";
+    }
 
-    public ApostleManager(RepositoryProvider repos, LogManager logManager) {
-        this.repos = repos;
-        this.logManager = logManager;
+    @Override
+    public ApostleManager initialize() {
+        return this;
+    }
+
+    @Override
+    public void reload() {
+
+    }
+
+    @Override
+    public void shutdown() {
+
     }
 
     // ==================== LOOKUPS ====================
 
     /** Find an apostle by its primary key. */
     public Optional<Apostle> findById(long id) {
-        return repos.apostles().query()
+        return factory.getRepos().apostles().query()
                 .where("id", id)
                 .findOne();
     }
 
     /** List all apostles. */
     public List<Apostle> listAll() {
-        return repos.apostles().query().list();
+        return factory.getRepos().apostles().query().list();
     }
 
     /** Resolve the crayon lineup for an apostle. */
     public Optional<CrayonLineUp> findLineUp(Apostle apostle) {
         if (apostle.getCrayon() == null) return Optional.empty();
-        return repos.crayonLineups().query()
+        return factory.getRepos().crayonLineups().query()
                 .where("id", apostle.getCrayon())
                 .findOne();
     }
@@ -70,15 +83,23 @@ public class ApostleManager {
     public CrayonLineUp requireLineUp(Apostle apostle) {
         return findLineUp(apostle).orElseThrow(() ->
                 new PrickcalException(PrickcalEnum.INVALID_CRAYONLINEUP,
-                        String.valueOf(apostle.getCrayon())));
+                        String.valueOf(apostle.getCrayon())
+                )
+        );
     }
 
     /** Find the tracking record for a user + apostle combination. */
     public Optional<ApostleTrack> findTrack(String uid, long apostleId) {
-        return repos.apostleTrackers().query()
+        return factory.getRepos().apostleTrackers().query()
                 .where("uid", uid)
                 .where("apostle_id", apostleId)
                 .findOne();
+    }
+
+    public int crayonTotalByStats(CrayonStats stats) {
+        for (Apostle a : listAll()) {
+
+        }
     }
 
     // ==================== CRAYON TOGGLE ====================
@@ -130,14 +151,13 @@ public class ApostleManager {
             track.setUid(uid);
             track.setCurrentStar(apostle.getInit());
             track.setCrayon(crayonStr);
-            repos.apostleTrackers().save(track);
-            logManager.created(uid, "apostle_tracks",
+            factory.getRepos().apostleTrackers().save(track);
+            logCreated(uid,
                     "Created crayon track for " + apostle.getName());
         } else {
             track.setCrayon(crayonStr);
-            repos.apostleTrackers().save(track);
-            logManager.updated(uid, "apostle_tracks",
-                    "Updated crayon track for " + apostle.getName());
+            factory.getRepos().apostleTrackers().save(track);
+            logUpdated(uid, "Updated crayon track for " + apostle.getName());
         }
         return track;
     }
@@ -200,11 +220,4 @@ public class ApostleManager {
     }
 
     // ==================== HELPERS ====================
-
-    public static List<CrayonStats> defaultCrayonStats() {
-        return Arrays.asList(
-                CrayonStats.ATK, CrayonStats.HP, CrayonStats.CRIT,
-                CrayonStats.DEF, CrayonStats.CRES
-        );
-    }
 }

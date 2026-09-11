@@ -23,7 +23,6 @@ import io.github.zazalng.prickcal.global.entities.Apostle;
 import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
 import io.github.zazalng.prickcal.global.entities.Log;
 import io.github.zazalng.prickcal.global.manager.*;
-import io.github.zazalng.prickcal.global.session.SessionManager;
 import net.dv8tion.jda.api.components.checkboxgroup.CheckboxGroup;
 import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.textinput.TextInput;
@@ -125,19 +124,17 @@ public class PrickcalButtonHandler {
         String action = event.getComponentId().substring(btnPrefix.length());
         switch (action) {
             case "consent_agree" -> {
-                Account account = accountManager.createAccount(userId, userId);
-                event.editMessage(
-                        new MessageEditBuilder()
-                                .useComponentsV2(true)
-                                .setComponents(panelBuilder.buildMainMenuComponent())
-                                .build()
-                ).queue();
+                Account account = accountManager.createAccount(event.getJDA().getSelfUser().getId(), userId);
+                event.getHook().deleteOriginal().queue();
                 User discordUser = event.getUser();
-                event.getHook().sendMessageEmbeds(
-                        panelBuilder.buildMainMenuEmbed(discordUser, account,
-                                ApostleManager.defaultCrayonStats(), null)
-                ).setEphemeral(true).queue(msg ->
-                        sessionManager.putControlMessages(userId, Collections.singletonList(msg)));
+                event.getHook()
+                        .sendMessageEmbeds(
+                                panelBuilder.buildMainMenuEmbed(discordUser, account, ApostleManager.defaultCrayonStats(), null)
+                        )
+                        .setEphemeral(true)
+                        .queue(msg ->
+                                sessionManager.putControlMessages(userId, Collections.singletonList(msg))
+                        );
             }
             case "consent_disagree" -> event.reply(
                             "❌ Consent denied. Your data will not be tracked. Use `/prickcal` if you change your mind.")
@@ -222,7 +219,7 @@ public class PrickcalButtonHandler {
         var optTrack = apostleManager.findTrack(userId, apostle.getId());
         CrayonLineUp lineUp = apostleManager.findLineUp(apostle).orElse(null);
 
-        event.editMessage(
+        event.getHook().editOriginal(
                 new MessageEditBuilder()
                         .useComponentsV2(true)
                         .setComponents(panelBuilder.buildApostleComponent(
@@ -242,11 +239,10 @@ public class PrickcalButtonHandler {
 
         apostleManager.confirmCrayon(userId, apostle, state);
 
-        event.reply("✅ Crayon data saved for **" + apostle.getName() + "**!")
-                .setEphemeral(true)
-                .queue(m -> m.deleteOriginal().queueAfter(3, TimeUnit.SECONDS));
-
-        showApostlePanel(event, userId, apostle);
+        event.getHook().editOriginal("✅ Crayon data saved for **" + apostle.getName() + "**!")
+                .queue(e -> e.editMessage(
+                        panelBuilder.buildApostleComponent(userId, apostle, tracker, )
+                ));
     }
 
     // ==================== CRAYON RESET ====================

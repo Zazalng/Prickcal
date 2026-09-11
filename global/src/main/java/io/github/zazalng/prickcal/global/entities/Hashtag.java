@@ -20,6 +20,8 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.time.Instant;
+
 @Entity(tableName = "hash_tags")
 public class Hashtag {
     /**
@@ -37,6 +39,12 @@ public class Hashtag {
      */
     @Column(defaultValue = "0")
     private int claim;
+
+    @Column
+    private Instant createdAt;
+
+    @Column
+    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -60,5 +68,21 @@ public class Hashtag {
 
     public void setClaim(int claim) {
         this.claim = claim;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

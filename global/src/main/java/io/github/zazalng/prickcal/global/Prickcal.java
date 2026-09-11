@@ -28,11 +28,7 @@ import io.github.zazalng.prickcal.global.handler.PrickcalButtonHandler;
 import io.github.zazalng.prickcal.global.handler.PrickcalModalHandler;
 import io.github.zazalng.prickcal.global.handler.PrickcalSelectMenuHandler;
 import io.github.zazalng.prickcal.global.manager.*;
-import io.github.zazalng.prickcal.global.session.SessionManager;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.components.container.Container;
-import net.dv8tion.jda.api.components.separator.Separator;
-import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -56,8 +52,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Architecture:
  * <ul>
- *   <li><b>Managers</b> ({@link AccountManager}, {@link ApostleManager},
- *       {@link LogManager}, {@link PermissionManager}) — encapsulate
+ *   <li><b>Managers</b> ({@link AccountManager}, {@link ApostleManager}, {@link PermissionManager}) — encapsulate
  *       all business logic, repository access, and audit logging.</li>
  *   <li><b>Handlers</b> — thin JDA event routers that delegate to managers.</li>
  *   <li><b>SessionManager</b> — ephemeral per-user state.</li>
@@ -71,7 +66,6 @@ import java.util.concurrent.TimeUnit;
         description = "A plugin for personally tracking & collection Trickcal progression."
 )
 public class Prickcal {
-
     // ==================== HANDLER IDS ====================
     private static final String BTN_HANDLER = ":button:";
     private static final String MODAL_HANDLER = ":modal:";
@@ -101,11 +95,7 @@ public class Prickcal {
 
     // ==================== MANAGERS & SERVICES ====================
     private RepositoryProvider repoProvider;
-    private LogManager logManager;
-    private AccountManager accountManager;
-    private ApostleManager apostleManager;
-    private PermissionManager permissionManager;
-    private SessionManager sessionManager;
+    private ManagerFactory factory;
     private PanelBuilder panelBuilder;
     private PrickcalButtonHandler prickcalButtonHandler;
     private PrickcalModalHandler prickcalModalHandler;
@@ -132,8 +122,8 @@ public class Prickcal {
 
     @OnDisable
     public void onDisable(PluginContext ctx) {
-        if (sessionManager != null) {
-            sessionManager.clearAllSessions();
+        if (factory != null) {
+            factory.shutdownAllManagers();
         }
         this.ctx = null;
     }
@@ -141,8 +131,8 @@ public class Prickcal {
     @OnShutdown
     public boolean onShutdown(PluginContext ctx) {
         try {
-            if (sessionManager != null) {
-                sessionManager.clearAllSessions();
+            if (factory != null) {
+                factory.shutdownAllManagers();
             }
             ctx.log("info", "%s (v%s) graceful shutdown on '%s'".formatted(
                     ctx.getInfo().getName(), ctx.getInfo().getVersion(), ctx.getPudel().getUserAgent())
@@ -200,6 +190,19 @@ public class Prickcal {
             tb = TableSchema.builder("stage_gear_drops").fromEntity(StageGearDrop.class).build();
             ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
         });
+        db.autoMigrate(Account.class,
+                Apostle.class,
+                ApostleRemarkable.class,
+                ApostleTrack.class,
+                CrayonLineUp.class,
+                CrayonRecord.class,
+                GiftAcquired.class,
+                GiftCode.class,
+                Hashtag.class,
+                Log.class,
+                RemarkableRecord.class,
+                StageGearDrop.class
+        );
     }
 
     private void createRepositories(PluginDatabaseManager db) {
@@ -219,7 +222,6 @@ public class Prickcal {
 
     private void initializeServices() {
         // -- Standalone services --
-        this.sessionManager = new SessionManager();
         this.panelBuilder = new PanelBuilder(btnPrefix, modalPrefix, stringMenuPrefix);
 
         // -- RepositoryProvider (standalone interface, not an inner class) --
@@ -227,21 +229,15 @@ public class Prickcal {
         this.repoProvider = createRepoProvider(jda);
 
         // -- Managers --
-        this.logManager = new LogManager(repoProvider);
-        this.accountManager = new AccountManager(repoProvider, logManager);
-        this.apostleManager = new ApostleManager(repoProvider, logManager);
-        this.permissionManager = new PermissionManager(repoProvider);
+        this.factory = new ManagerFactory(ctx, repoProvider);
 
         // -- Handlers (thin routers) --
         this.prickcalButtonHandler = new PrickcalButtonHandler(
-                btnPrefix, modalPrefix, panelBuilder, sessionManager,
-                accountManager, apostleManager, logManager, permissionManager, repoProvider);
+                btnPrefix, modalPrefix, panelBuilder, factory);
         this.prickcalModalHandler = new PrickcalModalHandler(
-                modalPrefix, panelBuilder, sessionManager,
-                accountManager, apostleManager, repoProvider);
+                modalPrefix, panelBuilder, factory);
         this.prickcalSelectMenuHandler = new PrickcalSelectMenuHandler(
-                stringMenuPrefix, sessionManager, panelBuilder,
-                accountManager, apostleManager, repoProvider);
+                stringMenuPrefix, panelBuilder, factory);
     }
 
     private RepositoryProvider createRepoProvider(JDA jda) {
@@ -333,6 +329,9 @@ public class Prickcal {
     public void openMainControlPoint(SlashCommandInteractionEvent event) {
         String userId = event.getUser().getId();
 
+        SessionManager sessionManager = factory.getManager(ManagersEnum.SESSION);
+        AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
+
         var optAccount = accountManager.findByUid(userId);
         if (optAccount.isEmpty()) {
             event.reply(
@@ -346,19 +345,18 @@ public class Prickcal {
 
         sessionManager.clearUserSession(userId);
 
+        event.getInteraction().getHook().sendMessageEmbeds(
+                panelBuilder.buildMainMenuEmbed(event.getUser(), optAccount.get(),
+                        ApostleManager.defaultCrayonStats(), null
+                )
+        ).setEphemeral(true).queue(m -> sessionManager.putControlMessages(userId, Collections.singletonList(m)));
+
         event.reply(
                 new MessageCreateBuilder()
                         .useComponentsV2(true)
                         .setComponents(panelBuilder.buildMainMenuComponent())
                         .build()
-        ).setEphemeral(true).queue(hook -> {
-            hook.sendMessageEmbeds(
-                    panelBuilder.buildMainMenuEmbed(event.getUser(), optAccount.get(),
-                            ApostleManager.defaultCrayonStats(), null)
-            ).setEphemeral(true).queue(msg -> {
-                sessionManager.putControlMessages(userId, Collections.singletonList(msg));
-            });
-        });
+        ).setEphemeral(true).queue();
     }
 
     // ==================== CONTEXT MENU ====================
@@ -372,6 +370,8 @@ public class Prickcal {
         User target = event.getTarget();
         String targetUid = target.getId();
 
+        AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
+
         var optAccount = accountManager.findByUid(targetUid);
         if (optAccount.isEmpty()) {
             event.reply("❌ This user doesn't have a Prickcal profile yet.")
@@ -380,28 +380,10 @@ public class Prickcal {
             return;
         }
 
-        Account account = optAccount.get();
-        Container panel = Container.of(
-                TextDisplay.of("# 👤 User Record: " + target.getName()),
-                Separator.create(true, Separator.Spacing.SMALL),
-                TextDisplay.of("""
-                        **IGN:** %s
-                        **Friend Code:** %s
-                        **Contribution Points:** %d
-                        **Leak Access:** %s
-                        """.formatted(
-                        account.getIgn() != null ? account.getIgn() : "Not set",
-                        account.getFriendCode() != null ? account.getFriendCode() : "Not set",
-                        account.getCp(),
-                        account.isLeak() ? "✅ Yes" : "❌ No"
-                ))
-        );
-
-        event.reply(
-                new MessageCreateBuilder()
-                        .useComponentsV2(true)
-                        .setComponents(panel)
-                        .build()
+        event.replyEmbeds(
+                panelBuilder.buildMainMenuEmbed(target, optAccount.get(),
+                        ApostleManager.defaultCrayonStats(), null
+                )
         ).setEphemeral(true).queue();
     }
 

@@ -22,6 +22,10 @@ import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePositi
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
 import io.github.zazalng.prickcal.global.entities.*;
+import io.github.zazalng.prickcal.global.manager.AccountManager;
+import io.github.zazalng.prickcal.global.manager.ApostleManager;
+import io.github.zazalng.prickcal.global.manager.ManagerFactory;
+import io.github.zazalng.prickcal.global.manager.ManagersEnum;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -42,18 +46,19 @@ import java.util.List;
  * Separates UI construction logic from business logic and event handling.
  */
 public class PanelBuilder {
-
     private static final Color ACCENT_MAIN = new Color(88, 101, 242);
     private static final Color ACCENT_CONSENT = new Color(255, 193, 7);
     private static final Color ACCENT_APOSTLE = new Color(0, 200, 83);
     private static final Color ACCENT_DANGER = new Color(237, 66, 69);
     private static final Color ACCENT_SEARCH = new Color(156, 39, 176);
 
+    private final ManagerFactory factory;
     private final String btnPrefix;
     private final String modalPrefix;
     private final String stringMenuPrefix;
 
-    public PanelBuilder(String btnPrefix, String modalPrefix, String stringMenuPrefix) {
+    public PanelBuilder(ManagerFactory factory, String btnPrefix, String modalPrefix, String stringMenuPrefix) {
+        this.factory = factory;
         this.btnPrefix = btnPrefix;
         this.modalPrefix = modalPrefix;
         this.stringMenuPrefix = stringMenuPrefix;
@@ -121,16 +126,28 @@ public class PanelBuilder {
 
     // ==================== MAIN MENU ====================
 
-    public MessageEmbed buildMainMenuEmbed(User discordUser, Account account,
-                                           List<CrayonStats> crayonStats,
-                                           CrayonRecord crayonRecord) {
+    public MessageEmbed buildMainMenuEmbed(User discordUser) {
+        AccountManager am = factory.getManager(ManagersEnum.ACCOUNT);
+        ApostleManager cm = factory.getManager(ManagersEnum.APOSTLE);
+
+        Account acc = am.findByUid(discordUser.getId());
+
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(discordUser.getName(), null, discordUser.getEffectiveAvatarUrl());
-        embed.setTitle(account.getIgn() != null ? account.getIgn() : discordUser.getName());
+        embed.setTitle(acc.getIgn() != null ? acc.getIgn() + "(%s)".formatted(discordUser.getName()) : discordUser.getName());
+        embed.setDescription("""
+                        Consent at %s
+                        Apostle: %d out of %d | CP: %d
+                        """.formatted(
+                        acc.getCreatedAt().toString(),
+                        am.getApostleOwned(acc.getUid()),
+                        cm.listAll().size(),
+                        acc.getCp()
+                )
+        );
         embed.setThumbnail(discordUser.getEffectiveAvatarUrl());
-        String footer = "";
-        if (account.getFriendCode() != null) footer += "Friend Code: " + account.getFriendCode();
-        embed.setFooter(footer.isEmpty() ? null : footer);
+        embed.setFooter("Friend Code: %s".formatted(acc.getFriendCode() != null ? acc.getFriendCode() : "*null*"));
+        embed.setTimestamp(acc.getUpdatedAt());
         embed.setColor(new Color(new Random().nextInt(256), new Random().nextInt(256), new Random().nextInt(256)));
 
         for (CrayonStats stats : crayonStats) {

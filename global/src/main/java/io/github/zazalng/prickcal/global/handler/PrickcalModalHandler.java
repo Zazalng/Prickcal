@@ -24,7 +24,7 @@ import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
 import io.github.zazalng.prickcal.global.manager.AccountManager;
 import io.github.zazalng.prickcal.global.manager.ApostleManager;
 import io.github.zazalng.prickcal.global.manager.RepositoryProvider;
-import io.github.zazalng.prickcal.global.session.SessionManager;
+import io.github.zazalng.prickcal.global.manager.SessionManager;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;

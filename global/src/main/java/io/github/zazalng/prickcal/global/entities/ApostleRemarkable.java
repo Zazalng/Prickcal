@@ -20,6 +20,8 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.time.Instant;
+
 @Entity(tableName = "apostle_reviews")
 public class ApostleRemarkable {
     /**
@@ -42,6 +44,12 @@ public class ApostleRemarkable {
      */
     @Column(nullable = false)
     private String msg;
+
+    @Column
+    private Instant createdAt;
+
+    @Column
+    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -73,5 +81,21 @@ public class ApostleRemarkable {
 
     public void setMsg(String msg) {
         this.msg = msg;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

@@ -20,6 +20,8 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.time.Instant;
+
 @Entity(tableName = "crayon_records")
 public class CrayonRecord {
     @Column
@@ -32,6 +34,10 @@ public class CrayonRecord {
     private int spent;
     @Column
     private int crayon;
+    @Column
+    private Instant createdAt;
+    @Column
+    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -71,5 +77,21 @@ public class CrayonRecord {
 
     public void setCrayon(int crayon) {
         this.crayon = crayon;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

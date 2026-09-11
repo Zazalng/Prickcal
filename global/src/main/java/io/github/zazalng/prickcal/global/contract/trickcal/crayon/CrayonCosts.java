@@ -6,12 +6,12 @@ public enum CrayonCosts {
     HOUSE_3(3, 6, 5),
     UNKNOWN(0, -1, -1);
 
-    private final int level;
+    private final int depth;
     private final int price;
     private final int amount;
 
-    CrayonCosts(int level, int price, int amount){
-        this.level = level;
+    CrayonCosts(int depth, int price, int amount) {
+        this.depth = depth;
         this.price = price;
         this.amount = amount;
     }
@@ -24,9 +24,9 @@ public enum CrayonCosts {
         return amount;
     }
 
-    public static CrayonCosts fromLevel(int level){
+    public static CrayonCosts fromDepth(int depth) {
         for(CrayonCosts e: CrayonCosts.values()){
-            if(e.level == level) return e;
+            if (e.depth == depth) return e;
         }
 
         return UNKNOWN;

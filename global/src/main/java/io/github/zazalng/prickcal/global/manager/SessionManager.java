@@ -15,8 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.zazalng.prickcal.global.session;
+package io.github.zazalng.prickcal.global.manager;
 
+import group.worldstandard.pudel.api.PluginContext;
 import io.github.zazalng.prickcal.global.entities.Apostle;
 import net.dv8tion.jda.api.entities.Message;
 
@@ -28,7 +29,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Manages user session state for the Prickcal plugin.
  * Encapsulates all per-user ephemeral state to avoid scattering maps across the main class.
  */
-public class SessionManager {
+public class SessionManager extends AbstractManager {
+    protected SessionManager(PluginContext ctx, RepositoryProvider repos) {
+        super(ctx, repos);
+    }
     /**
      * Control panel messages per user (userId -> {embedMessage, interactionMessage}).
      */
@@ -37,7 +41,6 @@ public class SessionManager {
      * Apostle panel messages per user (userId -> {embedMessage, interactionMessage}).
      */
     private final Map<String, List<Message>> apostleMessages = new ConcurrentHashMap<>();
-
     /**
      * Currently viewed apostle per user (userId -> Apostle).
      */

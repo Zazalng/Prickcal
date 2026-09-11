@@ -72,6 +72,14 @@ public enum Operator {
         return value;
     }
 
+    public static int defaultUser() {
+        int i = 0;
+        for (Operator o : Operator.values()) {
+            if (o.value > i) i = o.getValue();
+        }
+        return i;
+    }
+
     public static Operator fromString(int operator) {
         for (Operator o : Operator.values()) {
             if (o.value == operator) {

@@ -20,6 +20,7 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -75,6 +76,12 @@ public class CrayonLineUp {
      */
     @Column(defaultValue = "0")
     private int house3D;
+
+    @Column
+    private Instant createdAt;
+
+    @Column
+    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -156,6 +163,22 @@ public class CrayonLineUp {
         this.house3D = house3D;
     }
 
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     /**
      * A line-up of crayon must always return in this standard
      * {@code {getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse2C(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D()}}
@@ -164,6 +187,15 @@ public class CrayonLineUp {
      */
     public List<Integer> getLineUp() {
         return Arrays.asList(getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse2C(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D());
+    }
+
+    /**
+     * A line-up depth of crayon must depth with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonCosts}
+     *
+     * @return Depth Array match House Level
+     */
+    public List<Integer> getDepth() {
+        return Arrays.asList(1, 1, 2, 2, 2, 3, 3, 3, 3);
     }
 
     /**

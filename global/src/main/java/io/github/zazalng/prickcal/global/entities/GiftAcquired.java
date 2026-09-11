@@ -20,6 +20,8 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.time.Instant;
+
 @Entity(tableName = "gift_acquired")
 public class GiftAcquired {
     /**
@@ -37,6 +39,12 @@ public class GiftAcquired {
      */
     @Column(unique = true, nullable = false)
     private Long codeId;
+
+    @Column
+    private Instant createdAt;
+
+    @Column
+    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -60,5 +68,21 @@ public class GiftAcquired {
 
     public void setUid(String uid) {
         this.uid = uid;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

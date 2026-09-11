@@ -18,6 +18,7 @@
 package io.github.zazalng.prickcal.global.exception;
 
 public enum PrickcalEnum {
+    INVALID_ACCOUNT(404, "Wait a minute, w-who are you!? Index of %s"),
     INVALID_APOSTLE(404, "Invalid Apostle Index of %s"),
     INVALID_CRAYONLINEUP(404, "Invalid Crayon Line Up Index of %s"),
     ARGS_EXCEPTION(100, "%s"),

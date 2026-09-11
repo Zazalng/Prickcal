@@ -20,6 +20,8 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
+import java.time.Instant;
+
 @Entity(tableName = "remarkable_records")
 public class RemarkableRecord {
     /**
@@ -48,10 +50,16 @@ public class RemarkableRecord {
     @Column
     private Boolean voide;
     /**
-     * Given reason to void this remarkable by {@link Operator.ADMIN}
+     * Given reason to void this remarkable by {@link io.github.zazalng.prickcal.global.contract.operator.Operator#ADMIN}
      */
     @Column
     private String reason;
+
+    @Column
+    private Instant createdAt;
+
+    @Column
+    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -99,5 +107,21 @@ public class RemarkableRecord {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
