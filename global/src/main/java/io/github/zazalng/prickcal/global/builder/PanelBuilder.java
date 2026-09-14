@@ -22,10 +22,7 @@ import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePositi
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
 import io.github.zazalng.prickcal.global.entities.*;
-import io.github.zazalng.prickcal.global.manager.AccountManager;
-import io.github.zazalng.prickcal.global.manager.ApostleManager;
-import io.github.zazalng.prickcal.global.manager.ManagerFactory;
-import io.github.zazalng.prickcal.global.manager.ManagersEnum;
+import io.github.zazalng.prickcal.global.manager.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -37,9 +34,11 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 
 import java.awt.*;
-import java.time.Instant;
-import java.util.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Builds UI components for the Prickcal plugin.
@@ -53,6 +52,10 @@ public class PanelBuilder {
     private static final Color ACCENT_SEARCH = new Color(156, 39, 176);
 
     private final ManagerFactory factory;
+    private final AccountManager accountManager;
+    private final ApostleManager apostleManager;
+    private final SessionManager sessionManager;
+
     private final String btnPrefix;
     private final String modalPrefix;
     private final String stringMenuPrefix;
@@ -62,6 +65,9 @@ public class PanelBuilder {
         this.btnPrefix = btnPrefix;
         this.modalPrefix = modalPrefix;
         this.stringMenuPrefix = stringMenuPrefix;
+        accountManager = factory.getManager(ManagersEnum.ACCOUNT);
+        apostleManager = factory.getManager(ManagersEnum.APOSTLE);
+        sessionManager = factory.getManager(ManagersEnum.SESSION);
     }
 
     // ==================== CONSENT PANEL ====================
@@ -126,11 +132,8 @@ public class PanelBuilder {
 
     // ==================== MAIN MENU ====================
 
-    public MessageEmbed buildMainMenuEmbed(User discordUser) {
-        AccountManager am = factory.getManager(ManagersEnum.ACCOUNT);
-        ApostleManager cm = factory.getManager(ManagersEnum.APOSTLE);
-
-        Account acc = am.findByUid(discordUser.getId());
+    public MessageEmbed buildMainMenuEmbed(User discordUser, long uid) {
+        Account acc = accountManager.findById(uid);
 
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(discordUser.getName(), null, discordUser.getEffectiveAvatarUrl());
@@ -140,8 +143,8 @@ public class PanelBuilder {
                         Apostle: %d out of %d | CP: %d
                         """.formatted(
                         acc.getCreatedAt().toString(),
-                        am.getApostleOwned(acc.getUid()),
-                        cm.listAll().size(),
+                accountManager.getApostleOwned(acc),
+                apostleManager.listAll().size(),
                         acc.getCp()
                 )
         );
@@ -150,16 +153,34 @@ public class PanelBuilder {
         embed.setTimestamp(acc.getUpdatedAt());
         embed.setColor(new Color(new Random().nextInt(256), new Random().nextInt(256), new Random().nextInt(256)));
 
-        for (CrayonStats stats : crayonStats) {
-            embed.addField(stats.getName(),
-                    account.getUid() + "_own/" + "apostle_" + stats.getNo(),
-                    true);
+        {
+            int crayonSpend = 0;
+            int crayonPossible = 0;
+            for (CrayonStats stats : CrayonStats.values()) {
+                if (stats == CrayonStats.UNKNOWN) {
+                    embed.addField("Crayon Spent", "%d / %d".formatted(crayonSpend, crayonPossible), true);
+                    continue;
+                }
+
+                String[] tracker = accountManager.crayonCountByStats(acc, stats).split(",", 2);
+                String[] possible = apostleManager.crayonTotalByStats(stats).split(",", 2);
+
+                crayonSpend += Integer.parseInt(tracker[1]);
+                crayonPossible += Integer.parseInt(possible[1]);
+
+                embed.addField(stats.getName(),
+                        "%s / %s".formatted(tracker[0], possible[0]),
+                        true);
+            }
         }
 
-        int totalCrayons = (crayonRecord != null) ? crayonRecord.getCrayon() : 0;
-        int totalSpent = (crayonRecord != null) ? crayonRecord.getSpent() : 0;
-        embed.addField("Total Crayons Used", String.valueOf(totalCrayons), true);
-        embed.addField("Candy Spent", String.valueOf(totalSpent), true);
+        {
+            BigDecimal candySpend = accountManager.getCrayonsSpent(acc);
+            BigDecimal crayonAcquired = accountManager.getCrayonsAcquired(acc);
+            embed.addField("Candy Spent", candySpend.toPlainString(), false);
+            embed.addField("Crayon Acquired", crayonAcquired.toPlainString(), true);
+            embed.addField("Crayon Rate", crayonAcquired.divide(candySpend.divide(new BigDecimal(20), 0, RoundingMode.UP), 4, RoundingMode.HALF_UP).toPlainString(), true);
+        }
 
         return embed.build();
     }
@@ -176,6 +197,7 @@ public class PanelBuilder {
                 ActionRow.of(
                         Button.danger(btnPrefix + "administrator", "🔧 Administrator"),
                         Button.secondary(btnPrefix + "logs", "📋 Public Logs"),
+                        Button.secondary(btnPrefix + "refresh_embed", "Refresh"),
                         Button.success(btnPrefix + "public_post", "📢 Public Post")
                 ),
                 ActionRow.of(
@@ -187,36 +209,24 @@ public class PanelBuilder {
     // ==================== APOSTLE PANEL ====================
 
     public MessageEmbed buildApostleEmbed(User discordUser, Account account,
-                                          Apostle apostle, ApostleTrack track,
-                                          CrayonLineUp lineUp) {
+                                          Apostle apostle, ApostleTrack track) {
         EmbedBuilder embed = new EmbedBuilder();
-
-        String authorText = (track != null ? "" : "Not Owning - ")
-                + "Apostle of " + (account.getIgn() != null ? account.getIgn() : discordUser.getName());
-        int currentStar = (track != null) ? track.getCurrentStar() : apostle.getInit();
-        int maxStar = apostle.getMax();
-        embed.setAuthor(authorText + " | " + currentStar + "/" + maxStar,
-                null, discordUser.getEffectiveAvatarUrl());
-
-        String title = apostle.getName();
-        if (apostle.getElydn() != null && !apostle.getElydn().isEmpty()) {
-            title += " (" + apostle.getElydn() + ")";
-        }
-        embed.setTitle(title);
+        embed.setAuthor("Post by <@%s>".formatted(account.getUid()), null, discordUser.getEffectiveAvatarUrl());
+        embed.setTitle(apostle.trueName());
 
         if (apostle.getPic() != null) {
             embed.setThumbnail(apostle.getPic());
         }
         embed.setFooter("Last Updated");
+        embed.setTimestamp(apostle.getUpdatedAt());
+        embed.setColor(ApostleColor.fromNo(apostle.getColor()).getColor());
+        embed.setDescription("""
+                ## Hashtag
+                
+                %s
+                """.formatted(apostleManager.parseHashTag(apostle)));
 
-        if (track != null) {
-            embed.setTimestamp(Instant.now());
-        }
-
-        ApostleColor apostleColor = ApostleColor.fromNo(apostle.getColor());
-        embed.setColor(apostleColor.getColor());
-        embed.setDescription("#" + (apostle.getHashtag() != null ? apostle.getHashtag() : "none"));
-
+        CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
         if (lineUp != null && track != null) {
             List<Integer> lineUpValues = lineUp.getLineUp();
             List<Boolean> crayonValues = track.getCrayons();
@@ -245,31 +255,28 @@ public class PanelBuilder {
         return embed.build();
     }
 
-    public Container buildApostleComponent(String userId, Apostle apostle,
-                                           ApostleTrack track, CrayonLineUp lineUp,
-                                           boolean[] toggleState) {
-        List<Boolean> currentCrayons = (track != null) ? track.getCrayons() : Collections.nCopies(9, false);
-        boolean[] effectiveState;
-
-        if (toggleState != null) {
-            effectiveState = toggleState;
-        } else {
-            effectiveState = new boolean[currentCrayons.size()];
-            for (int i = 0; i < currentCrayons.size(); i++) {
-                effectiveState[i] = currentCrayons.get(i);
-            }
-        }
-
-        List<Integer> lineUpValues = (lineUp != null) ? lineUp.getLineUp()
-                : Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0);
-
+    public Container buildApostleComponent(Account account, Apostle apostle, ApostleTrack track) {
+        CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
         String[] houseLabels = {"1A", "1B", "2A", "2B", "2C", "3A", "3B", "3C", "3D"};
 
-        ActionRow row1 = buildCrayonRow(0, 3, lineUpValues, effectiveState, houseLabels);
-        ActionRow row2 = buildCrayonRow(3, 6, lineUpValues, effectiveState, houseLabels);
-        ActionRow row3 = buildCrayonRow(6, 9, lineUpValues, effectiveState, houseLabels);
+        ActionRow row1 = buildCrayonRow(0, 3, track, houseLabels);
+        ActionRow row2 = buildCrayonRow(3, 6, track, houseLabels);
+        ActionRow row3 = buildCrayonRow(6, 9, track, houseLabels);
 
         return Container.of(
+                TextDisplay.of("""
+                        # Tracking System
+                        ## %s
+                        -# %s
+                        
+                        ### Crayon Housing
+                        %s
+                        """
+                        .formatted(apostle.trueName(),
+                                track.isOwned() ? ":star: %d / %d :star2:%s".formatted(track.getCurrentStar(), apostle.getMax(), apostle.missingPiece(track)) : "Not Owned",
+                                lineUp.crayonHousing(track)
+                        )),
+                Separator.create(true, Separator.Spacing.LARGE),
                 TextDisplay.of("### 🖍️ Crayon Grid — " + apostle.getName()),
                 Separator.create(true, Separator.Spacing.SMALL),
                 row1,
@@ -277,20 +284,25 @@ public class PanelBuilder {
                 row3,
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
+                        Button.danger(btnPrefix + "apostle_decrease_star", ":heavy_minus_sign::star:"),
+                        Button.success(btnPrefix + "apostle_increase_star", ":heavy_plus_sign::star:")
+                ),
+                ActionRow.of(
                         Button.success(btnPrefix + "crayon_confirm", "✅ Confirm"),
                         Button.secondary(btnPrefix + "crayon_reset", "🔄 Reset"),
-                        Button.primary(btnPrefix + "switch_apostle", "🔀 Switch Apostle"),
-                        Button.secondary(btnPrefix + "apostle_public_post", "📢 Public Post")
+                        Button.primary(btnPrefix + "switch_apostle", "🔀 Switch Apostle")
+                ),
+                ActionRow.of(
+                        Button.secondary(btnPrefix + "apostle_public_post", "📢 Public Post"),
+                        Button.secondary(btnPrefix + "apostle_embed_public_post", "📢 Public Self Post")
                 )
-        ).withAccentColor(ACCENT_APOSTLE);
+        ).withAccentColor(ApostleColor.fromNo(apostle.getColor()).getColor());
     }
 
-    private ActionRow buildCrayonRow(int start, int end, List<Integer> lineUpValues,
-                                     boolean[] state, String[] labels) {
+    private ActionRow buildCrayonRow(int start, int end, ApostleTrack track, String[] labels) {
         List<Button> buttons = new ArrayList<>();
-        for (int i = start; i < end && i < lineUpValues.size(); i++) {
-            CrayonStats stat = CrayonStats.fromNo(lineUpValues.get(i));
-            boolean acquired = i < state.length && state[i];
+        for (int i = start; i < end && i < track.getCrayon().split(",").length; i++) {
+            boolean acquired = Boolean.parseBoolean(track.getCrayon().split(",")[i]);
             String label = labels[i] + " " + (acquired ? "✅" : "⬜");
             String btnId = btnPrefix + "crayon_toggle_" + i;
             if (acquired) {
@@ -340,7 +352,7 @@ public class PanelBuilder {
                 .setPlaceholder("Filter by Personality (Color)")
                 .setRequiredRange(0, 1);
         for (ApostleColor c : ApostleColor.values()) {
-            if (c != ApostleColor.UNKNOW) {
+            if (c != ApostleColor.UNKNOWN) {
                 colorMenu.addOption(c.getPersonality(), String.valueOf(c.getNo()));
             }
         }
@@ -349,7 +361,7 @@ public class PanelBuilder {
                 .setPlaceholder("Filter by Position")
                 .setRequiredRange(0, 1);
         for (ApostlePosition p : ApostlePosition.values()) {
-            if (p != ApostlePosition.UNKNOW) {
+            if (p != ApostlePosition.UNKNOWN) {
                 posMenu.addOption(p.getSeat(), String.valueOf(p.getNo()));
             }
         }

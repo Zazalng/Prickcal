@@ -27,8 +27,6 @@ public enum Operator {
      *     <li>inherit ability from Operator that had its value + 1</li>
      *     <li>Create/Delete any row in Apostle record</li>
      *     <li>Create/Delete any row in CrayonLineUp record</li>
-     *     <li>Create any row in GiftCode record</li>
-     *     <li>Create any row in HashTag record</li>
      *     <li>Update any row in Remarkable record</li>
      *     <li>Create/Delete any row in StageGearDrop record</li>
      * </ul>
@@ -40,8 +38,8 @@ public enum Operator {
      *     <li>inherit ability from Operator that had its value + 1</li>
      *     <li>Update any row in Apostle record</li>
      *     <li>Update any row in CrayonLineUp record</li>
-     *     <li>Update/Delete any row in GiftCode record</li>
-     *     <li>Update/Delete any row in HashTag record</li>
+     *     <li>Create/Update/Delete any row in GiftCode record</li>
+     *     <li>Create/Update/Delete any row in HashTag record</li>
      *     <li>Update any row in StageGearDrop record</li>
      * </ul>
      */
@@ -80,7 +78,7 @@ public enum Operator {
         return i;
     }
 
-    public static Operator fromString(int operator) {
+    public static Operator fromValue(int operator) {
         for (Operator o : Operator.values()) {
             if (o.value == operator) {
                 return o;

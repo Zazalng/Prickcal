@@ -7,7 +7,7 @@ public enum ApostlePosition {
     MID(2, "Mid Column"),
     BACK(3, "Back Column"),
     ROBIN(0, "Round Robin"),
-    UNKNOW(-1, "Invalid");
+    UNKNOWN(-1, "Invalid");
 
     private final int no;
     private final String seat;
@@ -22,7 +22,7 @@ public enum ApostlePosition {
         for (ApostlePosition a : ApostlePosition.values()) {
             if (Objects.equals(no, a.getNo())) return a;
         }
-        return UNKNOW;
+        return UNKNOWN;
     }
 
     public int getNo() {

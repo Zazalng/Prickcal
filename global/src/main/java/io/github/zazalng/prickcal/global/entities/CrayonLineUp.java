@@ -19,6 +19,7 @@ package io.github.zazalng.prickcal.global.entities;
 
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
+import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -202,6 +203,25 @@ public class CrayonLineUp {
      * Check if any Line-Up contain value of 0 which is mark for Invalid in {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     public boolean isValid() {
-        return getLineUp().contains(0);
+        return !getLineUp().contains(0);
+    }
+
+    public String crayonHousing(ApostleTrack track) {
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < 3; i++) {
+            int houseNumber = i + 1;
+            sb.append("%d. House-%d\n".formatted(houseNumber, houseNumber));
+
+            int itemIndex = 1; // Resets numbering for each house
+
+            for (int j = 0; j < getDepth().size(); j++) {
+                if (getDepth().get(j) == houseNumber) {
+                    sb.append(" %d. %s (%s)\n".formatted(itemIndex++, CrayonStats.fromNo(getLineUp().get(j)).getName(), track.getCrayons().get(j) ? "Unlock" : "Locked"));
+                }
+            }
+        }
+
+        return sb.toString();
     }
 }

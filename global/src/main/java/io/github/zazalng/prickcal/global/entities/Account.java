@@ -30,7 +30,7 @@ public class Account {
     @Column
     private Long id;
     /**
-     * User's discord id number
+     * User's discord id number. <b>NOT SUPPOSED TO BE USED AS FOREIGN KEY.</b>
      */
     @Column(nullable = false, unique = true)
     private String uid;
@@ -47,8 +47,8 @@ public class Account {
     /**
      * User's operation level in {@link io.github.zazalng.prickcal.global.contract.operator.Operator}
      */
-    @Column(defaultValue = "2")
-    private int ops;
+    @Column
+    private short ops;
     /**
      * User's consult to seeing hidden/unrelease content of in-game data on plugin database
      */
@@ -103,11 +103,11 @@ public class Account {
         this.ign = ign;
     }
 
-    public int getOps() {
+    public short getOps() {
         return ops;
     }
 
-    public void setOps(int ops) {
+    public void setOps(short ops) {
         this.ops = ops;
     }
 

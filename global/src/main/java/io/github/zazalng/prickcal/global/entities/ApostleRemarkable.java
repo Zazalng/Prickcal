@@ -38,7 +38,7 @@ public class ApostleRemarkable {
      * Belong to {@link Account}.uid
      */
     @Column(unique = true, nullable = false)
-    private String uid;
+    private Long uid;
     /**
      * A message that uid post about this character (by {@code ApostleRemarkable.apostleId})
      */
@@ -67,11 +67,11 @@ public class ApostleRemarkable {
         this.apostleId = apostleId;
     }
 
-    public String getUid() {
+    public Long getUid() {
         return uid;
     }
 
-    public void setUid(String uid) {
+    public void setUid(Long uid) {
         this.uid = uid;
     }
 

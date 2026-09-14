@@ -33,7 +33,7 @@ public class RemarkableRecord {
      * Belong to {@link Account}.uid
      */
     @Column(unique = true)
-    private String uid;
+    private Long uid;
     /**
      * Which table of database get invoice
      */
@@ -69,11 +69,11 @@ public class RemarkableRecord {
         this.id = id;
     }
 
-    public String getUid() {
+    public Long getUid() {
         return uid;
     }
 
-    public void setUid(String uid) {
+    public void setUid(Long uid) {
         this.uid = uid;
     }
 

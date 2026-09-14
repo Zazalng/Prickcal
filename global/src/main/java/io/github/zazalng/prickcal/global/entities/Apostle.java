@@ -19,6 +19,7 @@ package io.github.zazalng.prickcal.global.entities;
 
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
+import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.StarUpAmount;
 
 import java.time.Instant;
 
@@ -43,12 +44,12 @@ public class Apostle {
      * An initialize star that character gain.
      */
     @Column
-    private int init;
+    private short init;
     /**
      * A maximum star that character can reach.
      */
     @Column
-    private int max;
+    private short max;
     /**
      * Belong to {@link CrayonLineUp}.id
      */
@@ -58,12 +59,12 @@ public class Apostle {
      * Character's race number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace}
      */
     @Column
-    private int race;
+    private short race;
     /**
      * Character's personality (color) number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor}
      */
     @Column
-    private int color;
+    private short color;
     /**
      * Is character had elydn title?
      */
@@ -115,19 +116,19 @@ public class Apostle {
         this.pic = pic;
     }
 
-    public int getInit() {
+    public short getInit() {
         return init;
     }
 
-    public void setInit(int init) {
+    public void setInit(short init) {
         this.init = init;
     }
 
-    public int getMax() {
+    public short getMax() {
         return max;
     }
 
-    public void setMax(int max) {
+    public void setMax(short max) {
         this.max = max;
     }
 
@@ -139,11 +140,11 @@ public class Apostle {
         this.crayon = crayon;
     }
 
-    public int getRace() {
+    public short getRace() {
         return race;
     }
 
-    public void setRace(int race) {
+    public void setRace(short race) {
         this.race = race;
     }
 
@@ -167,11 +168,11 @@ public class Apostle {
         this.hashtag = hashtag;
     }
 
-    public int getColor() {
+    public short getColor() {
         return color;
     }
 
-    public void setColor(int color) {
+    public void setColor(short color) {
         this.color = color;
     }
 
@@ -189,5 +190,26 @@ public class Apostle {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public short getPosition() {
+        return position;
+    }
+
+    public void setPosition(short position) {
+        this.position = position;
+    }
+
+    public String trueName() {
+        return "%s %s".formatted(getName(), getElydn() == null ? ":six_pointed_star: %s".formatted(getElydn()) : ":star_of_david:");
+    }
+
+    public String missingPiece(ApostleTrack track) {
+        int missingPiece = StarUpAmount.missingPiece(track.getCurrentStar(), getMax());
+        if (missingPiece <= 0) {
+            return "";
+        } else {
+            return " (Missing %d Pieces)".formatted(missingPiece);
+        }
     }
 }

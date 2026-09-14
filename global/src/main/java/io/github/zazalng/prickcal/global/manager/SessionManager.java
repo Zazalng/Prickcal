@@ -17,7 +17,7 @@
  */
 package io.github.zazalng.prickcal.global.manager;
 
-import group.worldstandard.pudel.api.PluginContext;
+import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.Apostle;
 import net.dv8tion.jda.api.entities.Message;
 
@@ -30,34 +30,54 @@ import java.util.concurrent.ConcurrentHashMap;
  * Encapsulates all per-user ephemeral state to avoid scattering maps across the main class.
  */
 public class SessionManager extends AbstractManager {
-    protected SessionManager(PluginContext ctx, RepositoryProvider repos) {
-        super(ctx, repos);
-    }
     /**
-     * Control panel messages per user (userId -> {embedMessage, interactionMessage}).
+     * Control panel messages per user (userId -> embedMessage).
      */
-    private final Map<String, List<Message>> controlMessages = new ConcurrentHashMap<>();
+    private final Map<String, Message> controlMessages = new ConcurrentHashMap<>();
+    /**
+     * Currently viewed apostle per user (userId -> Apostle).
+     */
+    private final Map<Long, Apostle> currentApostle = new ConcurrentHashMap<>();
+    /**
+     * Current crayon toggle state per user (userId -> boolean[9]).
+     */
+    private final Map<Long, List<Boolean>> crayonToggleState = new ConcurrentHashMap<>();
+    /**
+     * Deep search results per user (userId -> List<Apostle>).
+     */
+    private final Map<Long, List<Apostle>> deepSearchResults = new ConcurrentHashMap<>();
+    /**
+     * Deep search pagination page per user.
+     */
+    private final Map<Long, Integer> deepSearchPage = new ConcurrentHashMap<>();
+
+    protected SessionManager(ManagerFactory factory) {
+        super(factory);
+    }
     /**
      * Apostle panel messages per user (userId -> {embedMessage, interactionMessage}).
      */
     private final Map<String, List<Message>> apostleMessages = new ConcurrentHashMap<>();
-    /**
-     * Currently viewed apostle per user (userId -> Apostle).
-     */
-    private final Map<String, Apostle> currentApostle = new ConcurrentHashMap<>();
-    /**
-     * Current crayon toggle state per user (userId -> boolean[9]).
-     */
-    private final Map<String, boolean[]> crayonToggleState = new ConcurrentHashMap<>();
 
-    /**
-     * Deep search results per user (userId -> List<Apostle>).
-     */
-    private final Map<String, List<Apostle>> deepSearchResults = new ConcurrentHashMap<>();
-    /**
-     * Deep search pagination page per user.
-     */
-    private final Map<String, Integer> deepSearchPage = new ConcurrentHashMap<>();
+    @Override
+    public String getTableName() {
+        return "";
+    }
+
+    @Override
+    public SessionManager initialize() {
+        return this;
+    }
+
+    @Override
+    public void reload() {
+
+    }
+
+    @Override
+    public void shutdown() {
+
+    }
 
     /**
      * Public post message IDs per user (userId -> channelId:messageId).
@@ -66,15 +86,15 @@ public class SessionManager extends AbstractManager {
 
     // ==================== CONTROL MESSAGES ====================
 
-    public void putControlMessages(String userId, List<Message> messages) {
+    public void putControlMessages(String userId, Message messages) {
         controlMessages.put(userId, messages);
     }
 
-    public List<Message> getControlMessages(String userId) {
+    public Message getControlMessages(String userId) {
         return controlMessages.get(userId);
     }
 
-    public List<Message> removeControlMessages(String userId) {
+    public Message removeControlMessages(String userId) {
         return controlMessages.remove(userId);
     }
 
@@ -94,55 +114,55 @@ public class SessionManager extends AbstractManager {
 
     // ==================== CURRENT APOSTLE ====================
 
-    public void setCurrentApostle(String userId, Apostle apostle) {
+    public void setCurrentApostle(Long userId, Apostle apostle) {
         currentApostle.put(userId, apostle);
     }
 
-    public Apostle getCurrentApostle(String userId) {
+    public Apostle getCurrentApostle(Long userId) {
         return currentApostle.get(userId);
     }
 
-    public void removeCurrentApostle(String userId) {
+    public void removeCurrentApostle(Long userId) {
         currentApostle.remove(userId);
     }
 
     // ==================== CRAYON TOGGLE STATE ====================
 
-    public void setCrayonToggleState(String userId, boolean[] state) {
+    public void setCrayonToggleState(Long userId, List<Boolean> state) {
         crayonToggleState.put(userId, state);
     }
 
-    public boolean[] getCrayonToggleState(String userId) {
+    public List<Boolean> getCrayonToggleState(Long userId) {
         return crayonToggleState.get(userId);
     }
 
-    public void removeCrayonToggleState(String userId) {
+    public void removeCrayonToggleState(Long userId) {
         crayonToggleState.remove(userId);
     }
 
     // ==================== DEEP SEARCH ====================
 
-    public void setDeepSearchResults(String userId, List<Apostle> results) {
+    public void setDeepSearchResults(Long userId, List<Apostle> results) {
         deepSearchResults.put(userId, results);
     }
 
-    public List<Apostle> getDeepSearchResults(String userId) {
+    public List<Apostle> getDeepSearchResults(Long userId) {
         return deepSearchResults.get(userId);
     }
 
-    public void removeDeepSearchResults(String userId) {
+    public void removeDeepSearchResults(Long userId) {
         deepSearchResults.remove(userId);
     }
 
-    public int getDeepSearchPage(String userId) {
+    public int getDeepSearchPage(Long userId) {
         return deepSearchPage.getOrDefault(userId, 0);
     }
 
-    public void setDeepSearchPage(String userId, int page) {
+    public void setDeepSearchPage(Long userId, int page) {
         deepSearchPage.put(userId, Math.max(0, page));
     }
 
-    public void removeDeepSearchPage(String userId) {
+    public void removeDeepSearchPage(Long userId) {
         deepSearchPage.remove(userId);
     }
 
@@ -162,14 +182,16 @@ public class SessionManager extends AbstractManager {
 
     // ==================== BULK CLEANUP ====================
 
-    public void clearUserSession(String userId) {
-        removeControlMessages(userId);
-        removeApostleMessages(userId);
-        removeCurrentApostle(userId);
-        removeCrayonToggleState(userId);
-        removeDeepSearchResults(userId);
-        removeDeepSearchPage(userId);
-        removePublicPost(userId);
+    public void clearUserSession(Account account) {
+        //Discord Session
+        removeControlMessages(account.getUid());
+        removeApostleMessages(account.getUid());
+        removePublicPost(account.getUid());
+        //Prickcal Session
+        removeCurrentApostle(account.getId());
+        removeCrayonToggleState(account.getId());
+        removeDeepSearchResults(account.getId());
+        removeDeepSearchPage(account.getId());
     }
 
     public void clearAllSessions() {

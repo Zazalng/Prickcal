@@ -17,6 +17,7 @@
  */
 package io.github.zazalng.prickcal.global.manager;
 
+import group.worldstandard.pudel.api.database.PluginRepository;
 import io.github.zazalng.prickcal.global.contract.operator.Action;
 import io.github.zazalng.prickcal.global.contract.operator.Operator;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonCosts;
@@ -24,20 +25,23 @@ import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
 import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.ApostleTrack;
 import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
+import io.github.zazalng.prickcal.global.entities.CrayonRecord;
 import io.github.zazalng.prickcal.global.exception.PrickcalEnum;
 import io.github.zazalng.prickcal.global.exception.PrickcalException;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 /**
  * Manages Account lifecycle: consent, lookup, profile access, and deletion.
  */
 public class AccountManager extends AbstractManager {
+    private final PluginRepository<Account> repo;
+
     protected AccountManager(ManagerFactory factory) {
         super(factory);
+        repo = factory.getRepos().accounts();
         initialize();
     }
 
@@ -62,15 +66,24 @@ public class AccountManager extends AbstractManager {
     }
 
     /** Find an account by Discord user ID. */
-    public Account findByUid(String uid) {
-        return factory.getRepos().accounts().query()
+    public Optional<Account> findByUid(String uid) {
+        return repo.query()
                 .where("uid", uid)
-                .findOne().orElseThrow(() -> new PrickcalException(PrickcalEnum.INVALID_ACCOUNT, uid));
+                .findOne();
     }
 
-    /** Check whether a user has consented (has an account). */
-    public boolean hasConsented(String uid) {
-        return findByUid(uid) != null;
+    public Account findById(long id) {
+        return repo.query()
+                .where("id", id)
+                .findOne().orElseThrow(() -> new PrickcalException(PrickcalEnum.INVALID_ACCOUNT, id + "(id)"));
+    }
+
+    public boolean isValid(Account user) {
+        return Operator.fromValue(user.getOps()) != Operator.UNKNOWN;
+    }
+
+    public boolean isValid(long id) {
+        return isValid(findById(id));
     }
 
     /** Create a new account (consent agreement). Logs the creation. */
@@ -78,57 +91,41 @@ public class AccountManager extends AbstractManager {
         Account account = new Account();
         account.setUid(uid);
         account.setOps(Operator.defaultUser());
-        factory.getRepos().accounts().save(account);
+        account = repo.save(account);
         logRecord(logInitiatorUid, Action.CREATE,
-                "<@" + logInitiatorUid + "> created account for <@" + uid + "> (given access '" + Operator.fromString(Operator.defaultUser()).name() + "')");
+                "<@" + logInitiatorUid + "> created account for <@" + uid + "> (given access '" + Operator.fromValue(Operator.defaultUser()).name() + "')");
         return account;
     }
 
     /** Check if the user has a specific operator level. */
-    public boolean hasOperator(String uid, Operator required) {
-        return findByUid(uid).
-                .map(a -> a.getOps() == required.getValue())
-                .orElse(false);
+    public boolean hasOperator(Account account, Operator required) {
+        return findById(account.getId()).getOps() == required.getValue();
     }
 
     /** Check if the user is at least a given operator level (lower value = higher rank). */
-    public boolean hasMinOperator(String uid, Operator minimum) {
-        return findByUid(uid)
-                .map(a -> a.getOps() <= minimum.getValue())
-                .orElse(false);
+    public boolean hasMinOperator(Account account, Operator minimum) {
+        return findById(account.getId()).getOps() <= minimum.getValue();
     }
 
-    public Map<Integer, Integer> crayonCountByStats(String uid, CrayonStats stats) {
-        if (uid == null || stats == null) {
-            return Collections.emptyMap();
-        }
+    public String crayonCountByStats(Account account, CrayonStats stats) {
+        return crayonCountByStats(account.getId(), stats);
+    }
 
-        List<ApostleTrack> userApostles = factory.getRepos().apostleTrackers().findBy("uid", uid);
+    public String crayonCountByStats(Long id, CrayonStats stats) {
+        List<ApostleTrack> userApostles = apostleManager().findTracks(findById(id));
         if (userApostles == null || userApostles.isEmpty()) {
-            return Collections.emptyMap();
+            return "0,0";
         }
-
-        ApostleManager apostleManager = factory.getManager(ManagersEnum.APOSTLE);
-        var crayonLineupsRepo = factory.getRepos().crayonLineups();
 
         int totalAmount = 0;
         int totalPrice = 0;
-        boolean hasMatches = false;
 
         for (ApostleTrack track : userApostles) {
             if (track == null || track.getApostleId() == null) {
                 continue;
             }
 
-            var crayonLineupOpt = apostleManager.findById(track.getApostleId())
-                    .filter(a -> a.getCrayon() != null)
-                    .flatMap(a -> crayonLineupsRepo.findById(a.getCrayon()));
-
-            if (crayonLineupOpt.isEmpty()) {
-                continue;
-            }
-
-            CrayonLineUp lineup = crayonLineupOpt.get();
+            CrayonLineUp lineup = apostleManager().findLineUp(track.getApostleId());
             if (!lineup.isValid()) {
                 throw new PrickcalException(PrickcalEnum.INVALID_CRAYONLINEUP, String.valueOf(lineup.getId()));
             }
@@ -155,78 +152,95 @@ public class AccountManager extends AbstractManager {
                 if (cost != null) {
                     totalAmount += cost.getAmount();
                     totalPrice += cost.getPrice();
-                    hasMatches = true;
                 }
             }
         }
 
-        if (!hasMatches) {
-            return Collections.emptyMap();
-        }
-
-        Map<Integer, Integer> result = new HashMap<>(1);
-        result.put(totalAmount, totalPrice);
-        return result;
+        return "%d,%d".formatted(totalAmount, totalPrice);
     }
 
-    public int getApostleOwned(String uid) {
-        return Math.toIntExact(factory.getRepos().apostleTrackers().countBy("uid", uid));
+    public BigDecimal getCrayonsSpent(Account account) {
+        int candySpent = 0;
+        for (CrayonRecord record : repos.crayonRecords().findBy("uid", account.getId())) {
+            candySpent += record.getSpent();
+        }
+        return new BigDecimal(candySpent);
+    }
+
+    public BigDecimal getCrayonsSpent(Long id) {
+        return getCrayonsSpent(findById(id));
+    }
+
+    public BigDecimal getCrayonsAcquired(Account account) {
+        int crayonAcquired = 0;
+        for (CrayonRecord record : repos.crayonRecords().findBy("uid", account.getId())) {
+            crayonAcquired += record.getCrayon();
+        }
+        return new BigDecimal(crayonAcquired);
+    }
+
+    public BigDecimal getCrayonsAcquired(Long id) {
+        return getCrayonsAcquired(findById(id));
+    }
+
+    public int getApostleOwned(Account account) {
+        return Math.toIntExact(repos.apostleTrackers().countBy("uid", account.getId()));
     }
 
     /**
      * Permanently delete all data belonging to a user across all tracked tables.
      * Returns the number of affected entities (rough count).
      */
-    public int deleteAllUserData(String uid) {
+    public Account deleteAllUserData(String uid) {
         int count = 0;
 
-        var trackCount = factory.getRepos().apostleTrackers().query()
-                .where("uid", uid)
+        Optional<Account> account = findByUid(uid);
+        if (account.isEmpty()) return null;
+
+        var trackCount = repos.apostleTrackers().query()
+                .where("uid", account.get().getId())
                 .list();
         for (var t : trackCount) {
-            factory.getRepos().apostleTrackers().delete(t);
+            repos.apostleTrackers().delete(t);
         }
         count += trackCount.size();
 
-        var crayonCount = factory.getRepos().crayonRecords().query()
-                .where("uid", uid)
+        var crayonCount = repos.crayonRecords().query()
+                .where("uid", account.get().getId())
                 .list();
         for (var c : crayonCount) {
-            factory.getRepos().crayonRecords().delete(c);
+            repos.crayonRecords().delete(c);
         }
         count += crayonCount.size();
 
-        var remarkCount = factory.getRepos().apostleRemarkables().query()
-                .where("uid", uid)
+        var remarkCount = repos.apostleRemarkables().query()
+                .where("uid", account.get().getId())
                 .list();
         for (var r : remarkCount) {
-            factory.getRepos().apostleRemarkables().delete(r);
+            repos.apostleRemarkables().delete(r);
         }
         count += remarkCount.size();
 
-        var giftCount = factory.getRepos().giftAcquires().query()
-                .where("uid", uid)
+        var giftCount = repos.giftAcquires().query()
+                .where("uid", account.get().getId())
                 .list();
         for (var r : giftCount) {
-            factory.getRepos().giftAcquires().delete(r);
+            repos.giftAcquires().delete(r);
         }
         count += giftCount.size();
 
-        var remarkLogCount = factory.getRepos().remarkableRecords().query()
-                .where("uid", uid)
+        var remarkLogCount = repos.remarkableRecords().query()
+                .where("uid", account.get().getId())
                 .list();
         for (var r : remarkLogCount) {
-            factory.getRepos().remarkableRecords().delete(r);
+            repos.remarkableRecords().delete(r);
         }
         count += remarkLogCount.size();
 
-        var optAccount = findByUid(uid);
-        if (optAccount.isPresent()) {
-            factory.getRepos().accounts().delete(optAccount.get());
-            count++;
-        }
+        repo.delete(account.get());
+        count++;
 
         logDeleted(uid, "a User has deleted all their data (" + count + " records)");
-        return count;
+        return account.get();
     }
 }

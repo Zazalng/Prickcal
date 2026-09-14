@@ -4,7 +4,7 @@ import java.awt.*;
 import java.util.Objects;
 
 public enum ApostleColor {
-    UNKNOW(0, "Invalid", new Color(0, 0, 0)),
+    UNKNOWN(0, "Invalid", new Color(0, 0, 0)),
     GREEN(1, "Innocent", new Color(80, 210, 80)),
     TEAL(2, "Composed", new Color(0, 250, 255)),
     RED(3, "Mad", new Color(210, 0, 0)),
@@ -26,7 +26,7 @@ public enum ApostleColor {
         for (ApostleColor a : ApostleColor.values()) {
             if (Objects.equals(no, a.getNo())) return a;
         }
-        return UNKNOW;
+        return UNKNOWN;
     }
 
     public int getNo() {

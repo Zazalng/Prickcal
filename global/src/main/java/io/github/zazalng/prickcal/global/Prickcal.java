@@ -40,7 +40,7 @@ import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 
-import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Architecture:
  * <ul>
- *   <li><b>Managers</b> ({@link AccountManager}, {@link ApostleManager}, {@link PermissionManager}) — encapsulate
+ *   <li><b>Managers</b> ({@link AccountManager}, {@link ApostleManager}, etc.) — encapsulate
  *       all business logic, repository access, and audit logging.</li>
  *   <li><b>Handlers</b> — thin JDA event routers that delegate to managers.</li>
  *   <li><b>SessionManager</b> — ephemeral per-user state.</li>
@@ -93,8 +93,6 @@ public class Prickcal {
     private PluginRepository<RemarkableRecord> remarkableRecords;
     private PluginRepository<StageGearDrop> stageGears;
 
-    // ==================== MANAGERS & SERVICES ====================
-    private RepositoryProvider repoProvider;
     private ManagerFactory factory;
     private PanelBuilder panelBuilder;
     private PrickcalButtonHandler prickcalButtonHandler;
@@ -222,11 +220,12 @@ public class Prickcal {
 
     private void initializeServices() {
         // -- Standalone services --
-        this.panelBuilder = new PanelBuilder(btnPrefix, modalPrefix, stringMenuPrefix);
+        this.panelBuilder = new PanelBuilder(factory, btnPrefix, modalPrefix, stringMenuPrefix);
 
         // -- RepositoryProvider (standalone interface, not an inner class) --
         JDA jda = ctx.getJDA();
-        this.repoProvider = createRepoProvider(jda);
+        // ==================== MANAGERS & SERVICES ====================
+        RepositoryProvider repoProvider = createRepoProvider(jda);
 
         // -- Managers --
         this.factory = new ManagerFactory(ctx, repoProvider);
@@ -327,13 +326,13 @@ public class Prickcal {
             integrationContext = {InteractionContextType.GUILD, InteractionContextType.BOT_DM}
     )
     public void openMainControlPoint(SlashCommandInteractionEvent event) {
-        String userId = event.getUser().getId();
+        String uid = event.getUser().getId();
 
-        SessionManager sessionManager = factory.getManager(ManagersEnum.SESSION);
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
+        SessionManager sessionManager = factory.getManager(ManagersEnum.SESSION);
 
-        var optAccount = accountManager.findByUid(userId);
-        if (optAccount.isEmpty()) {
+        Optional<Account> account = accountManager.findByUid(uid);
+        if (account.isEmpty()) {
             event.reply(
                     new MessageCreateBuilder()
                             .useComponentsV2(true)
@@ -343,13 +342,11 @@ public class Prickcal {
             return;
         }
 
-        sessionManager.clearUserSession(userId);
+        sessionManager.clearUserSession(account.get());
 
         event.getInteraction().getHook().sendMessageEmbeds(
-                panelBuilder.buildMainMenuEmbed(event.getUser(), optAccount.get(),
-                        ApostleManager.defaultCrayonStats(), null
-                )
-        ).setEphemeral(true).queue(m -> sessionManager.putControlMessages(userId, Collections.singletonList(m)));
+                panelBuilder.buildMainMenuEmbed(event.getUser(), account.get().getId())
+        ).setEphemeral(true).queue(m -> sessionManager.putControlMessages(uid, m));
 
         event.reply(
                 new MessageCreateBuilder()
@@ -364,7 +361,10 @@ public class Prickcal {
     @ContextMenu(
             baseName = "Prickcal",
             funcName = "View Record",
-            type = Command.Type.USER
+            type = Command.Type.USER,
+            nsfw = false,
+            integrationTo = {IntegrationType.GUILD_INSTALL, IntegrationType.USER_INSTALL},
+            integrationContext = {InteractionContextType.GUILD}
     )
     public void ephemeralViewRecord(UserContextInteractionEvent event) {
         User target = event.getTarget();
@@ -372,7 +372,7 @@ public class Prickcal {
 
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
 
-        var optAccount = accountManager.findByUid(targetUid);
+        Optional<Account> optAccount = accountManager.findByUid(targetUid);
         if (optAccount.isEmpty()) {
             event.reply("❌ This user doesn't have a Prickcal profile yet.")
                     .setEphemeral(true)
@@ -381,9 +381,7 @@ public class Prickcal {
         }
 
         event.replyEmbeds(
-                panelBuilder.buildMainMenuEmbed(target, optAccount.get(),
-                        ApostleManager.defaultCrayonStats(), null
-                )
+                panelBuilder.buildMainMenuEmbed(target, optAccount.get().getId())
         ).setEphemeral(true).queue();
     }
 

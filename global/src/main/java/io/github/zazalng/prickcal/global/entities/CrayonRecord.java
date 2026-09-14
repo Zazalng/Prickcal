@@ -27,7 +27,7 @@ public class CrayonRecord {
     @Column
     private Long id;
     @Column(nullable = false, index = true)
-    private String uid;
+    private Long uid;
     @Column
     private String imgUrl;
     @Column
@@ -47,11 +47,11 @@ public class CrayonRecord {
         this.id = id;
     }
 
-    public String getUid() {
+    public Long getUid() {
         return uid;
     }
 
-    public void setUid(String uid) {
+    public void setUid(Long uid) {
         this.uid = uid;
     }
 

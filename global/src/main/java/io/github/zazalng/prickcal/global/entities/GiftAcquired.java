@@ -33,7 +33,7 @@ public class GiftAcquired {
      * Belong to {@link Account}.uid
      */
     @Column(unique = true, nullable = false)
-    private String uid;
+    private Long uid;
     /**
      * Belong to {@link GiftCode}.id
      */
@@ -62,11 +62,11 @@ public class GiftAcquired {
         this.codeId = codeId;
     }
 
-    public String getUid() {
+    public Long getUid() {
         return uid;
     }
 
-    public void setUid(String uid) {
+    public void setUid(Long uid) {
         this.uid = uid;
     }
 

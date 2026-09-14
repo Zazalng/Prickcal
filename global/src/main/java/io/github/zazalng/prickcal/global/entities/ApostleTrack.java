@@ -23,6 +23,7 @@ import group.worldstandard.pudel.api.database.Entity;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity(tableName = "apostle_tracks")
 public class ApostleTrack {
@@ -37,10 +38,10 @@ public class ApostleTrack {
     @Column(unique = true, nullable = false)
     private Long apostleId;
     /**
-     * Belongs to {@link Account}.uid
+     * Belongs to {@link Account}.id
      */
     @Column(unique = true, nullable = false)
-    private String uid;
+    private Long uid;
     /**
      * Character of {@code Apostle.id} from {@code Account.uid}'s star level (cannot below {@code Apostle.init} or above {@code Apostle.max})
      */
@@ -78,11 +79,11 @@ public class ApostleTrack {
         this.apostleId = apostleId;
     }
 
-    public String getUid() {
+    public Long getUid() {
         return uid;
     }
 
-    public void setUid(String uid) {
+    public void setUid(Long uid) {
         this.uid = uid;
     }
 
@@ -100,6 +101,15 @@ public class ApostleTrack {
 
     public void setCrayon(String crayon) {
         this.crayon = crayon;
+    }
+
+    public ApostleTrack updateCrayon(List<Boolean> crayons) {
+        if (crayons != null) {
+            this.crayon = crayons.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(","));
+        }
+        return this;
     }
 
     public List<Boolean> getCrayons() {
@@ -125,5 +135,9 @@ public class ApostleTrack {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isOwned() {
+        return getCurrentStar() != 0;
     }
 }
