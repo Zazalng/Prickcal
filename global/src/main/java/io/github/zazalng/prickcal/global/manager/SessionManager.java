@@ -33,7 +33,7 @@ public class SessionManager extends AbstractManager {
     /**
      * Control panel messages per user (userId -> embedMessage).
      */
-    private final Map<String, Message> controlMessages = new ConcurrentHashMap<>();
+    private final Map<Long, Message> controlMessages = new ConcurrentHashMap<>();
     /**
      * Currently viewed apostle per user (userId -> Apostle).
      */
@@ -51,13 +51,19 @@ public class SessionManager extends AbstractManager {
      */
     private final Map<Long, Integer> deepSearchPage = new ConcurrentHashMap<>();
 
-    protected SessionManager(ManagerFactory factory) {
-        super(factory);
-    }
     /**
      * Apostle panel messages per user (userId -> {embedMessage, interactionMessage}).
      */
-    private final Map<String, List<Message>> apostleMessages = new ConcurrentHashMap<>();
+    private final Map<Long, List<Message>> apostleMessages = new ConcurrentHashMap<>();
+
+    /**
+     * Public post message IDs per user (userId -> channelId:messageId).
+     */
+    private final Map<Long, String> publicPosts = new ConcurrentHashMap<>();
+
+    protected SessionManager(ManagerFactory factory) {
+        super(factory);
+    }
 
     @Override
     public String getTableName() {
@@ -71,44 +77,39 @@ public class SessionManager extends AbstractManager {
 
     @Override
     public void reload() {
-
+        clearAllSessions();
     }
 
     @Override
     public void shutdown() {
-
+        clearAllSessions();
     }
-
-    /**
-     * Public post message IDs per user (userId -> channelId:messageId).
-     */
-    private final Map<String, String> publicPosts = new ConcurrentHashMap<>();
 
     // ==================== CONTROL MESSAGES ====================
 
-    public void putControlMessages(String userId, Message messages) {
+    public void putControlMessages(Long userId, Message messages) {
         controlMessages.put(userId, messages);
     }
 
-    public Message getControlMessages(String userId) {
+    public Message getControlMessages(Long userId) {
         return controlMessages.get(userId);
     }
 
-    public Message removeControlMessages(String userId) {
+    public Message removeControlMessages(Long userId) {
         return controlMessages.remove(userId);
     }
 
     // ==================== APOSTLE MESSAGES ====================
 
-    public void putApostleMessages(String userId, List<Message> messages) {
+    public void putApostleMessages(Long userId, List<Message> messages) {
         apostleMessages.put(userId, messages);
     }
 
-    public List<Message> getApostleMessages(String userId) {
+    public List<Message> getApostleMessages(Long userId) {
         return apostleMessages.get(userId);
     }
 
-    public List<Message> removeApostleMessages(String userId) {
+    public List<Message> removeApostleMessages(Long userId) {
         return apostleMessages.remove(userId);
     }
 
@@ -168,15 +169,15 @@ public class SessionManager extends AbstractManager {
 
     // ==================== PUBLIC POSTS ====================
 
-    public void putPublicPost(String userId, String channelMessageId) {
+    public void putPublicPost(Long userId, String channelMessageId) {
         publicPosts.put(userId, channelMessageId);
     }
 
-    public String getPublicPost(String userId) {
+    public String getPublicPost(Long userId) {
         return publicPosts.get(userId);
     }
 
-    public String removePublicPost(String userId) {
+    public String removePublicPost(Long userId) {
         return publicPosts.remove(userId);
     }
 
@@ -184,9 +185,9 @@ public class SessionManager extends AbstractManager {
 
     public void clearUserSession(Account account) {
         //Discord Session
-        removeControlMessages(account.getUid());
-        removeApostleMessages(account.getUid());
-        removePublicPost(account.getUid());
+        removeControlMessages(account.getId());
+        removeApostleMessages(account.getId());
+        removePublicPost(account.getId());
         //Prickcal Session
         removeCurrentApostle(account.getId());
         removeCrayonToggleState(account.getId());
@@ -195,15 +196,6 @@ public class SessionManager extends AbstractManager {
     }
 
     public void clearAllSessions() {
-        controlMessages.values().forEach(msgs -> {
-            for (Message msg : msgs) {
-                try {
-                    msg.delete().queue(null, _ -> {
-                    });
-                } catch (Exception ignored) {
-                }
-            }
-        });
         apostleMessages.values().forEach(msgs -> {
             for (Message msg : msgs) {
                 try {

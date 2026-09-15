@@ -1,35 +1,61 @@
+/*
+ * Prickcal - A Trickcal's procession tracker for Pudel Bot
+ * Copyright (C) 2026 Napapon Kamanee
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-import java.util.Objects;
+import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
 
-public enum ApostlePosition {
-    FRONT(1, "Front Column"),
-    MID(2, "Mid Column"),
-    BACK(3, "Back Column"),
-    ROBIN(0, "Round Robin"),
-    UNKNOWN(-1, "Invalid");
+public enum ApostlePosition implements EnumInterface {
+    FRONT((short) 1, "Front Column"),
+    MID((short) 2, "Mid Column"),
+    BACK((short) 3, "Back Column"),
+    ROBIN((short) 0, "Round Robin"),
+    UNKNOWN((short) -1, "Invalid");
 
-    private final int no;
+    private final short no;
     private final String seat;
 
-
-    ApostlePosition(int no, String seat) {
+    ApostlePosition(short no, String seat) {
         this.no = no;
         this.seat = seat;
     }
 
-    public static ApostlePosition fromNo(int no) {
+    public static ApostlePosition fromNo(short no) {
         for (ApostlePosition a : ApostlePosition.values()) {
-            if (Objects.equals(no, a.getNo())) return a;
+            if (no == a.no) return a;
         }
         return UNKNOWN;
     }
 
-    public int getNo() {
+    public short getNo() {
         return no;
     }
 
     public String getSeat() {
         return seat;
+    }
+
+    @Override
+    public String getOptionLabel() {
+        return seat;
+    }
+
+    @Override
+    public String getOptionValue() {
+        return String.valueOf(no);
     }
 }

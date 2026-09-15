@@ -17,37 +17,37 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-import java.util.Objects;
+import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
 
-public enum StarUpAmount{
-    S8(8, 60),
-    S7(7, 40),
-    S6(6, 0),
-    S5(5, 50),
-    S4(4, 25),
-    S3(3, 20),
-    S2(2, 12),
-    S1(1, 25);
+public enum StarUpAmount implements EnumInterface {
+    S8((short) 8, 60),
+    S7((short) 7, 40),
+    S6((short) 6, 0),
+    S5((short) 5, 50),
+    S4((short) 4, 25),
+    S3((short) 3, 20),
+    S2((short) 2, 12),
+    S1((short) 1, 25);
 
-    private final int star;
+    private final short star;
     private final int piece;
 
-    StarUpAmount(int star, int piece) {
+    StarUpAmount(short star, int piece) {
         this.star = star;
         this.piece = piece;
     }
 
-    public static StarUpAmount fromStar(int star) {
+    public static StarUpAmount fromStar(short star) {
         for (StarUpAmount s : StarUpAmount.values()) {
-            if (Objects.equals(star, s.star)) return s;
+            if (star == s.star) return s;
         }
 
         return null;
     }
 
-    public static int missingPiece(int currentStar, int apostleMax) {
+    public static int missingPiece(short currentStar, int apostleMax) {
         int missingPiece = 0;
-        for (int i = currentStar; i < apostleMax; i++) {
+        for (short i = currentStar; i < apostleMax; i++) {
             StarUpAmount s = fromStar(i);
             if (s == null) break;
             missingPiece += s.getPiece();
@@ -59,8 +59,17 @@ public enum StarUpAmount{
         return piece;
     }
 
-    public int getStar() {
+    public short getStar() {
         return star;
     }
 
+    @Override
+    public String getOptionLabel() {
+        return name();
+    }
+
+    @Override
+    public String getOptionValue() {
+        return String.valueOf(star);
+    }
 }

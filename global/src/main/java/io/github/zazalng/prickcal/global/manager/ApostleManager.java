@@ -124,13 +124,18 @@ public class ApostleManager extends AbstractManager {
                 .orElse(createTracker(account.getId(), apostleId));
     }
 
-    private ApostleTrack createTracker(Long uid, long apostleId) {
-        ApostleTrack tracker = new ApostleTrack();
-        tracker.setUid(uid);
-        tracker.setApostleId(apostleId);
-        tracker.setCurrentStar(0);
-        tracker = repoTracker.save(tracker);
-        return tracker;
+    /** Convert a boolean[] to the persisted comma-separated string. */
+    public static String crayonStateToString(List<Boolean> state) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < state.length; i++) {
+            if (i > 0) sb.append(",");
+            sb.append(state[i]);
+        }
+        return sb.toString();
+    }
+
+    public ApostleTrack findTrack(Account account, Apostle apostle) {
+        return findTrack(account, apostle.getId());
     }
 
     public List<ApostleTrack> findTracks(Account account) {
@@ -141,42 +146,13 @@ public class ApostleManager extends AbstractManager {
         return repoTracker.findBy("uid", id);
     }
 
-    public String crayonTotalByStats(CrayonStats stats) {
-        int totalAmount = 0;
-        int totalPrice = 0;
-
-        for (Apostle a : listAll()) {
-            CrayonLineUp lineUp = findLineUp(a);
-            if (!lineUp.isValid()) {
-                throw new PrickcalException(PrickcalEnum.INVALID_CRAYONLINEUP, String.valueOf(lineUp.getId()));
-            }
-
-            List<Integer> lineUpList = lineUp.getLineUp();
-            List<Integer> depthList = lineUp.getDepth();
-
-            if (lineUpList == null || depthList == null) {
-                continue;
-            }
-
-            int limit = Math.min(lineUpList.size(), depthList.size());
-
-            for (int i = 0; i < limit; i++) {
-                Integer targetStat = lineUpList.get(i);
-                Integer depthValue = depthList.get(i);
-
-                if (targetStat == null || depthValue == null || stats.getNo() != targetStat) {
-                    continue;
-                }
-
-                CrayonCosts cost = CrayonCosts.fromDepth(depthValue);
-                if (cost != null) {
-                    totalAmount += cost.getAmount();
-                    totalPrice += cost.getPrice();
-                }
-            }
-        }
-
-        return "%d,%d".formatted(totalAmount, totalPrice);
+    private ApostleTrack createTracker(Long uid, long apostleId) {
+        ApostleTrack tracker = new ApostleTrack();
+        tracker.setUid(uid);
+        tracker.setApostleId(apostleId);
+        tracker.setCurrentStar((short) 0);
+        tracker = repoTracker.save(tracker);
+        return tracker;
     }
 
     public String parseHashTag(Apostle apostle) {
@@ -223,14 +199,42 @@ public class ApostleManager extends AbstractManager {
 
     // ==================== CRAYON TOGGLE ====================
 
-    /** Convert a boolean[] to the persisted comma-separated string. */
-    public static String crayonStateToString(boolean[] state) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < state.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append(state[i]);
+    public String crayonTotalByStats(CrayonStats stats) {
+        int totalAmount = 0;
+        int totalPrice = 0;
+
+        for (Apostle a : listAll()) {
+            CrayonLineUp lineUp = findLineUp(a);
+            if (!lineUp.isValid()) {
+                throw new PrickcalException(PrickcalEnum.INVALID_CRAYONLINEUP, String.valueOf(lineUp.getId()));
+            }
+
+            List<Short> lineUpList = lineUp.getLineUp();
+            List<Short> depthList = lineUp.getDepth();
+
+            if (lineUpList == null || depthList == null) {
+                continue;
+            }
+
+            int limit = Math.min(lineUpList.size(), depthList.size());
+
+            for (int i = 0; i < limit; i++) {
+                Short targetStat = lineUpList.get(i);
+                Short depthValue = depthList.get(i);
+
+                if (targetStat == null || depthValue == null || stats.getNo() != targetStat) {
+                    continue;
+                }
+
+                CrayonCosts cost = CrayonCosts.fromDepth(depthValue);
+                if (cost != null) {
+                    totalAmount += cost.getAmount();
+                    totalPrice += cost.getPrice();
+                }
+            }
         }
-        return sb.toString();
+
+        return "%d,%d".formatted(totalAmount, totalPrice);
     }
 
     /** Convert persisted comma-separated string back to boolean[]. */
@@ -260,7 +264,7 @@ public class ApostleManager extends AbstractManager {
      * Creates a new track if none exists; updates otherwise.
      * Logs the operation.
      */
-    public ApostleTrack confirmCrayon(String uid, Apostle apostle, boolean[] state) {
+    public ApostleTrack confirmCrayon(Account account, Apostle apostle, List<Boolean> state) {
         String crayonStr = crayonStateToString(state);
 
         ApostleTrack track = findTrack(uid, apostle.getId()).orElse(null);

@@ -18,9 +18,11 @@
 package io.github.zazalng.prickcal.global.handler;
 
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
+import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
+import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
 import io.github.zazalng.prickcal.global.entities.*;
 import io.github.zazalng.prickcal.global.manager.*;
-import net.dv8tion.jda.api.components.checkboxgroup.CheckboxGroup;
+import io.github.zazalng.prickcal.global.util.LabelByEnum;
 import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
@@ -120,7 +122,7 @@ public class PrickcalButtonHandler {
                 event.getHook().sendMessageEmbeds(panelBuilder.buildMainMenuEmbed(discordUser, account.getId()))
                         .setEphemeral(true)
                         .queue(msg ->
-                                sessionManager.putControlMessages(account.getUid(), msg)
+                                sessionManager.putControlMessages(account.getId(), msg)
                         );
                 event.replyComponents(panelBuilder.buildMainMenuComponent())
                         .setEphemeral(true)
@@ -161,70 +163,76 @@ public class PrickcalButtonHandler {
                         .build()
         ).queue();
 
-        Message oldMessage = sessionManager.getControlMessages(event.getUser().getId());
+        Message oldMessage = sessionManager.getControlMessages(account.getId());
 
         event.getHook().editMessageEmbedsById(oldMessage.getId(),
                 panelBuilder.buildApostleEmbed(event.getUser(), account, apostle, tracker)
         ).queue(
-                m -> sessionManager.putControlMessages(event.getUser().getId(), m)
+                m -> sessionManager.putControlMessages(account.getId(), m)
         );
     }
 
     // ==================== CRAYON TOGGLE ====================
 
-    private void handleCrayonToggle(ButtonInteractionEvent event, String userId, String buttonId) {
+    private void handleCrayonToggle(ButtonInteractionEvent event, String buttonId) {
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        if (account.isEmpty()) return;
+
         int index = Integer.parseInt(buttonId.substring("crayon_toggle_".length()));
-        boolean[] state = sessionManager.getCrayonToggleState(userId);
+        List<Boolean> state = sessionManager.getCrayonToggleState(account.get().getId());
         if (state == null) return;
 
-        state[index] = !state[index];
-        sessionManager.setCrayonToggleState(userId, state);
+        state.set(index, !state.get(index));
+        sessionManager.setCrayonToggleState(account.get().getId(), state);
 
-        Apostle apostle = sessionManager.getCurrentApostle(userId);
+        Apostle apostle = sessionManager.getCurrentApostle(account.get().getId());
         if (apostle == null) return;
 
-        var optTrack = apostleManager.findTrack(userId, apostle.getId());
-        CrayonLineUp lineUp = apostleManager.findLineUp(apostle).orElse(null);
+        ApostleTrack track = apostleManager.findTrack(account.get(), apostle.getId());
 
         event.getHook().editOriginal(
                 new MessageEditBuilder()
                         .useComponentsV2(true)
                         .setComponents(panelBuilder.buildApostleComponent(
-                                userId, apostle, optTrack.orElse(null), lineUp, state))
+                                account.get(), apostle, track))
                         .build()
         ).queue();
     }
 
     // ==================== CRAYON CONFIRM ====================
 
-    private void handleCrayonConfirm(ButtonInteractionEvent event, String userId) {
-        Apostle apostle = sessionManager.getCurrentApostle(userId);
+    private void handleCrayonConfirm(ButtonInteractionEvent event) {
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        if (account.isEmpty()) return;
+
+        Apostle apostle = sessionManager.getCurrentApostle(account.get().getId());
         if (apostle == null) return;
 
-        boolean[] state = sessionManager.getCrayonToggleState(userId);
+        List<Boolean> state = sessionManager.getCrayonToggleState(account.get().getId());
         if (state == null) return;
 
-        apostleManager.confirmCrayon(userId, apostle, state);
+        apostleManager.confirmCrayon(account.get(), apostle, state);
 
-        event.getHook().editOriginal("✅ Crayon data saved for **" + apostle.getName() + "**!")
-                .queue(e -> e.editMessage(
-                        panelBuilder.buildApostleComponent(userId, apostle, tracker, )
-                ));
+        event.getHook().editOriginal("✅ Crayon data saved for **" + apostle.getName() + "**!").queue(
+                m -> m.editMessageComponents(
+                        panelBuilder.buildApostleComponent(account.get(), apostle, apostleManager.findTrack(account.get(), apostle))
+                ).queue()
+        );
     }
 
     // ==================== CRAYON RESET ====================
 
     private void handleCrayonReset(ButtonInteractionEvent event, String userId) {
-        Apostle apostle = sessionManager.getCurrentApostle(userId);
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        if (account.isEmpty()) return;
+
+        Apostle apostle = sessionManager.getCurrentApostle(account.get().getId());
         if (apostle == null) return;
 
-        var optTrack = apostleManager.findTrack(userId, apostle.getId());
-        optTrack.ifPresent(track -> {
-            boolean[] state = ApostleManager.listToState(track.getCrayons());
-            sessionManager.setCrayonToggleState(userId, state);
-        });
+        ApostleTrack track = apostleManager.findTrack(account.get(), apostle);
+        sessionManager.setCrayonToggleState(account.get().getId(), track.getCrayons());
 
-        showApostlePanel(event, userId, apostle);
+        showApostlePanel(event, account.get(), apostle);
     }
 
     // ==================== SWITCH APOSTLE ====================
@@ -252,22 +260,19 @@ public class PrickcalButtonHandler {
                                                 .setMaxLength(100)
                                                 .build()),
                                 Label.of("Filter by Personality",
-                                        CheckboxGroup.create("filter_color")
-                                                .addOption("Innocent", "1")
-                                                .addOption("Composed", "2")
-                                                .addOption("Mad", "3")
-                                                .addOption("Vivacious", "4")
-                                                .addOption("Depressed", "5")
-                                                .setMaxValues(1)
-                                                .build()),
+                                        LabelByEnum.createCheckBoxGroup(
+                                                        "filter_color",
+                                                        ApostleColor.class
+                                                )
+                                                .build()
+                                ),
                                 Label.of("Filter by Position",
-                                        CheckboxGroup.create("filter_position")
-                                                .addOption("Front Column", "1")
-                                                .addOption("Mid Column", "2")
-                                                .addOption("Back Column", "3")
-                                                .addOption("Round Robin", "0")
-                                                .setMaxValues(1)
-                                                .build())
+                                        LabelByEnum.createCheckBoxGroup(
+                                                        "filter_position",
+                                                        ApostlePosition.class
+                                                )
+                                                .build()
+                                )
                         ).build()
         ).queue();
     }

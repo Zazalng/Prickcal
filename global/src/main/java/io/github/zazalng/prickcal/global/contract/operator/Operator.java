@@ -17,10 +17,12 @@
  */
 package io.github.zazalng.prickcal.global.contract.operator;
 
+import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
+
 /**
  * An enum to document & describe which enum can do which thing
  */
-public enum Operator {
+public enum Operator implements EnumInterface {
     /**
      * A Level that had ability to
      * <ul>
@@ -31,7 +33,7 @@ public enum Operator {
      *     <li>Create/Delete any row in StageGearDrop record</li>
      * </ul>
      */
-    ADMIN(0),
+    ADMIN((short) 0),
     /**
      * A Level that had ability to
      * <ul>
@@ -43,7 +45,7 @@ public enum Operator {
      *     <li>Update any row in StageGearDrop record</li>
      * </ul>
      */
-    EDITOR(1),
+    EDITOR((short) 1),
     /**
      * A Level that had ability to
      * <ul>
@@ -54,36 +56,57 @@ public enum Operator {
      *     <li>Create/Update/Delete own uid match in ApostleRemarkable record</li>
      * </ul>
      */
-    USER(2),
+    USER((short) 2),
     /**
      * A level that had 0 ability to do anything
      */
-    UNKNOWN(-1);
+    UNKNOWN((short) -1, false);
 
-    private final int value;
+    private final short value;
+    private final boolean valid;
 
-    Operator(int value) {
+    Operator(short value, boolean valid) {
         this.value = value;
+        this.valid = valid;
     }
 
-    public int getValue() {
-        return value;
+    Operator(short value) {
+        this(value, true);
     }
 
-    public static int defaultUser() {
-        int i = 0;
+    public static short defaultUser() {
+        short i = 0;
         for (Operator o : Operator.values()) {
-            if (o.value > i) i = o.getValue();
+            if (o.value >= i) i = o.getValue();
         }
         return i;
     }
 
-    public static Operator fromValue(int operator) {
+    public static Operator fromValue(short operator) {
         for (Operator o : Operator.values()) {
             if (o.value == operator) {
                 return o;
             }
         }
         return UNKNOWN;
+    }
+
+    public short getValue() {
+        return value;
+    }
+
+    @Override
+    public String getOptionLabel() {
+        return name();
+    }
+
+    @Override
+    public String getOptionValue() {
+        return String.valueOf(value);
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 }

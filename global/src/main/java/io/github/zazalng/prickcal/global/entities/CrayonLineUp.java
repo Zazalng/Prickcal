@@ -36,47 +36,47 @@ public class CrayonLineUp {
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house1A;
+    private short house1A;
     /**
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house1B;
+    private short house1B;
     /**
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house2A;
+    private short house2A;
     /**
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house2B;
+    private short house2B;
     /**
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house2C;
+    private short house2C;
     /**
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house3A;
+    private short house3A;
     /**
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house3B;
+    private short house3B;
     /**
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house3C;
+    private short house3C;
     /**
      * Value that relate with {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     @Column(defaultValue = "0")
-    private int house3D;
+    private short house3D;
 
     @Column
     private Instant createdAt;
@@ -92,75 +92,75 @@ public class CrayonLineUp {
         this.id = id;
     }
 
-    public int getHouse1A() {
+    public short getHouse1A() {
         return house1A;
     }
 
-    public void setHouse1A(int house1A) {
+    public void setHouse1A(short house1A) {
         this.house1A = house1A;
     }
 
-    public int getHouse1B() {
+    public short getHouse1B() {
         return house1B;
     }
 
-    public void setHouse1B(int house1B) {
+    public void setHouse1B(short house1B) {
         this.house1B = house1B;
     }
 
-    public int getHouse2A() {
+    public short getHouse2A() {
         return house2A;
     }
 
-    public void setHouse2A(int house2A) {
+    public void setHouse2A(short house2A) {
         this.house2A = house2A;
     }
 
-    public int getHouse2B() {
+    public short getHouse2B() {
         return house2B;
     }
 
-    public void setHouse2B(int house2B) {
+    public void setHouse2B(short house2B) {
         this.house2B = house2B;
     }
 
-    public int getHouse2C() {
+    public short getHouse2C() {
         return house2C;
     }
 
-    public void setHouse2C(int house2C) {
+    public void setHouse2C(short house2C) {
         this.house2C = house2C;
     }
 
-    public int getHouse3A() {
+    public short getHouse3A() {
         return house3A;
     }
 
-    public void setHouse3A(int house3A) {
+    public void setHouse3A(short house3A) {
         this.house3A = house3A;
     }
 
-    public int getHouse3B() {
+    public short getHouse3B() {
         return house3B;
     }
 
-    public void setHouse3B(int house3B) {
+    public void setHouse3B(short house3B) {
         this.house3B = house3B;
     }
 
-    public int getHouse3C() {
+    public short getHouse3C() {
         return house3C;
     }
 
-    public void setHouse3C(int house3C) {
+    public void setHouse3C(short house3C) {
         this.house3C = house3C;
     }
 
-    public int getHouse3D() {
+    public short getHouse3D() {
         return house3D;
     }
 
-    public void setHouse3D(int house3D) {
+    public void setHouse3D(short house3D) {
         this.house3D = house3D;
     }
 
@@ -186,7 +186,7 @@ public class CrayonLineUp {
      *
      * @return Line Up Array
      */
-    public List<Integer> getLineUp() {
+    public List<Short> getLineUp() {
         return Arrays.asList(getHouse1A(), getHouse1B(), getHouse2A(), getHouse2B(), getHouse2C(), getHouse3A(), getHouse3B(), getHouse3C(), getHouse3D());
     }
 
@@ -195,15 +195,15 @@ public class CrayonLineUp {
      *
      * @return Depth Array match House Level
      */
-    public List<Integer> getDepth() {
-        return Arrays.asList(1, 1, 2, 2, 2, 3, 3, 3, 3);
+    public List<Short> getDepth() {
+        return Arrays.asList((short) 1, (short) 1, (short) 2, (short) 2, (short) 2, (short) 3, (short) 3, (short) 3, (short) 3);
     }
 
     /**
      * Check if any Line-Up contain value of 0 which is mark for Invalid in {@link io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats}
      */
     public boolean isValid() {
-        return !getLineUp().contains(0);
+        return !getLineUp().contains((short) 0);
     }
 
     public String crayonHousing(ApostleTrack track) {

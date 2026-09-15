@@ -258,6 +258,7 @@ public class PanelBuilder {
     public Container buildApostleComponent(Account account, Apostle apostle, ApostleTrack track) {
         CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
         String[] houseLabels = {"1A", "1B", "2A", "2B", "2C", "3A", "3B", "3C", "3D"};
+        sessionManager.setCrayonToggleState(account.getId(), track.getCrayons());
 
         ActionRow row1 = buildCrayonRow(0, 3, track, houseLabels);
         ActionRow row2 = buildCrayonRow(3, 6, track, houseLabels);

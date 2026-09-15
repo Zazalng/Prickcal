@@ -46,7 +46,7 @@ public class ApostleTrack {
      * Character of {@code Apostle.id} from {@code Account.uid}'s star level (cannot below {@code Apostle.init} or above {@code Apostle.max})
      */
     @Column
-    private int currentStar;
+    private short currentStar;
     /**
      * Crayon record for this Character of {@code Apostle.id} from {@code Account.uid}
      * In database this value will record in String but maintain Array convertable by using String.split(",", 9)
@@ -87,11 +87,11 @@ public class ApostleTrack {
         this.uid = uid;
     }
 
-    public int getCurrentStar() {
+    public short getCurrentStar() {
         return currentStar;
     }
 
-    public void setCurrentStar(int star) {
+    public void setCurrentStar(short star) {
         this.currentStar = star;
     }
 

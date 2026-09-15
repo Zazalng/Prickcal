@@ -130,8 +130,8 @@ public class AccountManager extends AbstractManager {
                 throw new PrickcalException(PrickcalEnum.INVALID_CRAYONLINEUP, String.valueOf(lineup.getId()));
             }
 
-            List<Integer> lineUpList = lineup.getLineUp();
-            List<Integer> depthList = lineup.getDepth();
+            List<Short> lineUpList = lineup.getLineUp();
+            List<Short> depthList = lineup.getDepth();
 
             if (lineUpList == null || depthList == null) {
                 continue;
@@ -141,8 +141,8 @@ public class AccountManager extends AbstractManager {
             int limit = Math.min(lineUpList.size(), depthList.size());
 
             for (int i = 0; i < limit; i++) {
-                Integer targetStat = lineUpList.get(i);
-                Integer depthValue = depthList.get(i);
+                Short targetStat = lineUpList.get(i);
+                Short depthValue = depthList.get(i);
 
                 if (targetStat == null || depthValue == null || stats.getNo() != targetStat) {
                     continue;

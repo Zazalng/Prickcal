@@ -17,36 +17,10 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal;
 
-public enum GearType {
-    PDEF((short) 1, "Physical Defense"),
-    MDEF((short) 2, "Magical Defense"),
-    CRIT((short) 3, "Crit Rate/Dmg"),
-    CRES((short) 4, "Crit Resistance"),
-    HP((short) 5, "Health Point"),
-    PATK((short) 61, "Physical Attack"),
-    MATK((short) 62, "Magical Attack"),
-    UNKNOWN((short) 0, "Invalid");
+public interface EnumInterface {
+    String getOptionLabel();
 
-    private final short no;
-    private final String name;
+    String getOptionValue();
 
-    GearType(short no, String name) {
-        this.no = no;
-        this.name = name;
-    }
-
-    public static GearType fromId(short no) {
-        for(GearType g:GearType.values()){
-            if (no == g.no) return g;
-        }
-        return UNKNOWN;
-    }
-
-    public short getNo() {
-        return no;
-    }
-
-    public String getName() {
-        return name;
-    }
+    boolean isValid();
 }

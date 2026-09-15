@@ -17,21 +17,23 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-public enum ApostleRace {
-    UNKNOWN(0, "Invalid"),
-    SPRITE(1, "Sprite"),
-    ELEMENTAL(2, "Elemental"),
-    BEASTMEN(3, "Werebeast"),
-    DRAGON(4, "Dragon"),
-    PHANTOM(5, "Phantom"),
-    ELF(6, "Elf"),
-    WITCH(7, "Witch"),
-    MYSTIC(8, "Mystic");
+import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
 
-    private final int no;
+public enum ApostleRace implements EnumInterface {
+    UNKNOWN((short) 0, "Invalid"),
+    SPRITE((short) 1, "Sprite"),
+    ELEMENTAL((short) 2, "Elemental"),
+    BEASTMEN((short) 3, "Werebeast"),
+    DRAGON((short) 4, "Dragon"),
+    PHANTOM((short) 5, "Phantom"),
+    ELF((short) 6, "Elf"),
+    WITCH((short) 7, "Witch"),
+    MYSTIC((short) 8, "Mystic");
+
+    private final short no;
     private final String name;
 
-    ApostleRace(int no, String name) {
+    ApostleRace(short no, String name) {
         this.no = no;
         this.name = name;
     }
@@ -44,12 +46,20 @@ public enum ApostleRace {
         return name;
     }
 
-    public static ApostleRace fromNo(int no) {
+    public static ApostleRace fromNo(short no) {
         for (ApostleRace race : ApostleRace.values()) {
-            if (race.getNo() == no) {
-                return race;
-            }
+            if (race.no == no) return race;
         }
         return UNKNOWN;
+    }
+
+    @Override
+    public String getOptionLabel() {
+        return name;
+    }
+
+    @Override
+    public String getOptionValue() {
+        return String.valueOf(no);
     }
 }
