@@ -25,14 +25,20 @@ public enum CrayonStats implements EnumInterface {
     CRIT((short) 3, "Crit Rate"),
     DEF((short) 4, "DEF"),
     CRES((short) 5, "Crit Resistance"),
-    UNKNOWN((short) 0, "Unknown");
+    UNKNOWN((short) 0, "Unknown", false);
 
     private final short no;
     private final String name;
+    private final boolean valid;
 
-    CrayonStats(short no, String name) {
+    CrayonStats(short no, String name, boolean valid) {
         this.no = no;
         this.name = name;
+        this.valid = valid;
+    }
+
+    CrayonStats(short no, String name) {
+        this(no, name, true);
     }
 
     public static CrayonStats fromNo(short no) {
@@ -60,5 +66,10 @@ public enum CrayonStats implements EnumInterface {
     @Override
     public String getOptionValue() {
         return String.valueOf(no);
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 }

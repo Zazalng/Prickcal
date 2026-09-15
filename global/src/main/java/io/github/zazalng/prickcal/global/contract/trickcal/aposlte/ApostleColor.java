@@ -22,7 +22,7 @@ import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
 import java.awt.*;
 
 public enum ApostleColor implements EnumInterface {
-    UNKNOWN((short) -1, "Invalid", new Color(0, 0, 0)),
+    UNKNOWN((short) -1, "Invalid", new Color(0, 0, 0), false),
     RAINBOW((short) 0, "Rainbow", new Color(255, 255, 255)),
     GREEN((short) 1, "Innocent", new Color(80, 210, 80)),
     TEAL((short) 2, "Composed", new Color(0, 250, 255)),
@@ -33,11 +33,17 @@ public enum ApostleColor implements EnumInterface {
     private final short no;
     private final String personality;
     private final Color color;
+    private final boolean valid;
 
-    ApostleColor(short no, String personality, Color color) {
+    ApostleColor(short no, String personality, Color color, boolean valid) {
         this.no = no;
         this.personality = personality;
         this.color = color;
+        this.valid = valid;
+    }
+
+    ApostleColor(short no, String personality, Color color) {
+        this(no, personality, color, true);
     }
 
     public static ApostleColor fromNo(short no) {
@@ -67,5 +73,10 @@ public enum ApostleColor implements EnumInterface {
     @Override
     public String getOptionValue() {
         return String.valueOf(no);
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 }

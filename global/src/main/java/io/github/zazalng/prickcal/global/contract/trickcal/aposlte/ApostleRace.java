@@ -20,7 +20,7 @@ package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
 
 public enum ApostleRace implements EnumInterface {
-    UNKNOWN((short) 0, "Invalid"),
+    UNKNOWN((short) 0, "Invalid", false),
     SPRITE((short) 1, "Sprite"),
     ELEMENTAL((short) 2, "Elemental"),
     BEASTMEN((short) 3, "Werebeast"),
@@ -32,10 +32,16 @@ public enum ApostleRace implements EnumInterface {
 
     private final short no;
     private final String name;
+    private final boolean valid;
 
-    ApostleRace(short no, String name) {
+    ApostleRace(short no, String name, boolean valid) {
         this.no = no;
         this.name = name;
+        this.valid = valid;
+    }
+
+    ApostleRace(short no, String name) {
+        this(no, name, true);
     }
 
     public int getNo() {
@@ -61,5 +67,10 @@ public enum ApostleRace implements EnumInterface {
     @Override
     public String getOptionValue() {
         return String.valueOf(no);
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 }

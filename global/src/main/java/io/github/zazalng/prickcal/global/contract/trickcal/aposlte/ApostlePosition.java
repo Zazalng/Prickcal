@@ -24,14 +24,20 @@ public enum ApostlePosition implements EnumInterface {
     MID((short) 2, "Mid Column"),
     BACK((short) 3, "Back Column"),
     ROBIN((short) 0, "Round Robin"),
-    UNKNOWN((short) -1, "Invalid");
+    UNKNOWN((short) -1, "Invalid", false);
 
     private final short no;
     private final String seat;
+    private final boolean valid;
 
-    ApostlePosition(short no, String seat) {
+    ApostlePosition(short no, String seat, boolean valid) {
         this.no = no;
         this.seat = seat;
+        this.valid = valid;
+    }
+
+    ApostlePosition(short no, String seat) {
+        this(no, seat, true);
     }
 
     public static ApostlePosition fromNo(short no) {
@@ -57,5 +63,10 @@ public enum ApostlePosition implements EnumInterface {
     @Override
     public String getOptionValue() {
         return String.valueOf(no);
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 }

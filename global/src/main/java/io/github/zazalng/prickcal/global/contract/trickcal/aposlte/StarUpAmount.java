@@ -31,10 +31,16 @@ public enum StarUpAmount implements EnumInterface {
 
     private final short star;
     private final int piece;
+    private final boolean valid;
 
-    StarUpAmount(short star, int piece) {
+    StarUpAmount(short star, int piece, boolean valid) {
         this.star = star;
         this.piece = piece;
+        this.valid = valid;
+    }
+
+    StarUpAmount(short star, int piece) {
+        this(star, piece, true);
     }
 
     public static StarUpAmount fromStar(short star) {
@@ -71,5 +77,10 @@ public enum StarUpAmount implements EnumInterface {
     @Override
     public String getOptionValue() {
         return String.valueOf(star);
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 }
