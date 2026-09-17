@@ -37,6 +37,7 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -132,25 +133,22 @@ public class PanelBuilder {
 
     // ==================== MAIN MENU ====================
 
-    public MessageEmbed buildMainMenuEmbed(User discordUser, long uid) {
-        Account acc = accountManager.findById(uid);
-
+    public MessageEmbed buildMainMenuEmbed(User discordUser, Account account) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setAuthor(discordUser.getName(), null, discordUser.getEffectiveAvatarUrl());
-        embed.setTitle(acc.getIgn() != null ? acc.getIgn() + "(%s)".formatted(discordUser.getName()) : discordUser.getName());
+        embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getId()));
         embed.setDescription("""
-                        Consent at %s
-                        Apostle: %d out of %d | CP: %d
-                        """.formatted(
-                        acc.getCreatedAt().toString(),
-                accountManager.getApostleOwned(acc),
+                Consent at <t:%s:R>
+                Apostle: %d out of %d |  CP: %d
+                """.formatted(
+                account.getCreatedAt().getEpochSecond(),
+                accountManager.getApostleOwned(account),
                 apostleManager.listAll().size(),
-                        acc.getCp()
+                account.getCp()
                 )
         );
         embed.setThumbnail(discordUser.getEffectiveAvatarUrl());
-        embed.setFooter("Friend Code: %s".formatted(acc.getFriendCode() != null ? acc.getFriendCode() : "*null*"));
-        embed.setTimestamp(acc.getUpdatedAt());
+        embed.setFooter("Friend Code: %s".formatted(account.getFriendCode() != null ? account.getFriendCode() : "*null*"));
+        embed.setTimestamp(account.getUpdatedAt());
         embed.setColor(new Color(new Random().nextInt(256), new Random().nextInt(256), new Random().nextInt(256)));
 
         {
@@ -162,7 +160,7 @@ public class PanelBuilder {
                     continue;
                 }
 
-                String[] tracker = accountManager.crayonCountByStats(acc, stats).split(",", 2);
+                String[] tracker = accountManager.crayonCountByStats(account, stats).split(",", 2);
                 String[] possible = apostleManager.crayonTotalByStats(stats).split(",", 2);
 
                 crayonSpend += Integer.parseInt(tracker[1]);
@@ -175,11 +173,16 @@ public class PanelBuilder {
         }
 
         {
-            BigDecimal candySpend = accountManager.getCrayonsSpent(acc);
-            BigDecimal crayonAcquired = accountManager.getCrayonsAcquired(acc);
-            embed.addField("Candy Spent", candySpend.toPlainString(), false);
+            BigDecimal candySpend = accountManager.getCrayonsSpent(account);
+            BigDecimal crayonAcquired = accountManager.getCrayonsAcquired(account);
+            BigDecimal crayonRate;
+            {
+                BigDecimal denominator = candySpend.divide(BigDecimal.valueOf(20), 0, RoundingMode.UP);
+                crayonRate = denominator.signum() == 0 ? BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP) : crayonAcquired.divide(denominator, 4, RoundingMode.HALF_UP);
+            }
+            embed.addField("Candy Spent", candySpend.toPlainString(), true);
             embed.addField("Crayon Acquired", crayonAcquired.toPlainString(), true);
-            embed.addField("Crayon Rate", crayonAcquired.divide(candySpend.divide(new BigDecimal(20), 0, RoundingMode.UP), 4, RoundingMode.HALF_UP).toPlainString(), true);
+            embed.addField("Crayon Rate", crayonRate.toPlainString(), true);
         }
 
         return embed.build();
@@ -192,13 +195,13 @@ public class PanelBuilder {
                 ActionRow.of(
                         Button.primary(btnPrefix + "apostle", "👤 Apostle"),
                         Button.secondary(btnPrefix + "import_export", "📦 Import/Export"),
-                        Button.secondary(btnPrefix + "database", "🗄️ Database")
+                        Button.success(btnPrefix + "post_profile", "📢 Post Profile"),
+                        Button.secondary(btnPrefix + "refresh_embed", "Refresh")
                 ),
                 ActionRow.of(
-                        Button.danger(btnPrefix + "administrator", "🔧 Administrator"),
+                        Button.secondary(btnPrefix + "database", "🗄️ Database"),
                         Button.secondary(btnPrefix + "logs", "📋 Public Logs"),
-                        Button.secondary(btnPrefix + "refresh_embed", "Refresh"),
-                        Button.success(btnPrefix + "public_post", "📢 Public Post")
+                        Button.danger(btnPrefix + "administrator", "🔧 Administrator")
                 ),
                 ActionRow.of(
                         Button.danger(btnPrefix + "delete_data", "🗑️ Delete Data")
@@ -208,27 +211,32 @@ public class PanelBuilder {
 
     // ==================== APOSTLE PANEL ====================
 
-    public MessageEmbed buildApostleEmbed(User discordUser, Account account,
-                                          Apostle apostle, ApostleTrack track) {
+    public MessageEmbed buildTrackEmbed(Account account, Apostle apostle) {
+        ApostleTrack track = apostleManager.findTrack(account, apostle);
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setAuthor("Post by <@%s>".formatted(account.getUid()), null, discordUser.getEffectiveAvatarUrl());
+        embed.setAuthor("%s | %s | %s | %s".formatted(
+                ApostleColor.fromNo(apostle.getColor()).getPersonality(),
+                ApostleRace.fromNo(apostle.getRace()).getName(),
+                ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
+                track.getCurrentStar() < apostle.getInit() ? "Not Owned" :
+                        "⭐ %d / %d%s".formatted(
+                                track.getCurrentStar(),
+                                apostle.getMax(),
+                                apostle.missingPiece(track)
+                        )
+        ));
         embed.setTitle(apostle.trueName());
 
         if (apostle.getPic() != null) {
             embed.setThumbnail(apostle.getPic());
         }
         embed.setFooter("Last Updated");
-        embed.setTimestamp(apostle.getUpdatedAt());
+        embed.setTimestamp(track.getUpdatedAt());
         embed.setColor(ApostleColor.fromNo(apostle.getColor()).getColor());
-        embed.setDescription("""
-                ## Hashtag
-                
-                %s
-                """.formatted(apostleManager.parseHashTag(apostle)));
 
         CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
-        if (lineUp != null && track != null) {
-            List<Integer> lineUpValues = lineUp.getLineUp();
+        if (lineUp != null) {
+            List<Short> lineUpValues = lineUp.getLineUp();
             List<Boolean> crayonValues = track.getCrayons();
 
             String[] houseLabels = {
@@ -236,9 +244,8 @@ public class PanelBuilder {
                     "House 3A", "House 3B", "House 3C", "House 3D"
             };
 
-            int totalSlots = lineUpValues.size();
-            for (int i = 0; i < totalSlots && i < houseLabels.length; i++) {
-                int statValue = lineUpValues.get(i);
+            for (int i = 0; i < lineUpValues.size() && i < houseLabels.length; i++) {
+                short statValue = lineUpValues.get(i);
                 CrayonStats stat = CrayonStats.fromNo(statValue);
                 boolean acquired = i < crayonValues.size() && crayonValues.get(i);
                 String fieldValue = stat != CrayonStats.UNKNOWN
@@ -246,17 +253,61 @@ public class PanelBuilder {
                         : "Invalid Stat";
                 embed.addField(houseLabels[i], fieldValue, true);
             }
-
-            long trueCount = 0;
-            for (boolean b : crayonValues) if (b) trueCount++;
-            embed.addField("Crayons Spent", trueCount + " / " + totalSlots, false);
+            embed.addField("Crayons Spent", track.totalSpent(lineUp.getDepth()) + " / " + lineUp.totalCost(), false);
         }
 
         return embed.build();
     }
 
-    public Container buildApostleComponent(Account account, Apostle apostle, ApostleTrack track) {
+    public MessageEmbed buildApostleEmbed(Apostle apostle) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle(apostle.trueName());
+        if (apostle.getPic() != null) {
+            embed.setThumbnail(apostle.getPic());
+        }
+        embed.setFooter("Last Updated");
+        embed.setTimestamp(apostle.getUpdatedAt());
+        embed.setColor(ApostleColor.fromNo(apostle.getColor()).getColor());
+        embed.setDescription("""
+                Personality: %s
+                Race: %s
+                Position: %s
+                Yearning: %s
+                ### Hashtag
+                %s
+                """.formatted(
+                ApostleColor.fromNo(apostle.getColor()).getPersonality(),
+                ApostleRace.fromNo(apostle.getRace()).getName(),
+                ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
+                apostle.getMax() > 5 ? "✅" : "❌",
+                apostleManager.parseHashTag(apostle)
+        ));
         CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
+        if (lineUp != null) {
+            List<Short> lineUpValues = lineUp.getLineUp();
+
+            String[] houseLabels = {
+                    "House 1A", "House 1B", "House 2A", "House 2B", "House 2C",
+                    "House 3A", "House 3B", "House 3C", "House 3D"
+            };
+
+            for (int i = 0; i < lineUpValues.size() && i < houseLabels.length; i++) {
+                short statValue = lineUpValues.get(i);
+                CrayonStats stat = CrayonStats.fromNo(statValue);
+                String fieldValue = stat != CrayonStats.UNKNOWN
+                        ? (stat.getName())
+                        : "Invalid Stat";
+                embed.addField(houseLabels[i], fieldValue, true);
+            }
+        }
+        embed.addField("Crayons Needed", String.valueOf(lineUp.totalCost()), false);
+        embed.addField("Certificate Needed", apostle.missingPiece(), true);
+
+        return embed.build();
+    }
+
+    public Container buildApostleComponent(Account account, Apostle apostle) {
+        ApostleTrack track = apostleManager.findTrack(account, apostle);
         String[] houseLabels = {"1A", "1B", "2A", "2B", "2C", "3A", "3B", "3C", "3D"};
         sessionManager.setCrayonToggleState(account.getId(), track.getCrayons());
 
@@ -265,19 +316,6 @@ public class PanelBuilder {
         ActionRow row3 = buildCrayonRow(6, 9, track, houseLabels);
 
         return Container.of(
-                TextDisplay.of("""
-                        # Tracking System
-                        ## %s
-                        -# %s
-                        
-                        ### Crayon Housing
-                        %s
-                        """
-                        .formatted(apostle.trueName(),
-                                track.isOwned() ? ":star: %d / %d :star2:%s".formatted(track.getCurrentStar(), apostle.getMax(), apostle.missingPiece(track)) : "Not Owned",
-                                lineUp.crayonHousing(track)
-                        )),
-                Separator.create(true, Separator.Spacing.LARGE),
                 TextDisplay.of("### 🖍️ Crayon Grid — " + apostle.getName()),
                 Separator.create(true, Separator.Spacing.SMALL),
                 row1,
@@ -285,8 +323,8 @@ public class PanelBuilder {
                 row3,
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
-                        Button.danger(btnPrefix + "apostle_decrease_star", ":heavy_minus_sign::star:"),
-                        Button.success(btnPrefix + "apostle_increase_star", ":heavy_plus_sign::star:")
+                        Button.danger(btnPrefix + "apostle_decrease_star", "➖⭐"),
+                        Button.success(btnPrefix + "apostle_increase_star", "➕⭐")
                 ),
                 ActionRow.of(
                         Button.success(btnPrefix + "crayon_confirm", "✅ Confirm"),
@@ -294,16 +332,16 @@ public class PanelBuilder {
                         Button.primary(btnPrefix + "switch_apostle", "🔀 Switch Apostle")
                 ),
                 ActionRow.of(
-                        Button.secondary(btnPrefix + "apostle_public_post", "📢 Public Post"),
-                        Button.secondary(btnPrefix + "apostle_embed_public_post", "📢 Public Self Post")
+                        Button.secondary(btnPrefix + "post_apostle", "📢 Post Apostle"),
+                        Button.secondary(btnPrefix + "post_tracker", "📢 Post Tracking")
                 )
         ).withAccentColor(ApostleColor.fromNo(apostle.getColor()).getColor());
     }
 
     private ActionRow buildCrayonRow(int start, int end, ApostleTrack track, String[] labels) {
         List<Button> buttons = new ArrayList<>();
-        for (int i = start; i < end && i < track.getCrayon().split(",").length; i++) {
-            boolean acquired = Boolean.parseBoolean(track.getCrayon().split(",")[i]);
+        for (int i = start; i < end; i++) {
+            boolean acquired = track.getCrayons().get(i);
             String label = labels[i] + " " + (acquired ? "✅" : "⬜");
             String btnId = btnPrefix + "crayon_toggle_" + i;
             if (acquired) {
@@ -313,96 +351,6 @@ public class PanelBuilder {
             }
         }
         return ActionRow.of(buttons);
-    }
-
-    // ==================== SWITCH APOSTLE MODAL ====================
-
-    public String getSwitchApostleModalId() {
-        return modalPrefix + "switch_apostle_search";
-    }
-
-    // ==================== DEEP SEARCH PANEL ====================
-
-    public Container buildDeepSearchPanel(String userId, List<Apostle> results,
-                                          int page, int pageSize) {
-        int totalPages = (int) Math.ceil((double) results.size() / pageSize);
-        int start = page * pageSize;
-        int end = Math.min(start + pageSize, results.size());
-        List<Apostle> pageResults = results.subList(start, end);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("# 🔍 Deep Search\n\n");
-        if (results.isEmpty()) {
-            sb.append("_No results found._");
-        } else {
-            sb.append("**Total Results:** ").append(results.size()).append("\n");
-            sb.append("**Page:** ").append(page + 1).append("/").append(totalPages).append("\n\n");
-            for (int i = 0; i < pageResults.size(); i++) {
-                Apostle a = pageResults.get(i);
-                ApostleColor color = ApostleColor.fromNo(a.getColor());
-                sb.append("**").append(start + i + 1).append(".** ").append(a.getName());
-                if (a.getElydn() != null && !a.getElydn().isEmpty()) {
-                    sb.append(" (").append(a.getElydn()).append(")");
-                }
-                sb.append(" — ").append(color.getPersonality());
-                sb.append("\n");
-            }
-        }
-
-        StringSelectMenu.Builder colorMenu = StringSelectMenu.create(stringMenuPrefix + "deep_color")
-                .setPlaceholder("Filter by Personality (Color)")
-                .setRequiredRange(0, 1);
-        for (ApostleColor c : ApostleColor.values()) {
-            if (c != ApostleColor.UNKNOWN) {
-                colorMenu.addOption(c.getPersonality(), String.valueOf(c.getNo()));
-            }
-        }
-
-        StringSelectMenu.Builder posMenu = StringSelectMenu.create(stringMenuPrefix + "deep_position")
-                .setPlaceholder("Filter by Position")
-                .setRequiredRange(0, 1);
-        for (ApostlePosition p : ApostlePosition.values()) {
-            if (p != ApostlePosition.UNKNOWN) {
-                posMenu.addOption(p.getSeat(), String.valueOf(p.getNo()));
-            }
-        }
-
-        StringSelectMenu.Builder raceMenu = StringSelectMenu.create(stringMenuPrefix + "deep_race")
-                .setPlaceholder("Filter by Race")
-                .setRequiredRange(0, 1);
-        for (ApostleRace r : ApostleRace.values()) {
-            if (r != ApostleRace.UNKNOWN) {
-                raceMenu.addOption(r.getName(), String.valueOf(r.getNo()));
-            }
-        }
-
-        return Container.of(
-                TextDisplay.of(sb.toString()),
-                Separator.create(true, Separator.Spacing.SMALL),
-                ActionRow.of(
-                        Button.primary(btnPrefix + "deep_name_input", "🔤 Search by Name")
-                ),
-                Separator.create(false, Separator.Spacing.SMALL),
-                ActionRow.of(colorMenu.build()),
-                Separator.create(false, Separator.Spacing.SMALL),
-                ActionRow.of(posMenu.build()),
-                Separator.create(false, Separator.Spacing.SMALL),
-                ActionRow.of(raceMenu.build()),
-                Separator.create(true, Separator.Spacing.SMALL),
-                ActionRow.of(
-                        Button.secondary(btnPrefix + "deep_prev", "⬅️ Previous")
-                                .withDisabled(page <= 0),
-                        Button.secondary(btnPrefix + "deep_page", "📄 " + (page + 1) + "/" + totalPages)
-                                .withDisabled(true),
-                        Button.primary(btnPrefix + "deep_next", "Next ➡️")
-                                .withDisabled(page >= totalPages - 1)
-                ),
-                ActionRow.of(
-                        Button.success(btnPrefix + "deep_select", "✅ Select Result")
-                                .withDisabled(results.size() != 1),
-                        Button.danger(btnPrefix + "deep_cancel", "❌ Cancel")
-                )
-        ).withAccentColor(ACCENT_SEARCH);
     }
 
     // ==================== LOGS PANEL ====================
@@ -452,15 +400,18 @@ public class PanelBuilder {
 
     public Container buildDeleteDataConfirmPanel() {
         return Container.of(
-                TextDisplay.of("# 🗑️ Delete All Your Data\n\n" +
-                        "⚠️ **This action is irreversible!**\n\n" +
-                        "All your tracked data will be permanently removed:\n" +
-                        "• Apostle tracking records\n" +
-                        "• Crayon records\n" +
-                        "• Remarkable records\n" +
-                        "• Gift acquired records\n" +
-                        "• Your account profile\n\n" +
-                        "Are you sure?"),
+                TextDisplay.of("""
+                        # 🗑️ Delete All Your Data
+                        
+                        ⚠️ **This action is irreversible!**
+                        All your tracked data will be permanently removed:
+                        * Apostle tracking records
+                        * Crayon records
+                        * Remarkable records
+                        * Gift acquired records
+                        * Your account profile
+                        
+                        Are you sure?"""),
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
                         Button.danger(btnPrefix + "delete_confirm", "✅ Yes, Delete Everything"),
@@ -481,16 +432,31 @@ public class PanelBuilder {
 
     // ==================== APOSTLE LIST PANEL (for switch) ====================
 
-    public Container buildApostleListPanel(List<Apostle> allApostles) {
+    public Container buildApostleListPanel(Account account) {
+        List<String> apostleSearch = sessionManager.getApostleSearch(account.getId());
+        String cacheResult = apostleSearch.getLast();
+
+        List<Apostle> searchResult;
+        if (cacheResult.isEmpty()) {
+            searchResult = apostleManager.listAll();
+        } else {
+            searchResult = factory.getRepos().apostles().query().whereIn("id", Arrays.stream(cacheResult.split(",")).toList()).list();
+        }
+
+        if (searchResult.size() == 1) {
+            sessionManager.setCurrentApostle(account.getId(), searchResult.getFirst());
+            return buildApostleComponent(account, searchResult.getFirst());
+        }
+
+        int limit = Math.min(searchResult.size(), 23);
+        boolean requirePagination = searchResult.size() > 23;
+
         StringSelectMenu.Builder menu = StringSelectMenu.create(stringMenuPrefix + "select_apostle")
                 .setPlaceholder("Select an Apostle to view")
-                .setRequiredRange(1, 1);
+                .setDefaultValues("-1")
+                .setRequiredRange(1, 1)
+                .setRequired(true);
 
-        for (Apostle a : allApostles) {
-            String label = a.getName();
-            if (label.length() > 100) label = label.substring(0, 97) + "...";
-            menu.addOption(label, String.valueOf(a.getId()));
-        }
 
         return Container.of(
                 TextDisplay.of("# 🔀 Switch Apostle\nSelect an apostle to view its crayon grid:"),

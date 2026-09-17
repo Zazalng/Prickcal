@@ -18,6 +18,7 @@
 package io.github.zazalng.prickcal.global.manager;
 
 import group.worldstandard.pudel.api.database.PluginRepository;
+import group.worldstandard.pudel.api.database.QueryBuilder;
 import io.github.zazalng.prickcal.global.contract.trickcal.HashtagClaim;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
@@ -31,6 +32,8 @@ import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
 import io.github.zazalng.prickcal.global.exception.PrickcalEnum;
 import io.github.zazalng.prickcal.global.exception.PrickcalException;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,13 +44,11 @@ import java.util.stream.Collectors;
 public class ApostleManager extends AbstractManager {
     private final PluginRepository<Apostle> repoApostle;
     private final PluginRepository<ApostleTrack> repoTracker;
-    private final Account accountManager;
 
     protected ApostleManager(ManagerFactory factory) {
         super(factory);
         repoApostle = factory.getRepos().apostles();
         repoTracker = factory.getRepos().apostleTrackers();
-        accountManager = factory.getManager(ManagersEnum.ACCOUNT);
     }
 
     @Override
@@ -115,35 +116,30 @@ public class ApostleManager extends AbstractManager {
                 .orElseThrow(() -> new PrickcalException(PrickcalEnum.INVALID_CRAYONLINEUP, String.valueOf(id)));
     }
 
-    /** Find the tracking record for a user + apostle combination. */
-    public ApostleTrack findTrack(Account account, long apostleId) {
-        return repoTracker.query()
-                .where("uid", account.getId())
-                .where("apostle_id", apostleId)
-                .findOne()
-                .orElse(createTracker(account.getId(), apostleId));
+    /**
+     * Convert a List of Boolean to the persisted comma-separated string.
+     */
+    public static String crayonStateToString(List<Boolean> state) {
+        return state.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
     }
 
-    /** Convert a boolean[] to the persisted comma-separated string. */
-    public static String crayonStateToString(List<Boolean> state) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < state.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append(state[i]);
-        }
-        return sb.toString();
+    /** Find the tracking record for a user + apostle combination. */
+    public ApostleTrack findTrack(long account, long apostleId) {
+        return repoTracker.query()
+                .where("apostle_id", apostleId)
+                .where("uid", account)
+                .findOne()
+                .orElseGet(() -> createTracker(account, apostleId));
+    }
+
+    public ApostleTrack findTrack(Account account, long apostle) {
+        return findTrack(account.getId(), apostle);
     }
 
     public ApostleTrack findTrack(Account account, Apostle apostle) {
         return findTrack(account, apostle.getId());
-    }
-
-    public List<ApostleTrack> findTracks(Account account) {
-        return findTracks(account.getId());
-    }
-
-    public List<ApostleTrack> findTracks(Long id) {
-        return repoTracker.findBy("uid", id);
     }
 
     private ApostleTrack createTracker(Long uid, long apostleId) {
@@ -153,6 +149,14 @@ public class ApostleManager extends AbstractManager {
         tracker.setCurrentStar((short) 0);
         tracker = repoTracker.save(tracker);
         return tracker;
+    }
+
+    public List<ApostleTrack> findTracks(Account account) {
+        return findTracks(account.getId());
+    }
+
+    public List<ApostleTrack> findTracks(Long id) {
+        return repoTracker.findBy("uid", id);
     }
 
     public String parseHashTag(Apostle apostle) {
@@ -210,7 +214,7 @@ public class ApostleManager extends AbstractManager {
             }
 
             List<Short> lineUpList = lineUp.getLineUp();
-            List<Short> depthList = lineUp.getDepth();
+            List<Integer> depthList = lineUp.getDepth();
 
             if (lineUpList == null || depthList == null) {
                 continue;
@@ -220,7 +224,7 @@ public class ApostleManager extends AbstractManager {
 
             for (int i = 0; i < limit; i++) {
                 Short targetStat = lineUpList.get(i);
-                Short depthValue = depthList.get(i);
+                Integer depthValue = depthList.get(i);
 
                 if (targetStat == null || depthValue == null || stats.getNo() != targetStat) {
                     continue;
@@ -267,80 +271,89 @@ public class ApostleManager extends AbstractManager {
     public ApostleTrack confirmCrayon(Account account, Apostle apostle, List<Boolean> state) {
         String crayonStr = crayonStateToString(state);
 
-        ApostleTrack track = findTrack(uid, apostle.getId()).orElse(null);
+        ApostleTrack track = findTrack(account, apostle.getId());
         if (track == null) {
             track = new ApostleTrack();
             track.setApostleId(apostle.getId());
-            track.setUid(uid);
+            track.setUid(account.getId());
             track.setCurrentStar(apostle.getInit());
             track.setCrayon(crayonStr);
             factory.getRepos().apostleTrackers().save(track);
-            logCreated(uid,
+            logCreated(account.getId(),
                     "Created crayon track for " + apostle.getName());
         } else {
             track.setCrayon(crayonStr);
             factory.getRepos().apostleTrackers().save(track);
-            logUpdated(uid, "Updated crayon track for " + apostle.getName());
+            logUpdated(account.getId(), "Updated crayon track for " + apostle.getName());
         }
         return track;
     }
 
     // ==================== DEEP SEARCH ====================
 
-    /** Filter apostles by name (case-insensitive contains). */
-    public List<Apostle> searchByName(List<Apostle> source, String name) {
-        if (name == null || name.isEmpty()) return source;
-        String lower = name.trim().toLowerCase();
-        return source.stream()
-                .filter(a -> a.getName() != null && a.getName().toLowerCase().contains(lower))
-                .collect(Collectors.toList());
-    }
-
-    /** Filter apostles by color/personality. */
-    public List<Apostle> filterByColor(List<Apostle> source, int colorNo) {
-        return source.stream()
-                .filter(a -> a.getColor() == colorNo)
-                .collect(Collectors.toList());
-    }
-
-    /** Filter apostles by position/race. */
-    public List<Apostle> filterByRace(List<Apostle> source, int raceNo) {
-        return source.stream()
-                .filter(a -> a.getRace() == raceNo)
-                .collect(Collectors.toList());
-    }
-
-    /** Apply chained filters: name, then color, then race. Stops early when 1 result. */
-    public List<Apostle> deepFilter(List<Apostle> source, String name,
-                                    List<Integer> colorFilters, List<Integer> positionFilters) {
-        List<Apostle> results = source;
-
-        if (name != null && !name.isEmpty()) {
-            results = searchByName(results, name);
-            if (results.size() <= 1) return results;
+    /**
+     * Apply chained filters: name, then race, then color, then position. Stops early when 1 result.
+     */
+    public void deepFilter(Account account) {
+        List<String> config = sessionManager().getApostleSearch(account.getId());
+        if (config == null || config.size() < 7) {
+            return;
         }
 
-        if (colorFilters != null && !colorFilters.isEmpty()) {
-            List<Apostle> filtered = results.stream()
-                    .filter(a -> colorFilters.contains(a.getColor()))
-                    .collect(Collectors.toList());
-            if (!filtered.isEmpty()) {
-                results = filtered;
-                if (results.size() <= 1) return results;
-            }
+        String name = config.get(0);
+        List<Short> raceFilters = parseShortList(config.get(3));
+        List<Short> colorFilters = parseShortList(config.get(4));
+        List<Short> positionFilters = parseShortList(config.get(5));
+
+        QueryBuilder<Apostle> query = repoApostle.query();
+
+        if (name != null && !name.isBlank()) {
+            query.whereILike("name", "%" + name.trim() + "%");
         }
 
-        if (positionFilters != null && !positionFilters.isEmpty()) {
-            List<Apostle> filtered = results.stream()
-                    .filter(a -> positionFilters.contains(a.getRace()))
-                    .collect(Collectors.toList());
-            if (!filtered.isEmpty()) {
-                results = filtered;
-            }
+        List<Apostle> results = query.list();
+
+        if (results.size() > 1 && !raceFilters.isEmpty()) {
+            query.whereIn("race", raceFilters);
+            results = query.list();
         }
 
-        return results;
+        if (results.size() > 1 && !colorFilters.isEmpty()) {
+            query.whereIn("color", colorFilters);
+            results = query.list();
+        }
+
+        if (results.size() > 1 && !positionFilters.isEmpty()) {
+            query.whereIn("position", positionFilters);
+            results = query.list();
+        }
+
+        config.set(6, results.stream()
+                .map(a -> String.valueOf(a.getId()))
+                .collect(Collectors.joining(",")));
+        sessionManager().setApostleSearch(account.getId(), config);
     }
 
     // ==================== HELPERS ====================
+    private List<Integer> parseIntegerList(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(Integer::valueOf)
+                .toList();
+    }
+
+    private List<Short> parseShortList(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(Short::valueOf)
+                .toList();
+    }
 }

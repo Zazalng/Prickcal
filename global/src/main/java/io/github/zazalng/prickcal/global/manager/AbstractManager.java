@@ -35,7 +35,7 @@ public abstract class AbstractManager implements Manager {
     /**
      * Create and persist an audit log entry.
      */
-    public Log logRecord(String actorUid, Action action, String description) {
+    public Log logRecord(long actorUid, Action action, String description) {
         Log log = new Log();
         log.setUid(actorUid);
         log.setTableName(getTableName());
@@ -48,21 +48,21 @@ public abstract class AbstractManager implements Manager {
     /**
      * Convenience: log a CREATE action.
      */
-    public Log logCreated(String actorUid, String description) {
+    public Log logCreated(long actorUid, String description) {
         return logRecord(actorUid, Action.CREATE, description);
     }
 
     /**
      * Convenience: log an UPDATE action.
      */
-    public Log logUpdated(String actorUid, String description) {
+    public Log logUpdated(long actorUid, String description) {
         return logRecord(actorUid, Action.UPDATE, description);
     }
 
     /**
      * Convenience: log a DELETE action.
      */
-    public Log logDeleted(String actorUid, String description) {
+    public Log logDeleted(long actorUid, String description) {
         return logRecord(actorUid, Action.DELETE, description);
     }
 }

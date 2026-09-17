@@ -18,9 +18,14 @@
 package io.github.zazalng.prickcal.global.handler;
 
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
+import io.github.zazalng.prickcal.global.contract.operator.Operator;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
-import io.github.zazalng.prickcal.global.entities.*;
+import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
+import io.github.zazalng.prickcal.global.entities.Account;
+import io.github.zazalng.prickcal.global.entities.Apostle;
+import io.github.zazalng.prickcal.global.entities.ApostleTrack;
+import io.github.zazalng.prickcal.global.entities.Log;
 import io.github.zazalng.prickcal.global.manager.*;
 import io.github.zazalng.prickcal.global.util.LabelByEnum;
 import net.dv8tion.jda.api.components.label.Label;
@@ -29,13 +34,12 @@ import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.modals.Modal;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -52,6 +56,7 @@ public class PrickcalButtonHandler {
     private final String btnPrefix;
     private final String modalPrefix;
     private final PanelBuilder panelBuilder;
+    private final ManagerFactory factory;
     private final AccountManager accountManager;
     private final ApostleManager apostleManager;
     private final SessionManager sessionManager;
@@ -61,6 +66,7 @@ public class PrickcalButtonHandler {
         this.btnPrefix = btnPrefix;
         this.modalPrefix = modalPrefix;
         this.panelBuilder = panelBuilder;
+        this.factory = factory;
         sessionManager = factory.getManager(ManagersEnum.SESSION);
         accountManager = factory.getManager(ManagersEnum.ACCOUNT);
         apostleManager = factory.getManager(ManagersEnum.APOSTLE);
@@ -85,8 +91,6 @@ public class PrickcalButtonHandler {
             handleCrayonReset(event);
         } else if (buttonId.equals("switch_apostle")) {
             handleSwitchApostle(event);
-        } else if (buttonId.startsWith("deep_")) {
-            handleDeepSearch(event, buttonId);
         } else if (buttonId.equals("import_export")) {
             handleImportExport(event);
         } else if (buttonId.equals("database")) {
@@ -95,8 +99,10 @@ public class PrickcalButtonHandler {
             handleAdministrator(event);
         } else if (buttonId.equals("logs")) {
             handleLogs(event);
-        } else if (buttonId.equals("public_post") || buttonId.equals("apostle_public_post")) {
-            handlePublicPost(event, guild, buttonId.startsWith("apostle_"));
+        } else if (buttonId.startsWith("post_")) {
+            if (buttonId.endsWith("apostle")) handlePostApostle(event);
+            else if (buttonId.endsWith("tracker")) handlePostTracker(event);
+            else if (buttonId.endsWith("profile")) handlePostProfile(event);
         } else if (buttonId.equals("delete_data")) {
             handleDeleteData(event);
         } else if (buttonId.startsWith("delete_")) {
@@ -116,17 +122,17 @@ public class PrickcalButtonHandler {
             case "consent_agree" -> {
                 Account account = accountManager.createAccount(event.getJDA().getSelfUser().getId(), event.getUser().getId());
                 event.getHook().deleteOriginal().queue();
-                User discordUser = event.getUser();
-                event.getHook().deleteOriginal().queue();
 
-                event.getHook().sendMessageEmbeds(panelBuilder.buildMainMenuEmbed(discordUser, account.getId()))
-                        .setEphemeral(true)
-                        .queue(msg ->
-                                sessionManager.putControlMessages(account.getId(), msg)
-                        );
-                event.replyComponents(panelBuilder.buildMainMenuComponent())
-                        .setEphemeral(true)
-                        .queue();
+                event.getInteraction().getHook().sendMessageEmbeds(
+                        panelBuilder.buildMainMenuEmbed(event.getUser(), account)
+                ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.getId(), m));
+
+                event.deferReply(true).queue(i ->
+                        i.sendMessageComponents(panelBuilder.buildMainMenuComponent())
+                                .useComponentsV2(true)
+                                .setEphemeral(true)
+                                .queue()
+                );
             }
             case "consent_disagree" -> event.getHook()
                     .editOriginal("❌ Consent denied. Your data will not be tracked. Use `/prickcal` if you change your mind.")
@@ -152,23 +158,16 @@ public class PrickcalButtonHandler {
     }
 
     private void showApostlePanel(ButtonInteractionEvent event, Account account, Apostle apostle) {
-        ApostleTrack tracker = apostleManager.findTrack(account, apostle.getId());
-
-        event.getHook().editOriginal(
-                new MessageEditBuilder()
-                        .useComponentsV2(true)
-                        .setComponents(panelBuilder.buildApostleComponent(
-                                account, apostle, tracker)
-                        )
-                        .build()
-        ).queue();
+        event.deferEdit().queue(i ->
+                i.editOriginalComponents(panelBuilder.buildApostleComponent(account, apostle)).useComponentsV2(true).queue()
+        );
 
         Message oldMessage = sessionManager.getControlMessages(account.getId());
 
         event.getHook().editMessageEmbedsById(oldMessage.getId(),
-                panelBuilder.buildApostleEmbed(event.getUser(), account, apostle, tracker)
+                panelBuilder.buildTrackEmbed(account, apostle)
         ).queue(
-                m -> sessionManager.putControlMessages(account.getId(), m)
+                m -> sessionManager.setControlMessages(account.getId(), m)
         );
     }
 
@@ -188,14 +187,8 @@ public class PrickcalButtonHandler {
         Apostle apostle = sessionManager.getCurrentApostle(account.get().getId());
         if (apostle == null) return;
 
-        ApostleTrack track = apostleManager.findTrack(account.get(), apostle.getId());
-
-        event.getHook().editOriginal(
-                new MessageEditBuilder()
-                        .useComponentsV2(true)
-                        .setComponents(panelBuilder.buildApostleComponent(
-                                account.get(), apostle, track))
-                        .build()
+        event.getHook().editOriginalComponents(
+                panelBuilder.buildApostleComponent(account.get(), apostle)
         ).queue();
     }
 
@@ -215,14 +208,14 @@ public class PrickcalButtonHandler {
 
         event.getHook().editOriginal("✅ Crayon data saved for **" + apostle.getName() + "**!").queue(
                 m -> m.editMessageComponents(
-                        panelBuilder.buildApostleComponent(account.get(), apostle, apostleManager.findTrack(account.get(), apostle))
-                ).queue()
+                        panelBuilder.buildApostleComponent(account.get(), apostle)
+                ).queueAfter(5, TimeUnit.SECONDS)
         );
     }
 
     // ==================== CRAYON RESET ====================
 
-    private void handleCrayonReset(ButtonInteractionEvent event, String userId) {
+    private void handleCrayonReset(ButtonInteractionEvent event) {
         Optional<Account> account = accountManager.findByUid(event.getUser().getId());
         if (account.isEmpty()) return;
 
@@ -237,14 +230,19 @@ public class PrickcalButtonHandler {
 
     // ==================== SWITCH APOSTLE ====================
 
-    private void handleSwitchApostle(ButtonInteractionEvent event, String userId) {
-        List<Apostle> all = apostleManager.listAll();
-        event.editMessage(
-                new MessageEditBuilder()
-                        .useComponentsV2(true)
-                        .setComponents(panelBuilder.buildApostleListPanel(all))
-                        .build()
+    private void handleSwitchApostle(ButtonInteractionEvent event) {
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        if (account.isEmpty()) return;
+
+        event.getHook().editOriginalComponents(
+                panelBuilder.buildApostleListPanel(account.get())
         ).queue();
+
+        if (sessionManager.getControlMessages(account.get().getId()) != null) {
+            event.getHook().editMessageEmbedsById(sessionManager.getControlMessages(account.get().getId()).getId(),
+                    panelBuilder.buildTrackEmbed(account.get(), sessionManager.getCurrentApostle(account.get().getId()))
+            ).queue(m -> sessionManager.setControlMessages(account.get().getId(), m));
+        }
     }
 
     // ==================== DEEP SEARCH ====================
@@ -259,74 +257,26 @@ public class PrickcalButtonHandler {
                                                 .setRequired(false)
                                                 .setMaxLength(100)
                                                 .build()),
+                                Label.of("Filter by Race",
+                                        LabelByEnum.createCheckBoxGroup(
+                                                "filter_race",
+                                                ApostleRace.class
+                                        ).build()
+                                ),
                                 Label.of("Filter by Personality",
                                         LabelByEnum.createCheckBoxGroup(
-                                                        "filter_color",
-                                                        ApostleColor.class
-                                                )
-                                                .build()
+                                                "filter_color",
+                                                ApostleColor.class
+                                        ).build()
                                 ),
                                 Label.of("Filter by Position",
                                         LabelByEnum.createCheckBoxGroup(
-                                                        "filter_position",
-                                                        ApostlePosition.class
-                                                )
-                                                .build()
+                                                "filter_position",
+                                                ApostlePosition.class
+                                        ).build()
                                 )
                         ).build()
         ).queue();
-    }
-
-    private void handleDeepSearch(ButtonInteractionEvent event, String userId, String buttonId) {
-        switch (buttonId) {
-            case "deep_name_input" -> event.replyModal(
-                    Modal.create(modalPrefix + "deep_name_search", "Search Apostle by Name")
-                            .addComponents(
-                                    Label.of("Apostle Name",
-                                            TextInput.create("deep_name", TextInputStyle.SHORT)
-                                                    .setPlaceholder("e.g. Er, Ner, pic")
-                                                    .setRequired(true)
-                                                    .setMaxLength(100)
-                                                    .build())
-                            ).build()
-            ).queue();
-            case "deep_prev" -> {
-                int page = sessionManager.getDeepSearchPage(userId);
-                sessionManager.setDeepSearchPage(userId, page - 1);
-                refreshDeepSearch(event, userId);
-            }
-            case "deep_next" -> {
-                int page = sessionManager.getDeepSearchPage(userId);
-                sessionManager.setDeepSearchPage(userId, page + 1);
-                refreshDeepSearch(event, userId);
-            }
-            case "deep_select" -> {
-                List<Apostle> results = sessionManager.getDeepSearchResults(userId);
-                if (results != null && results.size() == 1) {
-                    Apostle selected = results.getFirst();
-                    sessionManager.setCurrentApostle(userId, selected);
-                    showApostlePanel(event, userId, selected);
-                }
-            }
-            case "deep_cancel" -> {
-                sessionManager.removeDeepSearchResults(userId);
-                sessionManager.removeDeepSearchPage(userId);
-                handleSwitchApostle(event, userId);
-            }
-        }
-    }
-
-    private void refreshDeepSearch(ButtonInteractionEvent event, String userId) {
-        List<Apostle> results = sessionManager.getDeepSearchResults(userId);
-        int page = sessionManager.getDeepSearchPage(userId);
-        if (results != null) {
-            event.editMessage(
-                    new MessageEditBuilder()
-                            .useComponentsV2(true)
-                            .setComponents(panelBuilder.buildDeepSearchPanel(userId, results, page, 10))
-                            .build()
-            ).queue();
-        }
     }
 
     // ==================== SUB-PANELS ====================
@@ -349,8 +299,11 @@ public class PrickcalButtonHandler {
         ).queue();
     }
 
-    private void handleAdministrator(ButtonInteractionEvent event, String userId) {
-        if (!permissionManager.isAdmin(userId)) {
+    private void handleAdministrator(ButtonInteractionEvent event) {
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        if (account.isEmpty()) return;
+
+        if (!account.get().isActionable(Operator.ADMIN)) {
             event.reply("❌ You need **Administrator** permission to access this panel!")
                     .setEphemeral(true)
                     .queue(m -> m.deleteOriginal().queueAfter(5, TimeUnit.SECONDS));
@@ -365,7 +318,7 @@ public class PrickcalButtonHandler {
     }
 
     private void handleLogs(ButtonInteractionEvent event) {
-        List<Log> recentLogs = repos.logs().query()
+        List<Log> recentLogs = factory.getRepos().logs().query()
                 .orderByDesc("id")
                 .limit(50)
                 .list();
@@ -379,44 +332,43 @@ public class PrickcalButtonHandler {
 
     // ==================== PUBLIC POST ====================
 
-    private void handlePublicPost(ButtonInteractionEvent event, String userId, Guild guild, boolean isApostle) {
+    private void handlePostApostle(ButtonInteractionEvent event) {
         TextChannel channel = event.getChannel().asTextChannel();
+        var optAccount = accountManager.findByUid(event.getUser().getId());
+        if (optAccount.isEmpty()) return;
 
-        if (isApostle) {
-            Apostle apostle = sessionManager.getCurrentApostle(userId);
-            if (apostle == null) return;
-            var optAccount = accountManager.findByUid(userId);
-            if (optAccount.isEmpty()) return;
+        channel.sendMessageEmbeds(panelBuilder.buildApostleEmbed(sessionManager.getCurrentApostle(optAccount.get().getId()))).queue();
 
-            User discordUser = repos.getDiscordUser(userId);
-            User displayUser = discordUser != null ? discordUser : event.getUser();
-            var optTrack = apostleManager.findTrack(userId, apostle.getId());
-            CrayonLineUp lineUp = apostleManager.findLineUp(apostle).orElse(null);
+        event.reply("Success")
+                .setEphemeral(true)
+                .flatMap(InteractionHook::deleteOriginal)
+                .queue();
+    }
 
-            channel.sendMessageEmbeds(
-                    panelBuilder.buildApostleEmbed(displayUser, optAccount.get(), apostle,
-                            optTrack.orElse(null), lineUp)
-            ).queue(msg -> {
-                sessionManager.putPublicPost(userId, channel.getId() + ":" + msg.getId());
-                event.reply("✅ Apostle info posted publicly!").setEphemeral(true)
-                        .queue(m -> m.deleteOriginal().queueAfter(3, TimeUnit.SECONDS));
-            });
-        } else {
-            var optAccount = accountManager.findByUid(userId);
-            if (optAccount.isEmpty()) return;
+    private void handlePostTracker(ButtonInteractionEvent event) {
+        TextChannel channel = event.getChannel().asTextChannel();
+        var optAccount = accountManager.findByUid(event.getUser().getId());
+        if (optAccount.isEmpty()) return;
 
-            User discordUser = repos.getDiscordUser(userId);
-            User displayUser = discordUser != null ? discordUser : event.getUser();
+        channel.sendMessageEmbeds(panelBuilder.buildTrackEmbed(optAccount.get(), sessionManager.getCurrentApostle(optAccount.get().getId()))).queue();
 
-            channel.sendMessageEmbeds(
-                    panelBuilder.buildMainMenuEmbed(displayUser, optAccount.get(),
-                            ApostleManager.defaultCrayonStats(), null)
-            ).queue(msg -> {
-                sessionManager.putPublicPost(userId, channel.getId() + ":" + msg.getId());
-                event.reply("✅ Profile posted publicly!").setEphemeral(true)
-                        .queue(m -> m.deleteOriginal().queueAfter(3, TimeUnit.SECONDS));
-            });
-        }
+        event.reply("Success")
+                .setEphemeral(true)
+                .flatMap(InteractionHook::deleteOriginal)
+                .queue();
+    }
+
+    private void handlePostProfile(ButtonInteractionEvent event) {
+        TextChannel channel = event.getChannel().asTextChannel();
+        var optAccount = accountManager.findByUid(event.getUser().getId());
+        if (optAccount.isEmpty()) return;
+
+        channel.sendMessageEmbeds(panelBuilder.buildMainMenuEmbed(event.getUser(), optAccount.get())).queue();
+
+        event.reply("Success")
+                .setEphemeral(true)
+                .flatMap(InteractionHook::deleteOriginal)
+                .queue();
     }
 
     // ==================== DELETE DATA ====================
@@ -430,9 +382,9 @@ public class PrickcalButtonHandler {
         ).queue();
     }
 
-    private void handleDeleteConfirm(ButtonInteractionEvent event, String userId, String buttonId) {
+    private void handleDeleteConfirm(ButtonInteractionEvent event, String buttonId) {
         if (buttonId.equals("delete_confirm")) {
-            accountManager.deleteAllUserData(userId);
+            accountManager.deleteAllUserData(event.getUser().getId());
 
             event.getHook().editOriginal(
                     new MessageEditBuilder()
@@ -440,51 +392,25 @@ public class PrickcalButtonHandler {
                             .build()
             ).queue(m -> m.delete().queueAfter(5, TimeUnit.SECONDS));
         } else {
-            handleBackMain(event, userId);
+            handleBackMain(event);
         }
     }
 
     // ==================== NAVIGATION ====================
 
-    private void handleBackMain(ButtonInteractionEvent event, String userId) {
-        sessionManager.clearUserSession(userId);
-        var optAccount = accountManager.findByUid(userId);
+    private void handleBackMain(ButtonInteractionEvent event) {
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        if (account.isEmpty()) return;
 
-        if (optAccount.isEmpty()) {
-            event.editMessage(
-                    new MessageEditBuilder()
-                            .useComponentsV2(true)
-                            .setComponents(panelBuilder.buildConsentPanel())
-                            .build()
-            ).queue();
-            return;
-        }
-
-        User discordUser = repos.getDiscordUser(userId);
-        User displayUser = discordUser != null ? discordUser : event.getUser();
-
-        event.editMessage(
-                new MessageEditBuilder()
-                        .useComponentsV2(true)
-                        .setComponents(panelBuilder.buildMainMenuComponent())
-                        .build()
+        event.getHook().editOriginalComponents(
+                panelBuilder.buildMainMenuComponent()
         ).queue();
 
-        event.getHook().sendMessageEmbeds(
-                panelBuilder.buildMainMenuEmbed(displayUser, optAccount.get(),
-                        ApostleManager.defaultCrayonStats(), null)
-        ).setEphemeral(true).queue(msg -> {
-            List<Message> oldMsgs = sessionManager.getControlMessages(userId);
-            if (oldMsgs != null) {
-                for (Message m : oldMsgs) {
-                    try {
-                        m.delete().queue(null, _ -> {
-                        });
-                    } catch (Exception ignored) {
-                    }
-                }
-            }
-            sessionManager.putControlMessages(userId, Collections.singletonList(msg));
-        });
+        if (sessionManager.getControlMessages(account.get().getId()) != null) {
+            sessionManager.clearUserSession(account.get());
+            event.getHook().editMessageEmbedsById(sessionManager.getControlMessages(account.get().getId()).getId(),
+                    panelBuilder.buildMainMenuEmbed(event.getUser(), account.get())
+            ).queue(m -> sessionManager.setControlMessages(account.get().getId(), m));
+        }
     }
 }

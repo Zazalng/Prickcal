@@ -19,9 +19,11 @@ package io.github.zazalng.prickcal.global.entities;
 
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
+import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonCosts;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -113,9 +115,16 @@ public class ApostleTrack {
     }
 
     public List<Boolean> getCrayons() {
-        List<Boolean> crayons = new ArrayList<>();
-        for (String c : getCrayon().split(",")) {
-            crayons.addLast(Boolean.parseBoolean(c.toLowerCase()));
+        String raw = getCrayon();
+        if (raw == null || raw.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        String[] tokens = raw.split(",");
+        List<Boolean> crayons = new ArrayList<>(tokens.length);
+
+        for (String c : tokens) {
+            crayons.add(Boolean.parseBoolean(c.trim()));
         }
 
         return crayons;
@@ -139,5 +148,13 @@ public class ApostleTrack {
 
     public boolean isOwned() {
         return getCurrentStar() != 0;
+    }
+
+    public int totalSpent(List<Integer> depth) {
+        int totalSpent = 0;
+        for (int i = 0; i < getCrayons().size(); i++) {
+            if (getCrayons().get(i)) totalSpent += CrayonCosts.fromDepth(depth.get(i)).getPrice();
+        }
+        return totalSpent;
     }
 }

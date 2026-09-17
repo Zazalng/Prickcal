@@ -19,6 +19,7 @@ package io.github.zazalng.prickcal.global.entities;
 
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
+import io.github.zazalng.prickcal.global.contract.operator.Operator;
 
 import java.time.Instant;
 
@@ -157,5 +158,9 @@ public class Account {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isActionable(Operator level) {
+        return ops <= level.getValue();
     }
 }

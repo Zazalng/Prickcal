@@ -21,6 +21,8 @@ import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.Apostle;
 import net.dv8tion.jda.api.entities.Message;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,23 +45,10 @@ public class SessionManager extends AbstractManager {
      */
     private final Map<Long, List<Boolean>> crayonToggleState = new ConcurrentHashMap<>();
     /**
-     * Deep search results per user (userId -> List<Apostle>).
+     * Apostle search configuration per user.
+     * {inputText ,startIndex, startIndex+23, personality no, position no, race no, cache result}
      */
-    private final Map<Long, List<Apostle>> deepSearchResults = new ConcurrentHashMap<>();
-    /**
-     * Deep search pagination page per user.
-     */
-    private final Map<Long, Integer> deepSearchPage = new ConcurrentHashMap<>();
-
-    /**
-     * Apostle panel messages per user (userId -> {embedMessage, interactionMessage}).
-     */
-    private final Map<Long, List<Message>> apostleMessages = new ConcurrentHashMap<>();
-
-    /**
-     * Public post message IDs per user (userId -> channelId:messageId).
-     */
-    private final Map<Long, String> publicPosts = new ConcurrentHashMap<>();
+    private final Map<Long, List<String>> apostleSearch = new ConcurrentHashMap<>();
 
     protected SessionManager(ManagerFactory factory) {
         super(factory);
@@ -87,7 +76,7 @@ public class SessionManager extends AbstractManager {
 
     // ==================== CONTROL MESSAGES ====================
 
-    public void putControlMessages(Long userId, Message messages) {
+    public void setControlMessages(Long userId, Message messages) {
         controlMessages.put(userId, messages);
     }
 
@@ -97,20 +86,6 @@ public class SessionManager extends AbstractManager {
 
     public Message removeControlMessages(Long userId) {
         return controlMessages.remove(userId);
-    }
-
-    // ==================== APOSTLE MESSAGES ====================
-
-    public void putApostleMessages(Long userId, List<Message> messages) {
-        apostleMessages.put(userId, messages);
-    }
-
-    public List<Message> getApostleMessages(Long userId) {
-        return apostleMessages.get(userId);
-    }
-
-    public List<Message> removeApostleMessages(Long userId) {
-        return apostleMessages.remove(userId);
     }
 
     // ==================== CURRENT APOSTLE ====================
@@ -141,44 +116,18 @@ public class SessionManager extends AbstractManager {
         crayonToggleState.remove(userId);
     }
 
-    // ==================== DEEP SEARCH ====================
+    // ==================== Switching Search ====================
 
-    public void setDeepSearchResults(Long userId, List<Apostle> results) {
-        deepSearchResults.put(userId, results);
+    public void setApostleSearch(Long userId, List<String> config) {
+        apostleSearch.put(userId, config);
     }
 
-    public List<Apostle> getDeepSearchResults(Long userId) {
-        return deepSearchResults.get(userId);
+    public List<String> getApostleSearch(Long userId) {
+        return apostleSearch.computeIfAbsent(userId, _ -> new ArrayList<>(Arrays.asList("", "1", "23", "", "", "", "")));
     }
 
-    public void removeDeepSearchResults(Long userId) {
-        deepSearchResults.remove(userId);
-    }
-
-    public int getDeepSearchPage(Long userId) {
-        return deepSearchPage.getOrDefault(userId, 0);
-    }
-
-    public void setDeepSearchPage(Long userId, int page) {
-        deepSearchPage.put(userId, Math.max(0, page));
-    }
-
-    public void removeDeepSearchPage(Long userId) {
-        deepSearchPage.remove(userId);
-    }
-
-    // ==================== PUBLIC POSTS ====================
-
-    public void putPublicPost(Long userId, String channelMessageId) {
-        publicPosts.put(userId, channelMessageId);
-    }
-
-    public String getPublicPost(Long userId) {
-        return publicPosts.get(userId);
-    }
-
-    public String removePublicPost(Long userId) {
-        return publicPosts.remove(userId);
+    public void removeApostleSearch(Long userId) {
+        apostleSearch.remove(userId);
     }
 
     // ==================== BULK CLEANUP ====================
@@ -186,31 +135,16 @@ public class SessionManager extends AbstractManager {
     public void clearUserSession(Account account) {
         //Discord Session
         removeControlMessages(account.getId());
-        removeApostleMessages(account.getId());
-        removePublicPost(account.getId());
         //Prickcal Session
         removeCurrentApostle(account.getId());
         removeCrayonToggleState(account.getId());
-        removeDeepSearchResults(account.getId());
-        removeDeepSearchPage(account.getId());
+        removeApostleSearch(account.getId());
     }
 
     public void clearAllSessions() {
-        apostleMessages.values().forEach(msgs -> {
-            for (Message msg : msgs) {
-                try {
-                    msg.delete().queue(null, _ -> {
-                    });
-                } catch (Exception ignored) {
-                }
-            }
-        });
         controlMessages.clear();
-        apostleMessages.clear();
+        apostleSearch.clear();
         currentApostle.clear();
         crayonToggleState.clear();
-        deepSearchResults.clear();
-        deepSearchPage.clear();
-        publicPosts.clear();
     }
 }

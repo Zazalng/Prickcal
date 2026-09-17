@@ -53,7 +53,7 @@ public enum StarUpAmount implements EnumInterface {
 
     public static int missingPiece(short currentStar, int apostleMax) {
         int missingPiece = 0;
-        for (short i = currentStar; i < apostleMax; i++) {
+        for (short i = (short) (currentStar + 1); i < apostleMax; i++) {
             StarUpAmount s = fromStar(i);
             if (s == null) break;
             missingPiece += s.getPiece();

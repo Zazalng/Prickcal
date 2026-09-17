@@ -21,25 +21,30 @@ import group.worldstandard.pudel.api.PluginContext;
 import group.worldstandard.pudel.api.annotation.*;
 import group.worldstandard.pudel.api.database.PluginDatabaseManager;
 import group.worldstandard.pudel.api.database.PluginRepository;
-import group.worldstandard.pudel.api.database.TableSchema;
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
 import io.github.zazalng.prickcal.global.entities.*;
 import io.github.zazalng.prickcal.global.handler.PrickcalButtonHandler;
 import io.github.zazalng.prickcal.global.handler.PrickcalModalHandler;
 import io.github.zazalng.prickcal.global.handler.PrickcalSelectMenuHandler;
 import io.github.zazalng.prickcal.global.manager.*;
+import io.github.zazalng.prickcal.global.util.CrayonFormatParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.IntegrationType;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.Command;
-import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -151,43 +156,6 @@ public class Prickcal {
     }
 
     private void migrateDatabase(PluginDatabaseManager db) {
-        db.migrate(1, _ -> {
-            TableSchema tb = TableSchema.builder("accounts").fromEntity(Account.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("apostles").fromEntity(Apostle.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("apostle_reviews").fromEntity(ApostleRemarkable.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("apostle_tracks").fromEntity(ApostleTrack.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("crayon_line_ups").fromEntity(CrayonLineUp.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("crayon_records").fromEntity(CrayonRecord.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("gift_acquired").fromEntity(GiftAcquired.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("gift_codes").fromEntity(GiftCode.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("hash_tags").fromEntity(Hashtag.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("logs").fromEntity(Log.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("remarkable_records").fromEntity(RemarkableRecord.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-
-            tb = TableSchema.builder("stage_gear_drops").fromEntity(StageGearDrop.class).build();
-            ctx.log("info", "Creating table '%s': %s".formatted(tb.getTableName(), db.createTable(tb)));
-        });
         db.autoMigrate(Account.class,
                 Apostle.class,
                 ApostleRemarkable.class,
@@ -219,9 +187,6 @@ public class Prickcal {
     }
 
     private void initializeServices() {
-        // -- Standalone services --
-        this.panelBuilder = new PanelBuilder(factory, btnPrefix, modalPrefix, stringMenuPrefix);
-
         // -- RepositoryProvider (standalone interface, not an inner class) --
         JDA jda = ctx.getJDA();
         // ==================== MANAGERS & SERVICES ====================
@@ -229,6 +194,9 @@ public class Prickcal {
 
         // -- Managers --
         this.factory = new ManagerFactory(ctx, repoProvider);
+
+        // -- Standalone services --
+        this.panelBuilder = new PanelBuilder(factory, btnPrefix, modalPrefix, stringMenuPrefix);
 
         // -- Handlers (thin routers) --
         this.prickcalButtonHandler = new PrickcalButtonHandler(
@@ -333,27 +301,22 @@ public class Prickcal {
 
         Optional<Account> account = accountManager.findByUid(uid);
         if (account.isEmpty()) {
-            event.reply(
-                    new MessageCreateBuilder()
-                            .useComponentsV2(true)
-                            .setComponents(panelBuilder.buildConsentPanel())
-                            .build()
-            ).setEphemeral(true).queue();
+            event.replyComponents(panelBuilder.buildConsentPanel()).setEphemeral(true).queue();
             return;
         }
 
         sessionManager.clearUserSession(account.get());
 
         event.getInteraction().getHook().sendMessageEmbeds(
-                panelBuilder.buildMainMenuEmbed(event.getUser(), account.get().getId())
-        ).setEphemeral(true).queue(m -> sessionManager.putControlMessages(uid, m));
+                panelBuilder.buildMainMenuEmbed(event.getUser(), account.get())
+        ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.get().getId(), m));
 
-        event.reply(
-                new MessageCreateBuilder()
+        event.deferReply(true).queue(i ->
+                i.sendMessageComponents(panelBuilder.buildMainMenuComponent())
                         .useComponentsV2(true)
-                        .setComponents(panelBuilder.buildMainMenuComponent())
-                        .build()
-        ).setEphemeral(true).queue();
+                        .setEphemeral(true)
+                        .queue()
+        );
     }
 
     // ==================== CONTEXT MENU ====================
@@ -367,10 +330,15 @@ public class Prickcal {
             integrationContext = {InteractionContextType.GUILD}
     )
     public void ephemeralViewRecord(UserContextInteractionEvent event) {
+        AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        if (account.isEmpty()) {
+            event.replyComponents(panelBuilder.buildConsentPanel()).setEphemeral(true).queue();
+            return;
+        }
+
         User target = event.getTarget();
         String targetUid = target.getId();
-
-        AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
 
         Optional<Account> optAccount = accountManager.findByUid(targetUid);
         if (optAccount.isEmpty()) {
@@ -381,8 +349,157 @@ public class Prickcal {
         }
 
         event.replyEmbeds(
-                panelBuilder.buildMainMenuEmbed(target, optAccount.get().getId())
+                panelBuilder.buildMainMenuEmbed(target, optAccount.get())
         ).setEphemeral(true).queue();
+    }
+
+    @ContextMenu(
+            baseName = "Prickcal",
+            funcName = "Crayon Record",
+            type = Command.Type.MESSAGE,
+            nsfw = false,
+            integrationTo = {IntegrationType.GUILD_INSTALL, IntegrationType.USER_INSTALL},
+            integrationContext = {
+                    InteractionContextType.GUILD,
+                    InteractionContextType.BOT_DM,
+                    InteractionContextType.PRIVATE_CHANNEL
+            }
+    )
+    public void CrayonRecording(MessageContextInteractionEvent event) {
+        AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
+
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+
+        if (account.isEmpty()) {
+            event.replyComponents(panelBuilder.buildConsentPanel())
+                    .setEphemeral(true)
+                    .queue();
+            return;
+        }
+
+        if (!event.getUser().getId().equalsIgnoreCase(event.getTarget().getAuthor().getId())) {
+            event.reply("The user running the interaction is not the author of the target message")
+                    .setEphemeral(true)
+                    .queue(m -> m.deleteOriginal().queueAfter(5, TimeUnit.SECONDS));
+            return;
+        }
+
+        String format = account.get().getCrayonFormat();
+        String message = event.getTarget().getContentStripped();
+
+        Optional<CrayonFormatParser.Result> result =
+                CrayonFormatParser.parse(format, message);
+
+        if (result.isEmpty()) {
+            reject(
+                    event,
+                    "Incorrect format of User '%s'".formatted(format)
+            );
+            return;
+        }
+
+        Map<String, String> values = result.get().values();
+
+        // Make sure the user's format actually contains all required values.
+        if (!values.containsKey("%dd")
+                || !values.containsKey("%dm")
+                || !values.containsKey("%dy")
+                || !values.containsKey("%cs")
+                || !values.containsKey("%ca")) {
+
+            reject(
+                    event,
+                    "Your Crayon Format must contain %%dd, %%dm, %%dy, %%cs and %%ca."
+            );
+            return;
+        }
+
+        try {
+            int day = Integer.parseInt(values.get("%dd"));
+            int month = Integer.parseInt(values.get("%dm"));
+
+            String yearValue = values.get("%dy");
+            int year = yearValue.length() == 2
+                    ? 2000 + Integer.parseInt(yearValue)
+                    : Integer.parseInt(yearValue);
+
+            int candySpent = Integer.parseInt(values.get("%cs"));
+            int crayonAcquired = Integer.parseInt(values.get("%ca"));
+
+            if (candySpent < 20) {
+                reject(
+                        event,
+                        "Candy Spend input '%d' does not reach the minimum of 20."
+                                .formatted(candySpent)
+                );
+                return;
+            }
+
+            if (candySpent % 20 != 0) {
+                reject(
+                        event,
+                        "Candy Spend '%d' is not divisible by 20."
+                                .formatted(candySpent)
+                );
+                return;
+            }
+
+            LocalDate recordDate = LocalDate.of(year, month, day);
+
+            CrayonRecord row = new CrayonRecord();
+
+            row.setUid(account.get().getId());
+
+            if (!event.getTarget().getAttachments().isEmpty()) {
+                row.setImgUrl(
+                        event.getTarget()
+                                .getAttachments()
+                                .getFirst()
+                                .getUrl()
+                );
+            }
+
+            row.setSpent(candySpent);
+            row.setCrayon(crayonAcquired);
+            row.setRecordDate(recordDate);
+
+            factory.getRepos()
+                    .crayonRecords()
+                    .save(row);
+
+            event.getTarget()
+                    .removeReaction(
+                            Emoji.fromUnicode("❌"),
+                            event.getJDA().getSelfUser()
+                    )
+                    .queue();
+
+            event.getTarget()
+                    .addReaction(Emoji.fromUnicode("✅"))
+                    .queue();
+
+            event.reply("Success")
+                    .setEphemeral(true)
+                    .flatMap(InteractionHook::deleteOriginal)
+                    .queue();
+        } catch (DateTimeException ex) {
+            reject(
+                    event,
+                    "Date dd (%s), dm (%s), dy (%s) cannot be parsed into a valid LocalDate."
+                            .formatted(
+                                    values.get("%dd"),
+                                    values.get("%dm"),
+                                    values.get("%dy")
+                            )
+            );
+
+        } catch (NumberFormatException ex) {
+            reject(
+                    event,
+                    "NumberFormatException: '%s'"
+                            .formatted(ex.getMessage())
+            );
+        }
     }
 
     // ==================== HANDLER ROUTERS ====================
@@ -400,5 +517,24 @@ public class Prickcal {
     @group.worldstandard.pudel.api.annotation.SelectMenuHandler(":string:")
     public void handleSelectMenu(StringSelectInteractionEvent event) {
         prickcalSelectMenuHandler.handle(event);
+    }
+
+    // ==================== HELPER ====================
+
+    private void reject(
+            MessageContextInteractionEvent event,
+            String reason
+    ) {
+        event.getTarget()
+                .addReaction(Emoji.fromUnicode("❌"))
+                .queue();
+
+        event.getUser()
+                .openPrivateChannel()
+                .queue(channel ->
+                        channel.sendMessage(
+                                "Operation Error: " + reason
+                        ).queue(m -> m.delete().queueAfter(5, TimeUnit.SECONDS))
+                );
     }
 }

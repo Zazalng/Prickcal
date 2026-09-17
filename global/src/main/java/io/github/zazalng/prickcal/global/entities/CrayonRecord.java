@@ -21,6 +21,7 @@ import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity(tableName = "crayon_records")
 public class CrayonRecord {
@@ -34,6 +35,8 @@ public class CrayonRecord {
     private int spent;
     @Column
     private int crayon;
+    @Column
+    private LocalDate recordDate;
     @Column
     private Instant createdAt;
     @Column
@@ -93,5 +96,13 @@ public class CrayonRecord {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDate getRecordDate() {
+        return recordDate;
+    }
+
+    public void setRecordDate(LocalDate recordDate) {
+        this.recordDate = recordDate;
     }
 }

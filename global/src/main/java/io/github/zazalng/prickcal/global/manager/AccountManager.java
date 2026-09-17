@@ -87,12 +87,12 @@ public class AccountManager extends AbstractManager {
     }
 
     /** Create a new account (consent agreement). Logs the creation. */
-    public Account createAccount(String uid, String logInitiatorUid) {
+    public Account createAccount(String logInitiatorUid, String uid) {
         Account account = new Account();
         account.setUid(uid);
         account.setOps(Operator.defaultUser());
         account = repo.save(account);
-        logRecord(logInitiatorUid, Action.CREATE,
+        logRecord(0, Action.CREATE,
                 "<@" + logInitiatorUid + "> created account for <@" + uid + "> (given access '" + Operator.fromValue(Operator.defaultUser()).name() + "')");
         return account;
     }
@@ -112,6 +112,8 @@ public class AccountManager extends AbstractManager {
     }
 
     public String crayonCountByStats(Long id, CrayonStats stats) {
+        if (stats == CrayonStats.UNKNOWN) return "-1,-1";
+
         List<ApostleTrack> userApostles = apostleManager().findTracks(findById(id));
         if (userApostles == null || userApostles.isEmpty()) {
             return "0,0";
@@ -125,13 +127,13 @@ public class AccountManager extends AbstractManager {
                 continue;
             }
 
-            CrayonLineUp lineup = apostleManager().findLineUp(track.getApostleId());
+            CrayonLineUp lineup = apostleManager().findLineUp(apostleManager().findById(track.getApostleId()));
             if (!lineup.isValid()) {
                 throw new PrickcalException(PrickcalEnum.INVALID_CRAYONLINEUP, String.valueOf(lineup.getId()));
             }
 
             List<Short> lineUpList = lineup.getLineUp();
-            List<Short> depthList = lineup.getDepth();
+            List<Integer> depthList = lineup.getDepth();
 
             if (lineUpList == null || depthList == null) {
                 continue;
@@ -142,7 +144,7 @@ public class AccountManager extends AbstractManager {
 
             for (int i = 0; i < limit; i++) {
                 Short targetStat = lineUpList.get(i);
-                Short depthValue = depthList.get(i);
+                Integer depthValue = depthList.get(i);
 
                 if (targetStat == null || depthValue == null || stats.getNo() != targetStat) {
                     continue;
@@ -150,8 +152,10 @@ public class AccountManager extends AbstractManager {
 
                 CrayonCosts cost = CrayonCosts.fromDepth(depthValue);
                 if (cost != null) {
-                    totalAmount += cost.getAmount();
-                    totalPrice += cost.getPrice();
+                    if (track.getCrayons().get(i)) {
+                        totalAmount += cost.getAmount();
+                        totalPrice += cost.getPrice();
+                    }
                 }
             }
         }
@@ -184,7 +188,7 @@ public class AccountManager extends AbstractManager {
     }
 
     public int getApostleOwned(Account account) {
-        return Math.toIntExact(repos.apostleTrackers().countBy("uid", account.getId()));
+        return Math.toIntExact(repos.apostleTrackers().query().where("uid", account.getId()).whereNot("current_star", 0).list().size());
     }
 
     /**
@@ -240,7 +244,7 @@ public class AccountManager extends AbstractManager {
         repo.delete(account.get());
         count++;
 
-        logDeleted(uid, "a User has deleted all their data (" + count + " records)");
+        logDeleted(account.get().getId(), "a User has deleted all their data (" + count + " records)");
         return account.get();
     }
 }

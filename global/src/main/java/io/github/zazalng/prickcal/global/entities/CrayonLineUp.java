@@ -19,7 +19,7 @@ package io.github.zazalng.prickcal.global.entities;
 
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
-import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
+import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonCosts;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -195,8 +195,16 @@ public class CrayonLineUp {
      *
      * @return Depth Array match House Level
      */
-    public List<Short> getDepth() {
-        return Arrays.asList((short) 1, (short) 1, (short) 2, (short) 2, (short) 2, (short) 3, (short) 3, (short) 3, (short) 3);
+    public List<Integer> getDepth() {
+        return Arrays.asList(1, 1, 2, 2, 2, 3, 3, 3, 3);
+    }
+
+    public int totalCost() {
+        int totalCost = 0;
+        for (int i = 0; i < getLineUp().size(); i++) {
+            totalCost += CrayonCosts.fromDepth(getDepth().get(i)).getPrice();
+        }
+        return totalCost;
     }
 
     /**
@@ -204,24 +212,5 @@ public class CrayonLineUp {
      */
     public boolean isValid() {
         return !getLineUp().contains((short) 0);
-    }
-
-    public String crayonHousing(ApostleTrack track) {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < 3; i++) {
-            int houseNumber = i + 1;
-            sb.append("%d. House-%d\n".formatted(houseNumber, houseNumber));
-
-            int itemIndex = 1; // Resets numbering for each house
-
-            for (int j = 0; j < getDepth().size(); j++) {
-                if (getDepth().get(j) == houseNumber) {
-                    sb.append(" %d. %s (%s)\n".formatted(itemIndex++, CrayonStats.fromNo(getLineUp().get(j)).getName(), track.getCrayons().get(j) ? "Unlock" : "Locked"));
-                }
-            }
-        }
-
-        return sb.toString();
     }
 }

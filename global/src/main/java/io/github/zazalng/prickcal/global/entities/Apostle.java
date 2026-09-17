@@ -201,7 +201,7 @@ public class Apostle {
     }
 
     public String trueName() {
-        return "%s %s".formatted(getName(), getElydn() == null ? ":six_pointed_star: %s".formatted(getElydn()) : ":star_of_david:");
+        return "%s %s".formatted(getName(), getElydn() == null ? ":star_of_david:" : ":six_pointed_star: %s".formatted(getElydn()));
     }
 
     public String missingPiece(ApostleTrack track) {
@@ -211,5 +211,10 @@ public class Apostle {
         } else {
             return " (Missing %d Pieces)".formatted(missingPiece);
         }
+    }
+
+    public String missingPiece() {
+        int missingPiece = StarUpAmount.missingPiece(getInit(), getMax());
+        return String.valueOf(missingPiece);
     }
 }

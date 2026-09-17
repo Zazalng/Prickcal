@@ -41,7 +41,7 @@ public enum GearType implements EnumInterface {
         this(no, name, true);
     }
 
-    public static GearType fromId(short no) {
+    public static GearType fromNo(short no) {
         for(GearType g:GearType.values()){
             if (no == g.no) return g;
         }
