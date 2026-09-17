@@ -117,11 +117,16 @@ public class SessionManager extends AbstractManager {
     }
 
     // ==================== Switching Search ====================
-
+    /**
+     * {Apostle.name, StartIndexPagination, EndIndexPagination, RaceFilter, ColorFilter, PositionFilter, Apostle.id}
+     */
     public void setApostleSearch(Long userId, List<String> config) {
         apostleSearch.put(userId, config);
     }
 
+    /**
+     * {Apostle.name, StartIndexPagination, EndIndexPagination, RaceFilter, ColorFilter, PositionFilter, Apostle.id}
+     */
     public List<String> getApostleSearch(Long userId) {
         return apostleSearch.computeIfAbsent(userId, _ -> new ArrayList<>(Arrays.asList("", "1", "23", "", "", "", "")));
     }
@@ -132,19 +137,23 @@ public class SessionManager extends AbstractManager {
 
     // ==================== BULK CLEANUP ====================
 
-    public void clearUserSession(Account account) {
+    public SessionManager clearUserSession(Account account) {
         //Discord Session
         removeControlMessages(account.getId());
         //Prickcal Session
         removeCurrentApostle(account.getId());
         removeCrayonToggleState(account.getId());
         removeApostleSearch(account.getId());
+
+        return this;
     }
 
-    public void clearAllSessions() {
+    public SessionManager clearAllSessions() {
         controlMessages.clear();
         apostleSearch.clear();
         currentApostle.clear();
         crayonToggleState.clear();
+
+        return this;
     }
 }

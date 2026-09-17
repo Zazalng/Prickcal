@@ -178,11 +178,11 @@ public class PanelBuilder {
             BigDecimal crayonRate;
             {
                 BigDecimal denominator = candySpend.divide(BigDecimal.valueOf(20), 0, RoundingMode.UP);
-                crayonRate = denominator.signum() == 0 ? BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP) : crayonAcquired.divide(denominator, 4, RoundingMode.HALF_UP);
+                crayonRate = denominator.signum() == 0 ? BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP) : crayonAcquired.divide(denominator, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100.00")).setScale(2, RoundingMode.HALF_UP);
             }
             embed.addField("Candy Spent", candySpend.toPlainString(), true);
             embed.addField("Crayon Acquired", crayonAcquired.toPlainString(), true);
-            embed.addField("Crayon Rate", crayonRate.toPlainString(), true);
+            embed.addField("Crayon Rate", "%s%%".formatted(crayonRate.toPlainString()), true);
         }
 
         return embed.build();
@@ -196,7 +196,7 @@ public class PanelBuilder {
                         Button.primary(btnPrefix + "apostle", "👤 Apostle"),
                         Button.secondary(btnPrefix + "import_export", "📦 Import/Export"),
                         Button.success(btnPrefix + "post_profile", "📢 Post Profile"),
-                        Button.secondary(btnPrefix + "refresh_embed", "Refresh")
+                        Button.secondary(btnPrefix + "back_main", "Refresh")
                 ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "database", "🗄️ Database"),
@@ -307,13 +307,17 @@ public class PanelBuilder {
     }
 
     public Container buildApostleComponent(Account account, Apostle apostle) {
-        ApostleTrack track = apostleManager.findTrack(account, apostle);
         String[] houseLabels = {"1A", "1B", "2A", "2B", "2C", "3A", "3B", "3C", "3D"};
-        sessionManager.setCrayonToggleState(account.getId(), track.getCrayons());
 
-        ActionRow row1 = buildCrayonRow(0, 3, track, houseLabels);
-        ActionRow row2 = buildCrayonRow(3, 6, track, houseLabels);
-        ActionRow row3 = buildCrayonRow(6, 9, track, houseLabels);
+        if(sessionManager.getCrayonToggleState(account.getId()) == null) {
+            sessionManager.setCrayonToggleState(account.getId(), apostleManager.findTrack(account, apostle).getCrayons());
+        }
+
+        List<Boolean> state = sessionManager.getCrayonToggleState(account.getId());
+
+        ActionRow row1 = buildCrayonRow(0, 3, state, houseLabels);
+        ActionRow row2 = buildCrayonRow(3, 6, state, houseLabels);
+        ActionRow row3 = buildCrayonRow(6, 9, state, houseLabels);
 
         return Container.of(
                 TextDisplay.of("### 🖍️ Crayon Grid — " + apostle.getName()),
@@ -334,14 +338,17 @@ public class PanelBuilder {
                 ActionRow.of(
                         Button.secondary(btnPrefix + "post_apostle", "📢 Post Apostle"),
                         Button.secondary(btnPrefix + "post_tracker", "📢 Post Tracking")
+                ),
+                ActionRow.of(
+                        Button.primary(btnPrefix + "back_main", "⬅️ Back")
                 )
         ).withAccentColor(ApostleColor.fromNo(apostle.getColor()).getColor());
     }
 
-    private ActionRow buildCrayonRow(int start, int end, ApostleTrack track, String[] labels) {
+    private ActionRow buildCrayonRow(int start, int end, List<Boolean> state, String[] labels) {
         List<Button> buttons = new ArrayList<>();
         for (int i = start; i < end; i++) {
-            boolean acquired = track.getCrayons().get(i);
+            boolean acquired = state.get(i);
             String label = labels[i] + " " + (acquired ? "✅" : "⬜");
             String btnId = btnPrefix + "crayon_toggle_" + i;
             if (acquired) {
@@ -440,7 +447,9 @@ public class PanelBuilder {
         if (cacheResult.isEmpty()) {
             searchResult = apostleManager.listAll();
         } else {
-            searchResult = factory.getRepos().apostles().query().whereIn("id", Arrays.stream(cacheResult.split(",")).toList()).list();
+            searchResult = factory.getRepos().apostles().query()
+                    .whereIn("id", Arrays.stream(cacheResult.split(",")).toList())
+                    .list();
         }
 
         if (searchResult.size() == 1) {
@@ -448,8 +457,9 @@ public class PanelBuilder {
             return buildApostleComponent(account, searchResult.getFirst());
         }
 
-        int limit = Math.min(searchResult.size(), 23);
-        boolean requirePagination = searchResult.size() > 23;
+        int startIndex = Integer.parseInt(apostleSearch.get(1));
+        int newIndex = startIndex;
+        int limit = Math.min(searchResult.size()-startIndex, 23);
 
         StringSelectMenu.Builder menu = StringSelectMenu.create(stringMenuPrefix + "select_apostle")
                 .setPlaceholder("Select an Apostle to view")
@@ -457,6 +467,22 @@ public class PanelBuilder {
                 .setRequiredRange(1, 1)
                 .setRequired(true);
 
+        if(startIndex != 1) {
+            menu.addOption("\uD83D\uDD3C---Previous---\uD83D\uDD3C", "pagination:-1");
+        }
+
+        for(int i = 0; i < limit; i++) {
+            menu.addOption(searchResult.get(i+startIndex).getName(), String.valueOf(searchResult.get(i+startIndex).getId()));
+            newIndex++;
+        }
+
+        if(searchResult.size()-startIndex > 23){
+            menu.addOption("\uD83D\uDD3D---Next---\uD83D\uDD3D", "pagination:1");
+            apostleSearch.set(2, String.valueOf(newIndex));
+            sessionManager.setApostleSearch(account.getId(), apostleSearch);
+        } else {
+            menu.addOption(searchResult.getLast().getName(), String.valueOf(searchResult.getLast().getId()));
+        }
 
         return Container.of(
                 TextDisplay.of("# 🔀 Switch Apostle\nSelect an apostle to view its crayon grid:"),

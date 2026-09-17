@@ -24,6 +24,7 @@ import io.github.zazalng.prickcal.global.entities.ApostleTrack;
 import io.github.zazalng.prickcal.global.manager.*;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -53,16 +54,36 @@ public class PrickcalSelectMenuHandler {
         String userId = event.getUser().getId();
 
         switch (menuId) {
-            case "select_apostle" -> handleSelectApostle(event, userId);
+            case "select_apostle" -> handleSelectApostle(event);
         }
     }
 
     // ==================== SELECT APOSTLE ====================
 
-    private void handleSelectApostle(StringSelectInteractionEvent event, String userId) {
+    private void handleSelectApostle(StringSelectInteractionEvent event) {
         if (event.getValues().isEmpty()) return;
+
+        String value = event.getValues().getFirst();
+
         Optional<Account> account = accountManager.findByUid(event.getUser().getId());
         if (account.isEmpty()) return;
+
+        if(value.contains("pagination")) {
+            int upDown = Integer.parseInt(value.substring("pagination".length()+1));
+            List<String> config = sessionManager.getApostleSearch(account.get().getId());
+
+            if(upDown <= 0) {
+
+            } else {
+
+            }
+            event.deferEdit().queue(i ->
+                    i.editOriginalComponents(
+                                    panelBuilder.buildApostleListPanel(account.get()))
+                            .useComponentsV2()
+                            .queue()
+            );
+        }
 
         Apostle apostle = apostleManager.findById(Long.parseLong(event.getValues().getFirst()));
 
@@ -71,9 +92,11 @@ public class PrickcalSelectMenuHandler {
 
         sessionManager.setCrayonToggleState(account.get().getId(), track.getCrayons());
 
-        event.getHook().editOriginalComponents(
-                panelBuilder.buildApostleComponent(account.get(), apostle)
-        ).queue();
+        event.deferEdit().queue(i ->
+                i.editOriginalComponents(panelBuilder.buildApostleComponent(account.get(), apostle))
+                        .useComponentsV2(true)
+                        .queue()
+        );
 
         if (sessionManager.getControlMessages(account.get().getId()) != null) {
             event.getHook().editMessageEmbedsById(sessionManager.getControlMessages(account.get().getId()).getId(),

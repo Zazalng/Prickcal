@@ -159,12 +159,12 @@ public class PrickcalButtonHandler {
 
     private void showApostlePanel(ButtonInteractionEvent event, Account account, Apostle apostle) {
         event.deferEdit().queue(i ->
-                i.editOriginalComponents(panelBuilder.buildApostleComponent(account, apostle)).useComponentsV2(true).queue()
+                i.editOriginalComponents(panelBuilder.buildApostleComponent(account, apostle))
+                        .useComponentsV2(true)
+                        .queue()
         );
 
-        Message oldMessage = sessionManager.getControlMessages(account.getId());
-
-        event.getHook().editMessageEmbedsById(oldMessage.getId(),
+        event.getHook().editMessageEmbedsById(sessionManager.getControlMessages(account.getId()).getId(),
                 panelBuilder.buildTrackEmbed(account, apostle)
         ).queue(
                 m -> sessionManager.setControlMessages(account.getId(), m)
@@ -187,9 +187,7 @@ public class PrickcalButtonHandler {
         Apostle apostle = sessionManager.getCurrentApostle(account.get().getId());
         if (apostle == null) return;
 
-        event.getHook().editOriginalComponents(
-                panelBuilder.buildApostleComponent(account.get(), apostle)
-        ).queue();
+        showApostlePanel(event, account.get(), apostle);
     }
 
     // ==================== CRAYON CONFIRM ====================
@@ -206,11 +204,7 @@ public class PrickcalButtonHandler {
 
         apostleManager.confirmCrayon(account.get(), apostle, state);
 
-        event.getHook().editOriginal("✅ Crayon data saved for **" + apostle.getName() + "**!").queue(
-                m -> m.editMessageComponents(
-                        panelBuilder.buildApostleComponent(account.get(), apostle)
-                ).queueAfter(5, TimeUnit.SECONDS)
-        );
+        showApostlePanel(event, account.get(), apostle);
     }
 
     // ==================== CRAYON RESET ====================
@@ -234,9 +228,12 @@ public class PrickcalButtonHandler {
         Optional<Account> account = accountManager.findByUid(event.getUser().getId());
         if (account.isEmpty()) return;
 
-        event.getHook().editOriginalComponents(
-                panelBuilder.buildApostleListPanel(account.get())
-        ).queue();
+        event.deferEdit().queue(i ->
+                i.editOriginalComponents(
+                    panelBuilder.buildApostleListPanel(account.get()))
+                        .useComponentsV2()
+                        .queue()
+        );
 
         if (sessionManager.getControlMessages(account.get().getId()) != null) {
             event.getHook().editMessageEmbedsById(sessionManager.getControlMessages(account.get().getId()).getId(),
@@ -333,11 +330,10 @@ public class PrickcalButtonHandler {
     // ==================== PUBLIC POST ====================
 
     private void handlePostApostle(ButtonInteractionEvent event) {
-        TextChannel channel = event.getChannel().asTextChannel();
         var optAccount = accountManager.findByUid(event.getUser().getId());
         if (optAccount.isEmpty()) return;
 
-        channel.sendMessageEmbeds(panelBuilder.buildApostleEmbed(sessionManager.getCurrentApostle(optAccount.get().getId()))).queue();
+        event.getInteraction().getChannel().sendMessageEmbeds(panelBuilder.buildApostleEmbed(sessionManager.getCurrentApostle(optAccount.get().getId()))).queue();
 
         event.reply("Success")
                 .setEphemeral(true)
@@ -346,11 +342,10 @@ public class PrickcalButtonHandler {
     }
 
     private void handlePostTracker(ButtonInteractionEvent event) {
-        TextChannel channel = event.getChannel().asTextChannel();
         var optAccount = accountManager.findByUid(event.getUser().getId());
         if (optAccount.isEmpty()) return;
 
-        channel.sendMessageEmbeds(panelBuilder.buildTrackEmbed(optAccount.get(), sessionManager.getCurrentApostle(optAccount.get().getId()))).queue();
+        event.getInteraction().getChannel().sendMessageEmbeds(panelBuilder.buildTrackEmbed(optAccount.get(), sessionManager.getCurrentApostle(optAccount.get().getId()))).queue();
 
         event.reply("Success")
                 .setEphemeral(true)
@@ -359,11 +354,10 @@ public class PrickcalButtonHandler {
     }
 
     private void handlePostProfile(ButtonInteractionEvent event) {
-        TextChannel channel = event.getChannel().asTextChannel();
         var optAccount = accountManager.findByUid(event.getUser().getId());
         if (optAccount.isEmpty()) return;
 
-        channel.sendMessageEmbeds(panelBuilder.buildMainMenuEmbed(event.getUser(), optAccount.get())).queue();
+        event.getInteraction().getChannel().sendMessageEmbeds(panelBuilder.buildMainMenuEmbed(event.getUser(), optAccount.get())).queue();
 
         event.reply("Success")
                 .setEphemeral(true)
@@ -402,15 +396,17 @@ public class PrickcalButtonHandler {
         Optional<Account> account = accountManager.findByUid(event.getUser().getId());
         if (account.isEmpty()) return;
 
-        event.getHook().editOriginalComponents(
-                panelBuilder.buildMainMenuComponent()
-        ).queue();
+        event.deferEdit().queue(i ->
+                i.editOriginalComponents(panelBuilder.buildMainMenuComponent())
+                        .useComponentsV2(true)
+                        .queue()
+        );
+
 
         if (sessionManager.getControlMessages(account.get().getId()) != null) {
-            sessionManager.clearUserSession(account.get());
             event.getHook().editMessageEmbedsById(sessionManager.getControlMessages(account.get().getId()).getId(),
                     panelBuilder.buildMainMenuEmbed(event.getUser(), account.get())
-            ).queue(m -> sessionManager.setControlMessages(account.get().getId(), m));
+            ).queue(m -> sessionManager.clearUserSession(account.get()).setControlMessages(account.get().getId(), m));
         }
     }
 }

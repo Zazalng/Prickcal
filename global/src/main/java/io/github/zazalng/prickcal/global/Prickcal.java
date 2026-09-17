@@ -41,6 +41,8 @@ import net.dv8tion.jda.api.interactions.IntegrationType;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -289,34 +291,56 @@ public class Prickcal {
     @SlashCommand(
             name = "prickcal",
             description = "Open Control Panel for personal tracking.",
+            options = {
+                    @CommandOption(
+                            name = "string_record",
+                            description = "Take input as recording crayon process.",
+                            type = OptionType.STRING
+                    )
+            },
             nsfw = false,
             integrationTo = {IntegrationType.USER_INSTALL, IntegrationType.GUILD_INSTALL},
             integrationContext = {InteractionContextType.GUILD, InteractionContextType.BOT_DM}
     )
     public void openMainControlPoint(SlashCommandInteractionEvent event) {
-        String uid = event.getUser().getId();
-
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
-        SessionManager sessionManager = factory.getManager(ManagersEnum.SESSION);
 
-        Optional<Account> account = accountManager.findByUid(uid);
+        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
         if (account.isEmpty()) {
             event.replyComponents(panelBuilder.buildConsentPanel()).setEphemeral(true).queue();
             return;
         }
 
-        sessionManager.clearUserSession(account.get());
+        OptionMapping mapping = event.getOption("string_record");
 
-        event.getInteraction().getHook().sendMessageEmbeds(
-                panelBuilder.buildMainMenuEmbed(event.getUser(), account.get())
-        ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.get().getId(), m));
+        if(mapping == null){
+            SessionManager sessionManager = factory.getManager(ManagersEnum.SESSION);
+            sessionManager.clearUserSession(account.get());
 
-        event.deferReply(true).queue(i ->
-                i.sendMessageComponents(panelBuilder.buildMainMenuComponent())
-                        .useComponentsV2(true)
-                        .setEphemeral(true)
-                        .queue()
-        );
+            event.getInteraction().getHook().sendMessageEmbeds(
+                    panelBuilder.buildMainMenuEmbed(event.getUser(), account.get())
+            ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.get().getId(), m));
+
+            event.deferReply(true).queue(i ->
+                    i.sendMessageComponents(panelBuilder.buildMainMenuComponent())
+                            .useComponentsV2(true)
+                            .setEphemeral(true)
+                            .queue()
+            );
+        } else {
+            String format = account.get().getCrayonFormat();
+            String message = mapping.getAsString();
+            String result = parsingRecordCrayon(account.get(), format, message, null);
+
+            if(!result.isEmpty()){
+                sendPrivateMessage(event.getUser(), result);
+            }
+
+            event.reply("Success")
+                    .setEphemeral(true)
+                    .flatMap(InteractionHook::deleteOriginal)
+                    .queue();
+        }
     }
 
     // ==================== CONTEXT MENU ====================
@@ -386,87 +410,12 @@ public class Prickcal {
 
         String format = account.get().getCrayonFormat();
         String message = event.getTarget().getContentStripped();
+        String result = parsingRecordCrayon(account.get(), format, message, event.getTarget().getAttachments().getFirst().getUrl());
 
-        Optional<CrayonFormatParser.Result> result =
-                CrayonFormatParser.parse(format, message);
-
-        if (result.isEmpty()) {
-            reject(
-                    event,
-                    "Incorrect format of User '%s'".formatted(format)
-            );
+        if(!result.isEmpty()){
+            reject(event, result);
             return;
-        }
-
-        Map<String, String> values = result.get().values();
-
-        // Make sure the user's format actually contains all required values.
-        if (!values.containsKey("%dd")
-                || !values.containsKey("%dm")
-                || !values.containsKey("%dy")
-                || !values.containsKey("%cs")
-                || !values.containsKey("%ca")) {
-
-            reject(
-                    event,
-                    "Your Crayon Format must contain %%dd, %%dm, %%dy, %%cs and %%ca."
-            );
-            return;
-        }
-
-        try {
-            int day = Integer.parseInt(values.get("%dd"));
-            int month = Integer.parseInt(values.get("%dm"));
-
-            String yearValue = values.get("%dy");
-            int year = yearValue.length() == 2
-                    ? 2000 + Integer.parseInt(yearValue)
-                    : Integer.parseInt(yearValue);
-
-            int candySpent = Integer.parseInt(values.get("%cs"));
-            int crayonAcquired = Integer.parseInt(values.get("%ca"));
-
-            if (candySpent < 20) {
-                reject(
-                        event,
-                        "Candy Spend input '%d' does not reach the minimum of 20."
-                                .formatted(candySpent)
-                );
-                return;
-            }
-
-            if (candySpent % 20 != 0) {
-                reject(
-                        event,
-                        "Candy Spend '%d' is not divisible by 20."
-                                .formatted(candySpent)
-                );
-                return;
-            }
-
-            LocalDate recordDate = LocalDate.of(year, month, day);
-
-            CrayonRecord row = new CrayonRecord();
-
-            row.setUid(account.get().getId());
-
-            if (!event.getTarget().getAttachments().isEmpty()) {
-                row.setImgUrl(
-                        event.getTarget()
-                                .getAttachments()
-                                .getFirst()
-                                .getUrl()
-                );
-            }
-
-            row.setSpent(candySpent);
-            row.setCrayon(crayonAcquired);
-            row.setRecordDate(recordDate);
-
-            factory.getRepos()
-                    .crayonRecords()
-                    .save(row);
-
+        } else {
             event.getTarget()
                     .removeReaction(
                             Emoji.fromUnicode("❌"),
@@ -477,29 +426,12 @@ public class Prickcal {
             event.getTarget()
                     .addReaction(Emoji.fromUnicode("✅"))
                     .queue();
-
-            event.reply("Success")
-                    .setEphemeral(true)
-                    .flatMap(InteractionHook::deleteOriginal)
-                    .queue();
-        } catch (DateTimeException ex) {
-            reject(
-                    event,
-                    "Date dd (%s), dm (%s), dy (%s) cannot be parsed into a valid LocalDate."
-                            .formatted(
-                                    values.get("%dd"),
-                                    values.get("%dm"),
-                                    values.get("%dy")
-                            )
-            );
-
-        } catch (NumberFormatException ex) {
-            reject(
-                    event,
-                    "NumberFormatException: '%s'"
-                            .formatted(ex.getMessage())
-            );
         }
+
+        event.reply("Success")
+                .setEphemeral(true)
+                .flatMap(InteractionHook::deleteOriginal)
+                .queue();
     }
 
     // ==================== HANDLER ROUTERS ====================
@@ -521,16 +453,82 @@ public class Prickcal {
 
     // ==================== HELPER ====================
 
+    private String parsingRecordCrayon(Account account, String format, String message, String url) {
+        Optional<CrayonFormatParser.Result> result =
+                CrayonFormatParser.parse(format, message);
+
+        if (result.isEmpty()) {
+            return "Incorrect format of User '%s'".formatted(format);
+        }
+
+        Map<String, String> values = result.get().values();
+
+        // Make sure the user's format actually contains all required values.
+        if (!values.containsKey("%dd")
+                || !values.containsKey("%dm")
+                || !values.containsKey("%dy")
+                || !values.containsKey("%cs")
+                || !values.containsKey("%ca")) {
+
+            return "Your Crayon Format must contain %%dd, %%dm, %%dy, %%cs and %%ca.";
+        }
+
+        try {
+            int day = Integer.parseInt(values.get("%dd"));
+            int month = Integer.parseInt(values.get("%dm"));
+
+            String yearValue = values.get("%dy");
+            int year = yearValue.length() == 2
+                    ? 2000 + Integer.parseInt(yearValue)
+                    : Integer.parseInt(yearValue);
+
+            int candySpent = Integer.parseInt(values.get("%cs"));
+            int crayonAcquired = Integer.parseInt(values.get("%ca"));
+
+            if (candySpent < 20) {
+                return "Candy Spend input '%d' does not reach the minimum of 20.".formatted(candySpent);
+            }
+
+            if (candySpent % 20 != 0) {
+                return"Candy Spend '%d' is not divisible by 20.".formatted(candySpent);
+            }
+
+            LocalDate recordDate = LocalDate.of(year, month, day);
+
+            CrayonRecord row = new CrayonRecord();
+
+            row.setUid(account.getId());
+            row.setImgUrl(url);
+            row.setSpent(candySpent);
+            row.setCrayon(crayonAcquired);
+            row.setRecordDate(recordDate);
+
+            factory.getRepos()
+                    .crayonRecords()
+                    .save(row);
+        } catch (DateTimeException ex) {
+            return "Date dd (%s), dm (%s), dy (%s) cannot be parsed into a valid LocalDate.".formatted(
+                                    values.get("%dd"),
+                                    values.get("%dm"),
+                                    values.get("%dy")
+            );
+        } catch (NumberFormatException ex) {
+            return "NumberFormatException: '%s'".formatted(ex.getMessage());
+        }
+
+        return "";
+    }
+
     private void reject(
             MessageContextInteractionEvent event,
             String reason
     ) {
-        event.getTarget()
-                .addReaction(Emoji.fromUnicode("❌"))
-                .queue();
+        event.getTarget().addReaction(Emoji.fromUnicode("❌")).queue();
+        sendPrivateMessage(event.getUser(), reason);
+    }
 
-        event.getUser()
-                .openPrivateChannel()
+    private void sendPrivateMessage(User user, String reason){
+        user.openPrivateChannel()
                 .queue(channel ->
                         channel.sendMessage(
                                 "Operation Error: " + reason
