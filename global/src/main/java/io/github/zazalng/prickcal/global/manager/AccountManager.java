@@ -33,9 +33,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Manages Account lifecycle: consent, lookup, profile access, and deletion.
- */
 public class AccountManager extends AbstractManager {
     private final PluginRepository<Account> repo;
 

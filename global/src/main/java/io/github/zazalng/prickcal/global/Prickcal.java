@@ -299,15 +299,15 @@ public class Prickcal {
                     )
             },
             nsfw = false,
-            integrationTo = {IntegrationType.USER_INSTALL, IntegrationType.GUILD_INSTALL},
-            integrationContext = {InteractionContextType.GUILD, InteractionContextType.BOT_DM}
+            integrationTo = {IntegrationType.GUILD_INSTALL, IntegrationType.USER_INSTALL},
+            integrationContext = {InteractionContextType.GUILD, InteractionContextType.BOT_DM, InteractionContextType.PRIVATE_CHANNEL}
     )
     public void openMainControlPoint(SlashCommandInteractionEvent event) {
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
 
         Optional<Account> account = accountManager.findByUid(event.getUser().getId());
         if (account.isEmpty()) {
-            event.replyComponents(panelBuilder.buildConsentPanel()).setEphemeral(true).queue();
+            event.replyComponents(panelBuilder.buildConsentPanel()).useComponentsV2(true).setEphemeral(true).queue();
             return;
         }
 

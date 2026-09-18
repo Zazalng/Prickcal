@@ -17,13 +17,12 @@
  */
 package io.github.zazalng.prickcal.global.manager;
 
+import io.github.zazalng.prickcal.global.dto.ApostleSearch;
 import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.Apostle;
+import io.github.zazalng.prickcal.global.entities.ApostleTrack;
 import net.dv8tion.jda.api.entities.Message;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,6 +32,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SessionManager extends AbstractManager {
     /**
+     * Cache account of user of plugin give advantage efficiency optimize.
+     */
+    private final Map<String, Account> accountCache = new ConcurrentHashMap<>();
+    /**
      * Control panel messages per user (userId -> embedMessage).
      */
     private final Map<Long, Message> controlMessages = new ConcurrentHashMap<>();
@@ -41,14 +44,14 @@ public class SessionManager extends AbstractManager {
      */
     private final Map<Long, Apostle> currentApostle = new ConcurrentHashMap<>();
     /**
-     * Current crayon toggle state per user (userId -> boolean[9]).
+     * Cache state of {@link ApostleTrack}
      */
-    private final Map<Long, List<Boolean>> crayonToggleState = new ConcurrentHashMap<>();
+    private final Map<Long, ApostleTrack> trackedApostleState = new ConcurrentHashMap<>();
     /**
      * Apostle search configuration per user.
-     * {inputText ,startIndex, startIndex+23, personality no, position no, race no, cache result}
+     * {inputText ,startIndex, unused_yet, personality no, position no, race no, cache result}
      */
-    private final Map<Long, List<String>> apostleSearch = new ConcurrentHashMap<>();
+    private final Map<Long, ApostleSearch> apostleSearch = new ConcurrentHashMap<>();
 
     protected SessionManager(ManagerFactory factory) {
         super(factory);
@@ -76,8 +79,9 @@ public class SessionManager extends AbstractManager {
 
     // ==================== CONTROL MESSAGES ====================
 
-    public void setControlMessages(Long userId, Message messages) {
+    public SessionManager setControlMessages(Long userId, Message messages) {
         controlMessages.put(userId, messages);
+        return this;
     }
 
     public Message getControlMessages(Long userId) {
@@ -90,49 +94,47 @@ public class SessionManager extends AbstractManager {
 
     // ==================== CURRENT APOSTLE ====================
 
-    public void setCurrentApostle(Long userId, Apostle apostle) {
+    public SessionManager setCurrentApostle(Long userId, Apostle apostle) {
         currentApostle.put(userId, apostle);
+        return this;
     }
 
     public Apostle getCurrentApostle(Long userId) {
         return currentApostle.get(userId);
     }
 
-    public void removeCurrentApostle(Long userId) {
-        currentApostle.remove(userId);
+    public Apostle removeCurrentApostle(Long userId) {
+        return currentApostle.remove(userId);
     }
 
     // ==================== CRAYON TOGGLE STATE ====================
 
-    public void setCrayonToggleState(Long userId, List<Boolean> state) {
-        crayonToggleState.put(userId, state);
+    public SessionManager setApostleTrackState(Long userId, ApostleTrack state) {
+        trackedApostleState.put(userId, state);
+        return this;
     }
 
-    public List<Boolean> getCrayonToggleState(Long userId) {
-        return crayonToggleState.get(userId);
+    public ApostleTrack getApostleTrackState(Long userId) {
+        return trackedApostleState.get(userId);
     }
 
-    public void removeCrayonToggleState(Long userId) {
-        crayonToggleState.remove(userId);
+    public ApostleTrack removeApostleTrackState(Long userId) {
+        return trackedApostleState.remove(userId);
     }
 
     // ==================== Switching Search ====================
-    /**
-     * {Apostle.name, StartIndexPagination, EndIndexPagination, RaceFilter, ColorFilter, PositionFilter, Apostle.id}
-     */
-    public void setApostleSearch(Long userId, List<String> config) {
+
+    public SessionManager setApostleSearch(Long userId, ApostleSearch config) {
         apostleSearch.put(userId, config);
+        return this;
     }
 
-    /**
-     * {Apostle.name, StartIndexPagination, EndIndexPagination, RaceFilter, ColorFilter, PositionFilter, Apostle.id}
-     */
-    public List<String> getApostleSearch(Long userId) {
-        return apostleSearch.computeIfAbsent(userId, _ -> new ArrayList<>(Arrays.asList("", "1", "23", "", "", "", "")));
+    public ApostleSearch getApostleSearch(Long userId) {
+        return apostleSearch.computeIfAbsent(userId, _ -> new ApostleSearch(""));
     }
 
-    public void removeApostleSearch(Long userId) {
-        apostleSearch.remove(userId);
+    public ApostleSearch removeApostleSearch(Long userId) {
+        return apostleSearch.remove(userId);
     }
 
     // ==================== BULK CLEANUP ====================
@@ -142,7 +144,7 @@ public class SessionManager extends AbstractManager {
         removeControlMessages(account.getId());
         //Prickcal Session
         removeCurrentApostle(account.getId());
-        removeCrayonToggleState(account.getId());
+        removeApostleTrackState(account.getId());
         removeApostleSearch(account.getId());
 
         return this;
@@ -152,7 +154,7 @@ public class SessionManager extends AbstractManager {
         controlMessages.clear();
         apostleSearch.clear();
         currentApostle.clear();
-        crayonToggleState.clear();
+        trackedApostleState.clear();
 
         return this;
     }

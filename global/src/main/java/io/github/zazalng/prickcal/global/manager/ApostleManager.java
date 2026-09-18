@@ -25,6 +25,7 @@ import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePositi
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonCosts;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
+import io.github.zazalng.prickcal.global.dto.ApostleSearch;
 import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.Apostle;
 import io.github.zazalng.prickcal.global.entities.ApostleTrack;
@@ -32,15 +33,9 @@ import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
 import io.github.zazalng.prickcal.global.exception.PrickcalEnum;
 import io.github.zazalng.prickcal.global.exception.PrickcalException;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Encapsulates all Apostle-related business logic:
- * lookup, tracking, crayon operations, deep search, and switch.
- */
 public class ApostleManager extends AbstractManager {
     private final PluginRepository<Apostle> repoApostle;
     private final PluginRepository<ApostleTrack> repoTracker;
@@ -96,6 +91,38 @@ public class ApostleManager extends AbstractManager {
     /** List all apostles. */
     public List<Apostle> listAll() {
         return repoApostle.query().list();
+    }
+
+    /**
+     * Apply chained filters: name, then race, then color, then position. Stops early when 1 result.
+     */
+    public List<Apostle> deepFilter(ApostleSearch config) {
+        String name = config.getSfGuessName();
+
+        QueryBuilder<Apostle> query = repoApostle.query();
+
+        if (name != null && !name.isBlank()) {
+            query.whereILike("name", "%" + name.trim() + "%");
+        }
+
+        List<Apostle> results = query.list();
+
+        if (results.size() > 1 && !config.getSfRaceFilter().isEmpty()) {
+            query.whereIn("race", config.getSfRaceFilter());
+            results = query.list();
+        }
+
+        if (results.size() > 1 && !config.getSfColorFilter().isEmpty()) {
+            query.whereIn("color", config.getSfColorFilter());
+            results = query.list();
+        }
+
+        if (results.size() > 1 && !config.getSfPositionFilter().isEmpty()) {
+            query.whereIn("position", config.getSfPositionFilter());
+            results = query.list();
+        }
+
+        return results;
     }
 
     public CrayonLineUp findLineUp(ApostleTrack apostleTrack) {
@@ -241,26 +268,6 @@ public class ApostleManager extends AbstractManager {
         return "%d,%d".formatted(totalAmount, totalPrice);
     }
 
-    /** Convert persisted comma-separated string back to boolean[]. */
-    public static boolean[] stringToCrayonState(String raw) {
-        if (raw == null || raw.isEmpty()) return new boolean[0];
-        String[] parts = raw.split(",");
-        boolean[] state = new boolean[parts.length];
-        for (int i = 0; i < parts.length; i++) {
-            state[i] = Boolean.parseBoolean(parts[i]);
-        }
-        return state;
-    }
-
-    /** Convert a List<Boolean> to boolean[]. */
-    public boolean[] listToState(List<Boolean> list) {
-        boolean[] state = new boolean[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            state[i] = list.get(i);
-        }
-        return state;
-    }
-
     // ==================== CONFIRM / PERSIST ====================
 
     /**
@@ -268,24 +275,7 @@ public class ApostleManager extends AbstractManager {
      * Creates a new track if none exists; updates otherwise.
      * Logs the operation.
      */
-    public ApostleTrack confirmCrayon(Account account, Apostle apostle, List<Boolean> state) {
-        String crayonStr = crayonStateToString(state);
-
-        ApostleTrack track = findTrack(account, apostle.getId());
-        if (track == null) {
-            track = new ApostleTrack();
-            track.setApostleId(apostle.getId());
-            track.setUid(account.getId());
-            track.setCurrentStar(apostle.getInit());
-            track.setCrayon(crayonStr);
-            factory.getRepos().apostleTrackers().save(track);
-            logCreated(account.getId(),
-                    "Created crayon track for " + apostle.getName());
-        } else {
-            track.setCrayon(crayonStr);
-            factory.getRepos().apostleTrackers().save(track);
-            logUpdated(account.getId(), "Updated crayon track for " + apostle.getName());
-        }
-        return track;
+    public ApostleTrack confirmTrackUpdate(ApostleTrack track) {
+        return factory.getRepos().apostleTrackers().save(track);
     }
 }

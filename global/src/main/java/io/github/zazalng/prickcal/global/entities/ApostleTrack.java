@@ -157,4 +157,9 @@ public class ApostleTrack {
         }
         return totalSpent;
     }
+
+    public String printStar(Apostle apostle) {
+        if (getCurrentStar() < apostle.getInit()) return "_Not Owning_";
+        return "⭐".repeat(Math.max(0, getCurrentStar()));
+    }
 }

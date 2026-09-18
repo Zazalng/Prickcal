@@ -16,9 +16,6 @@ public final class CrayonFormatParser {
     private static final Pattern TOKEN_PATTERN =
             Pattern.compile("%(?:dd|dm|dy|cs|ca)");
 
-    private CrayonFormatParser() {
-    }
-
     public static Optional<Result> parse(String format, String input) {
         Matcher tokenMatcher = TOKEN_PATTERN.matcher(format);
 

@@ -18,13 +18,12 @@
 package io.github.zazalng.prickcal.global.handler;
 
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
+import io.github.zazalng.prickcal.global.dto.ApostleSearch;
 import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.Apostle;
-import io.github.zazalng.prickcal.global.entities.ApostleTrack;
 import io.github.zazalng.prickcal.global.manager.*;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -51,7 +50,6 @@ public class PrickcalSelectMenuHandler {
 
     public void handle(StringSelectInteractionEvent event) {
         String menuId = event.getComponentId().substring(stringMenuPrefix.length());
-        String userId = event.getUser().getId();
 
         switch (menuId) {
             case "select_apostle" -> handleSelectApostle(event);
@@ -65,43 +63,60 @@ public class PrickcalSelectMenuHandler {
 
         String value = event.getValues().getFirst();
 
-        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
-        if (account.isEmpty()) return;
+        Optional<Account> accountOpt = accountManager.findByUid(event.getUser().getId());
 
-        if(value.contains("pagination")) {
-            int upDown = Integer.parseInt(value.substring("pagination".length()+1));
-            List<String> config = sessionManager.getApostleSearch(account.get().getId());
+        if (accountOpt.isEmpty()) return;
 
-            if(upDown <= 0) {
+        Account account = accountOpt.get();
 
-            } else {
+        if (value.startsWith("pagination:")) {
+            int direction = Integer.parseInt(value.substring("pagination:".length()));
 
+            ApostleSearch search = sessionManager.getApostleSearch(account.getId());
+
+            if (direction < 0) {
+                search.previousPage();
+            } else if (direction > 0) {
+                search.nextPage();
             }
-            event.deferEdit().queue(i ->
-                    i.editOriginalComponents(
-                                    panelBuilder.buildApostleListPanel(account.get()))
-                            .useComponentsV2()
-                            .queue()
+
+            sessionManager.setApostleSearch(account.getId(), search);
+
+            event.deferEdit().queue(hook ->
+                    hook.editOriginalComponents(
+                            panelBuilder.buildApostleListPanel(account)
+                    ).useComponentsV2().queue()
             );
+
+            return;
         }
 
-        Apostle apostle = apostleManager.findById(Long.parseLong(event.getValues().getFirst()));
+        Apostle apostle = apostleManager.findById(Long.parseLong(value));
 
-        sessionManager.setCurrentApostle(account.get().getId(), apostle);
-        ApostleTrack track = apostleManager.findTrack(account.get(), apostle);
+        if (apostle == null) return;
 
-        sessionManager.setCrayonToggleState(account.get().getId(), track.getCrayons());
+        sessionManager.setCurrentApostle(account.getId(), apostle);
+        sessionManager.removeApostleTrackState(account.getId());
 
-        event.deferEdit().queue(i ->
-                i.editOriginalComponents(panelBuilder.buildApostleComponent(account.get(), apostle))
-                        .useComponentsV2(true)
-                        .queue()
+        event.deferEdit().queue(hook ->
+                hook.editOriginalComponents(
+                        panelBuilder.buildApostleComponent(
+                                account,
+                                apostle
+                        )
+                ).useComponentsV2(true).queue()
         );
 
-        if (sessionManager.getControlMessages(account.get().getId()) != null) {
-            event.getHook().editMessageEmbedsById(sessionManager.getControlMessages(account.get().getId()).getId(),
-                    panelBuilder.buildMainMenuEmbed(event.getUser(), account.get())
-            ).queue(m -> sessionManager.setControlMessages(account.get().getId(), m));
+        if (sessionManager.getControlMessages(account.getId()) != null) {
+            event.getHook().editMessageEmbedsById(
+                    sessionManager.getControlMessages(account.getId()).getId(),
+                    panelBuilder.buildApostleEmbed(apostle)
+            ).queue(message ->
+                    sessionManager.setControlMessages(
+                            account.getId(),
+                            message
+                    )
+            );
         }
     }
 }

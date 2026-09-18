@@ -18,13 +18,16 @@
 package io.github.zazalng.prickcal.global.handler;
 
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
+import io.github.zazalng.prickcal.global.dto.ApostleSearch;
 import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.manager.*;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Thin modal-interaction router.
@@ -51,7 +54,7 @@ public class PrickcalModalHandler {
         String modalId = event.getModalId().substring(modalPrefix.length());
 
         switch (modalId) {
-            case "switch_apostle_search" -> handleSwitchApostleSearch(event);
+            case "apostle_switch_search" -> handleSwitchApostleSearch(event);
         }
     }
 
@@ -66,22 +69,48 @@ public class PrickcalModalHandler {
                 .filter(s -> !s.isEmpty())
                 .orElse("");
 
-        String raceFilters = Optional.ofNullable(event.getValue("filter_race"))
-                .map(v -> String.join(",", v.getAsStringList()))
-                .orElse("");
+        ApostleSearch config = new ApostleSearch(
+                searchName,
+                mapToShort(event.getValue("filter_race")),
+                mapToShort(event.getValue("filter_color")),
+                mapToShort(event.getValue("filter_position"))
+        );
 
-        String colorFilters = Optional.ofNullable(event.getValue("filter_color"))
-                .map(v -> String.join(",", v.getAsStringList()))
-                .orElse("");
+        config.getSfResult().addAll(apostleManager.deepFilter(config));
 
-        String positionFilters = Optional.ofNullable(event.getValue("filter_position"))
-                .map(v -> String.join(",", v.getAsStringList()))
-                .orElse("");
+        sessionManager.setApostleSearch(account.get().getId(), config);
 
-        sessionManager.setApostleSearch(account.get().getId(), new ArrayList<>(Arrays.asList(searchName, "1", "23", raceFilters, colorFilters, positionFilters, "")));
+        event.deferEdit().queue(i ->
+                i.editOriginalComponents(
+                        panelBuilder.buildApostleListPanel(account.get())
+                ).useComponentsV2(true).queue(_ -> {
+                    if (sessionManager.getControlMessages(account.get().getId()) != null) {
+                        event.getHook().editMessageEmbedsById(
+                                sessionManager
+                                        .getControlMessages(account.get().getId())
+                                        .getId(),
+                                panelBuilder.buildMainMenuEmbed(
+                                        event.getUser(),
+                                        account.get()
+                                )
+                        ).queue(message ->
+                                sessionManager.setControlMessages(
+                                        account.get().getId(),
+                                        message
+                                )
+                        );
+                    }
+                })
+        );
+    }
 
-        event.getHook().editOriginalComponents(
-                panelBuilder.buildApostleListPanel(account.get())
-        ).queue();
+    // ==================== Helper ====================
+
+    private List<Short> mapToShort(ModalMapping value) {
+        return Optional.ofNullable(value)
+                .map(v -> v.getAsStringList().stream()
+                        .map(Short::valueOf)
+                        .collect(Collectors.toList()))
+                .orElseGet(ArrayList::new);
     }
 }

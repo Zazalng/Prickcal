@@ -7,6 +7,7 @@ public final class LabelByEnum {
     public static <E extends Enum<E> & EnumInterface> CheckboxGroup.Builder createCheckBoxGroup(String prefix, Class<E> eClass) {
         CheckboxGroup.Builder b = CheckboxGroup.create(prefix);
         for (E e : eClass.getEnumConstants()) {
+            if (!e.isValid()) continue;
             b.addOption(e.getOptionLabel(), e.getOptionValue());
         }
         return b;

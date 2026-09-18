@@ -21,6 +21,7 @@ import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
+import io.github.zazalng.prickcal.global.dto.ApostleSearch;
 import io.github.zazalng.prickcal.global.entities.*;
 import io.github.zazalng.prickcal.global.manager.*;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -37,7 +38,6 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -135,7 +135,7 @@ public class PanelBuilder {
 
     public MessageEmbed buildMainMenuEmbed(User discordUser, Account account) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getId()));
+        embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getName()));
         embed.setDescription("""
                 Consent at <t:%s:R>
                 Apostle: %d out of %d |  CP: %d
@@ -194,16 +194,17 @@ public class PanelBuilder {
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
                         Button.primary(btnPrefix + "apostle", "👤 Apostle"),
-                        Button.secondary(btnPrefix + "import_export", "📦 Import/Export"),
-                        Button.success(btnPrefix + "post_profile", "📢 Post Profile"),
-                        Button.secondary(btnPrefix + "back_main", "Refresh")
+                        Button.primary(btnPrefix + "crayon", "🖍️ Crayon"),
+                        Button.primary(btnPrefix + "profile", "👤 Profile")
                 ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "database", "🗄️ Database"),
                         Button.secondary(btnPrefix + "logs", "📋 Public Logs"),
-                        Button.danger(btnPrefix + "administrator", "🔧 Administrator")
+                        Button.secondary(btnPrefix + "administrator", "🔧 Administrator")
                 ),
                 ActionRow.of(
+                        Button.secondary(btnPrefix + "import_export", "📦 Import/Export"),
+                        Button.success(btnPrefix + "post_profile", "📢 Post Profile"),
                         Button.danger(btnPrefix + "delete_data", "🗑️ Delete Data")
                 )
         ).withAccentColor(ACCENT_MAIN);
@@ -309,31 +310,32 @@ public class PanelBuilder {
     public Container buildApostleComponent(Account account, Apostle apostle) {
         String[] houseLabels = {"1A", "1B", "2A", "2B", "2C", "3A", "3B", "3C", "3D"};
 
-        if(sessionManager.getCrayonToggleState(account.getId()) == null) {
-            sessionManager.setCrayonToggleState(account.getId(), apostleManager.findTrack(account, apostle).getCrayons());
+        if (sessionManager.getApostleTrackState(account.getId()) == null) {
+            sessionManager.setApostleTrackState(account.getId(), apostleManager.findTrack(account, apostle));
         }
 
-        List<Boolean> state = sessionManager.getCrayonToggleState(account.getId());
+        ApostleTrack state = sessionManager.getApostleTrackState(account.getId());
 
-        ActionRow row1 = buildCrayonRow(0, 3, state, houseLabels);
-        ActionRow row2 = buildCrayonRow(3, 6, state, houseLabels);
-        ActionRow row3 = buildCrayonRow(6, 9, state, houseLabels);
+        ActionRow row1 = buildCrayonRow(0, 3, state.getCrayons(), houseLabels);
+        ActionRow row2 = buildCrayonRow(3, 6, state.getCrayons(), houseLabels);
+        ActionRow row3 = buildCrayonRow(6, 9, state.getCrayons(), houseLabels);
 
         return Container.of(
-                TextDisplay.of("### 🖍️ Crayon Grid — " + apostle.getName()),
+                TextDisplay.of("### 🖍️ Crayon Grid — " + apostle.trueName()),
                 Separator.create(true, Separator.Spacing.SMALL),
                 row1,
                 row2,
                 row3,
+                TextDisplay.of("### %s".formatted(state.printStar(apostle))),
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
-                        Button.danger(btnPrefix + "apostle_decrease_star", "➖⭐"),
-                        Button.success(btnPrefix + "apostle_increase_star", "➕⭐")
+                        Button.danger(btnPrefix + "apostle_increase_false", "➖⭐"),
+                        Button.success(btnPrefix + "apostle_increase_true", "➕⭐")
                 ),
                 ActionRow.of(
                         Button.success(btnPrefix + "crayon_confirm", "✅ Confirm"),
                         Button.secondary(btnPrefix + "crayon_reset", "🔄 Reset"),
-                        Button.primary(btnPrefix + "switch_apostle", "🔀 Switch Apostle")
+                        Button.primary(btnPrefix + "apostle_switching", "🔀 Switch Apostle")
                 ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "post_apostle", "📢 Post Apostle"),
@@ -440,58 +442,90 @@ public class PanelBuilder {
     // ==================== APOSTLE LIST PANEL (for switch) ====================
 
     public Container buildApostleListPanel(Account account) {
-        List<String> apostleSearch = sessionManager.getApostleSearch(account.getId());
-        String cacheResult = apostleSearch.getLast();
+        ApostleSearch apostleSearch = sessionManager.getApostleSearch(account.getId());
 
-        List<Apostle> searchResult;
-        if (cacheResult.isEmpty()) {
-            searchResult = apostleManager.listAll();
-        } else {
-            searchResult = factory.getRepos().apostles().query()
-                    .whereIn("id", Arrays.stream(cacheResult.split(",")).toList())
-                    .list();
+        List<Apostle> searchResult = apostleSearch.getSfResult();
+
+        if (searchResult.isEmpty()) {
+            apostleSearch.getSfResult().addAll(apostleManager.listAll());
+            searchResult.addAll(apostleSearch.getSfResult());
         }
 
         if (searchResult.size() == 1) {
-            sessionManager.setCurrentApostle(account.getId(), searchResult.getFirst());
-            return buildApostleComponent(account, searchResult.getFirst());
+            Apostle apostle = searchResult.getFirst();
+
+            sessionManager.setCurrentApostle(
+                    account.getId(),
+                    apostle
+            );
+            sessionManager.removeApostleTrackState(account.getId());
+
+            return buildApostleComponent(
+                    account,
+                    apostle
+            );
         }
 
-        int startIndex = Integer.parseInt(apostleSearch.get(1));
-        int newIndex = startIndex;
-        int limit = Math.min(searchResult.size()-startIndex, 23);
+        int startIndex = apostleSearch.getSfStartIndex();
+        int endIndex = Math.min(
+                apostleSearch.getSfEndIndex(),
+                searchResult.size()
+        );
 
-        StringSelectMenu.Builder menu = StringSelectMenu.create(stringMenuPrefix + "select_apostle")
-                .setPlaceholder("Select an Apostle to view")
-                .setDefaultValues("-1")
-                .setRequiredRange(1, 1)
-                .setRequired(true);
+        StringSelectMenu.Builder menu =
+                StringSelectMenu.create(
+                                stringMenuPrefix + "select_apostle"
+                        )
+                        .setPlaceholder("Select an Apostle to view")
+                        .setRequiredRange(1, 1)
+                        .setRequired(true);
 
-        if(startIndex != 1) {
-            menu.addOption("\uD83D\uDD3C---Previous---\uD83D\uDD3C", "pagination:-1");
+        if (apostleSearch.hasPreviousPage()) {
+            menu.addOption(
+                    "🔼---Previous---🔼",
+                    "pagination:-1"
+            );
         }
 
-        for(int i = 0; i < limit; i++) {
-            menu.addOption(searchResult.get(i+startIndex).getName(), String.valueOf(searchResult.get(i+startIndex).getId()));
-            newIndex++;
+        for (int i = startIndex; i < endIndex; i++) {
+            Apostle apostle = searchResult.get(i);
+
+            menu.addOption(
+                    apostle.getName(),
+                    String.valueOf(apostle.getId())
+            );
         }
 
-        if(searchResult.size()-startIndex > 23){
-            menu.addOption("\uD83D\uDD3D---Next---\uD83D\uDD3D", "pagination:1");
-            apostleSearch.set(2, String.valueOf(newIndex));
-            sessionManager.setApostleSearch(account.getId(), apostleSearch);
-        } else {
-            menu.addOption(searchResult.getLast().getName(), String.valueOf(searchResult.getLast().getId()));
+        if (apostleSearch.hasNextPage()) {
+            menu.addOption(
+                    "🔽---Next---🔽",
+                    "pagination:1"
+            );
         }
 
         return Container.of(
-                TextDisplay.of("# 🔀 Switch Apostle\nSelect an apostle to view its crayon grid:"),
-                Separator.create(true, Separator.Spacing.SMALL),
+                TextDisplay.of(
+                        "# 🔀 Switch Apostle\n" +
+                                "Select an apostle to view its crayon grid:"
+                ),
+                Separator.create(
+                        true,
+                        Separator.Spacing.SMALL
+                ),
                 ActionRow.of(menu.build()),
-                Separator.create(true, Separator.Spacing.SMALL),
+                Separator.create(
+                        true,
+                        Separator.Spacing.SMALL
+                ),
                 ActionRow.of(
-                        Button.primary(btnPrefix + "deep_search_modal", "🔍 Deep Search"),
-                        Button.secondary(btnPrefix + "back_main", "⬅️ Back")
+                        Button.primary(
+                                btnPrefix + "deep_search_modal",
+                                "🔍 Deep Search"
+                        ),
+                        Button.secondary(
+                                btnPrefix + "back_main",
+                                "⬅️ Back"
+                        )
                 )
         ).withAccentColor(ACCENT_APOSTLE);
     }

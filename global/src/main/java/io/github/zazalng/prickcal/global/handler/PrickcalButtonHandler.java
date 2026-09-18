@@ -33,8 +33,6 @@ import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.modals.Modal;
@@ -81,16 +79,22 @@ public class PrickcalButtonHandler {
 
         if (buttonId.startsWith("consent_")) {
             handleConsent(event);
-        } else if (buttonId.equals("apostle")) {
-            handleApostle(event);
-        } else if (buttonId.startsWith("crayon_toggle_")) {
-            handleCrayonToggle(event, buttonId);
-        } else if (buttonId.equals("crayon_confirm")) {
-            handleCrayonConfirm(event);
-        } else if (buttonId.equals("crayon_reset")) {
-            handleCrayonReset(event);
-        } else if (buttonId.equals("switch_apostle")) {
-            handleSwitchApostle(event);
+        } else if (buttonId.startsWith("apostle")) {
+            if (buttonId.equals("apostle_switching")) {
+                handleSwitchApostle(event);
+            } else {
+                handleApostle(event);
+            }
+        } else if (buttonId.startsWith("crayon")) {
+            if (buttonId.startsWith("crayon_toggle_")) {
+                handleCrayonToggle(event, buttonId);
+            } else if (buttonId.equals("crayon_confirm")) {
+                handleCrayonConfirm(event);
+            } else if (buttonId.equals("crayon_reset")) {
+                handleCrayonReset(event);
+            } else {
+                handleAdministrator(event);
+            }
         } else if (buttonId.equals("import_export")) {
             handleImportExport(event);
         } else if (buttonId.equals("database")) {
@@ -134,9 +138,12 @@ public class PrickcalButtonHandler {
                                 .queue()
                 );
             }
-            case "consent_disagree" -> event.getHook()
-                    .editOriginal("❌ Consent denied. Your data will not be tracked. Use `/prickcal` if you change your mind.")
-                    .queue(m -> m.delete().queueAfter(5, TimeUnit.SECONDS));
+            case "consent_disagree" -> event.deferEdit().queue(i -> {
+                i.deleteOriginal().queue();
+                i.sendMessage("❌ Consent denied. Your data will not be tracked. Use `/prickcal` if you change your mind.")
+                        .setEphemeral(true)
+                        .queue(m -> m.delete().queueAfter(5, TimeUnit.SECONDS));
+            });
         }
     }
 
@@ -177,15 +184,18 @@ public class PrickcalButtonHandler {
         Optional<Account> account = accountManager.findByUid(event.getUser().getId());
         if (account.isEmpty()) return;
 
+        Apostle apostle = sessionManager.getCurrentApostle(account.get().getId());
+        if (apostle == null) return;
+
         int index = Integer.parseInt(buttonId.substring("crayon_toggle_".length()));
-        List<Boolean> state = sessionManager.getCrayonToggleState(account.get().getId());
+        ApostleTrack track = sessionManager.getApostleTrackState(account.get().getId());
+        List<Boolean> state = track.getCrayons();
         if (state == null) return;
 
         state.set(index, !state.get(index));
-        sessionManager.setCrayonToggleState(account.get().getId(), state);
+        if (state.contains(true) && track.getCurrentStar() < apostle.getInit()) track.setCurrentStar(apostle.getInit());
 
-        Apostle apostle = sessionManager.getCurrentApostle(account.get().getId());
-        if (apostle == null) return;
+        sessionManager.setApostleTrackState(account.get().getId(), track.updateCrayon(state));
 
         showApostlePanel(event, account.get(), apostle);
     }
@@ -199,10 +209,7 @@ public class PrickcalButtonHandler {
         Apostle apostle = sessionManager.getCurrentApostle(account.get().getId());
         if (apostle == null) return;
 
-        List<Boolean> state = sessionManager.getCrayonToggleState(account.get().getId());
-        if (state == null) return;
-
-        apostleManager.confirmCrayon(account.get(), apostle, state);
+        apostleManager.confirmTrackUpdate(sessionManager.removeApostleTrackState(account.get().getId()));
 
         showApostlePanel(event, account.get(), apostle);
     }
@@ -217,7 +224,7 @@ public class PrickcalButtonHandler {
         if (apostle == null) return;
 
         ApostleTrack track = apostleManager.findTrack(account.get(), apostle);
-        sessionManager.setCrayonToggleState(account.get().getId(), track.getCrayons());
+        sessionManager.setApostleTrackState(account.get().getId(), track);
 
         showApostlePanel(event, account.get(), apostle);
     }
@@ -246,7 +253,7 @@ public class PrickcalButtonHandler {
 
     private void handleDeepSearchModal(ButtonInteractionEvent event) {
         event.replyModal(
-                Modal.create(modalPrefix + "switch_apostle_search", "Search Apostle")
+                Modal.create(modalPrefix + "apostle_switch_search", "Search Apostle")
                         .addComponents(
                                 Label.of("Search by Name",
                                         TextInput.create("search_name", TextInputStyle.SHORT)
@@ -258,19 +265,19 @@ public class PrickcalButtonHandler {
                                         LabelByEnum.createCheckBoxGroup(
                                                 "filter_race",
                                                 ApostleRace.class
-                                        ).build()
+                                        ).setRequired(false).build()
                                 ),
                                 Label.of("Filter by Personality",
                                         LabelByEnum.createCheckBoxGroup(
                                                 "filter_color",
                                                 ApostleColor.class
-                                        ).build()
+                                        ).setRequired(false).build()
                                 ),
                                 Label.of("Filter by Position",
                                         LabelByEnum.createCheckBoxGroup(
                                                 "filter_position",
                                                 ApostlePosition.class
-                                        ).build()
+                                        ).setRequired(false).build()
                                 )
                         ).build()
         ).queue();
