@@ -97,6 +97,18 @@ public class ApostleTrack {
         this.currentStar = star;
     }
 
+    public ApostleTrack updateCurrentStar(Apostle apostle, boolean increase) {
+        if(increase){
+            setCurrentStar((short) (getCurrentStar() + 1));
+            if(getCurrentStar() <= apostle.getInit()) setCurrentStar(apostle.getInit());
+        } else {
+            setCurrentStar((short) (getCurrentStar() -1));
+            if(getCurrentStar() < apostle.getInit()) setCurrentStar((short) 0);
+        }
+        if(getCurrentStar() > apostle.getMax()) setCurrentStar(apostle.getMax());
+        return this;
+    }
+
     public String getCrayon() {
         return crayon;
     }

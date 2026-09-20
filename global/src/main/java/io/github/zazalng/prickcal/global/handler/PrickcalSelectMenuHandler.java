@@ -100,22 +100,16 @@ public class PrickcalSelectMenuHandler {
 
         event.deferEdit().queue(hook ->
                 hook.editOriginalComponents(
-                        panelBuilder.buildApostleComponent(
-                                account,
-                                apostle
-                        )
+                        panelBuilder.buildApostleComponent(account, apostle)
                 ).useComponentsV2(true).queue()
         );
 
         if (sessionManager.getControlMessages(account.getId()) != null) {
             event.getHook().editMessageEmbedsById(
                     sessionManager.getControlMessages(account.getId()).getId(),
-                    panelBuilder.buildApostleEmbed(apostle)
+                    panelBuilder.buildTrackEmbed(account, apostle)
             ).queue(message ->
-                    sessionManager.setControlMessages(
-                            account.getId(),
-                            message
-                    )
+                    sessionManager.setControlMessages(account.getId(), message)
             );
         }
     }

@@ -305,21 +305,22 @@ public class Prickcal {
     public void openMainControlPoint(SlashCommandInteractionEvent event) {
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
 
-        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
-        if (account.isEmpty()) {
+        Optional<Account> accounts = accountManager.findByUid(event.getUser().getId());
+        if (accounts.isEmpty()) {
             event.replyComponents(panelBuilder.buildConsentPanel()).useComponentsV2(true).setEphemeral(true).queue();
             return;
         }
 
+        SessionManager sessionManager = factory.getManager(ManagersEnum.SESSION);
+        sessionManager.clearUserSession(accounts.get());
+        Account account = sessionManager.setAccountCache(event.getUser().getId(), accounts.get())
+                .getAccountCache(event.getUser().getId());
         OptionMapping mapping = event.getOption("string_record");
 
         if(mapping == null){
-            SessionManager sessionManager = factory.getManager(ManagersEnum.SESSION);
-            sessionManager.clearUserSession(account.get());
-
             event.getInteraction().getHook().sendMessageEmbeds(
-                    panelBuilder.buildMainMenuEmbed(event.getUser(), account.get())
-            ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.get().getId(), m));
+                    panelBuilder.buildMainMenuEmbed(event.getUser(), account)
+            ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.getId(), m));
 
             event.deferReply(true).queue(i ->
                     i.sendMessageComponents(panelBuilder.buildMainMenuComponent())
@@ -328,9 +329,9 @@ public class Prickcal {
                             .queue()
             );
         } else {
-            String format = account.get().getCrayonFormat();
+            String format = account.getCrayonFormat();
             String message = mapping.getAsString();
-            String result = parsingRecordCrayon(account.get(), format, message, null);
+            String result = parsingRecordCrayon(account, format, message, null);
 
             if(!result.isEmpty()){
                 sendPrivateMessage(event.getUser(), result);
@@ -414,7 +415,6 @@ public class Prickcal {
 
         if(!result.isEmpty()){
             reject(event, result);
-            return;
         } else {
             event.getTarget()
                     .removeReaction(

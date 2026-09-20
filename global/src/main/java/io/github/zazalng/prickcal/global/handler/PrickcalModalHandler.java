@@ -61,8 +61,8 @@ public class PrickcalModalHandler {
     // ==================== SWITCH APOSTLE SEARCH ====================
 
     private void handleSwitchApostleSearch(ModalInteractionEvent event) {
-        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
-        if (account.isEmpty()) return;
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+        if (account == null) return;
 
         String searchName = Optional.ofNullable(event.getValue("search_name"))
                 .map(v -> v.getAsString().trim().toLowerCase())
@@ -78,24 +78,24 @@ public class PrickcalModalHandler {
 
         config.getSfResult().addAll(apostleManager.deepFilter(config));
 
-        sessionManager.setApostleSearch(account.get().getId(), config);
+        sessionManager.setApostleSearch(account.getId(), config);
 
         event.deferEdit().queue(i ->
                 i.editOriginalComponents(
-                        panelBuilder.buildApostleListPanel(account.get())
+                        panelBuilder.buildApostleListPanel(account)
                 ).useComponentsV2(true).queue(_ -> {
-                    if (sessionManager.getControlMessages(account.get().getId()) != null) {
+                    if (sessionManager.getControlMessages(account.getId()) != null) {
                         event.getHook().editMessageEmbedsById(
                                 sessionManager
-                                        .getControlMessages(account.get().getId())
+                                        .getControlMessages(account.getId())
                                         .getId(),
-                                panelBuilder.buildMainMenuEmbed(
-                                        event.getUser(),
-                                        account.get()
+                                panelBuilder.buildTrackEmbed(
+                                        account,
+                                        sessionManager.getCurrentApostle(account.getId())
                                 )
                         ).queue(message ->
                                 sessionManager.setControlMessages(
-                                        account.get().getId(),
+                                        account.getId(),
                                         message
                                 )
                         );

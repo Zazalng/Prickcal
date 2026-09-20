@@ -22,6 +22,7 @@ import io.github.zazalng.prickcal.global.entities.Account;
 import io.github.zazalng.prickcal.global.entities.Apostle;
 import io.github.zazalng.prickcal.global.entities.ApostleTrack;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SessionManager extends AbstractManager {
     /**
-     * Cache account of user of plugin give advantage efficiency optimize.
+     * Cache account of {@link Account} that match by {@link User#getId()}
      */
     private final Map<String, Account> accountCache = new ConcurrentHashMap<>();
     /**
@@ -48,8 +49,7 @@ public class SessionManager extends AbstractManager {
      */
     private final Map<Long, ApostleTrack> trackedApostleState = new ConcurrentHashMap<>();
     /**
-     * Apostle search configuration per user.
-     * {inputText ,startIndex, unused_yet, personality no, position no, race no, cache result}
+     * Cache config of {@link ApostleSearch}
      */
     private final Map<Long, ApostleSearch> apostleSearch = new ConcurrentHashMap<>();
 
@@ -75,6 +75,21 @@ public class SessionManager extends AbstractManager {
     @Override
     public void shutdown() {
         clearAllSessions();
+    }
+
+    // ==================== ACCOUNT CACHING ====================
+
+    public SessionManager setAccountCache(String uid, Account account) {
+        accountCache.put(uid, account);
+        return this;
+    }
+
+    public Account getAccountCache(String uid) {
+        return accountCache.get(uid);
+    }
+
+    public Account removeAccountCache(String uid) {
+        return accountCache.remove(uid);
     }
 
     // ==================== CONTROL MESSAGES ====================
@@ -141,6 +156,7 @@ public class SessionManager extends AbstractManager {
 
     public SessionManager clearUserSession(Account account) {
         //Discord Session
+        removeAccountCache(account.getUid());
         removeControlMessages(account.getId());
         //Prickcal Session
         removeCurrentApostle(account.getId());
@@ -151,6 +167,7 @@ public class SessionManager extends AbstractManager {
     }
 
     public SessionManager clearAllSessions() {
+        accountCache.clear();
         controlMessages.clear();
         apostleSearch.clear();
         currentApostle.clear();

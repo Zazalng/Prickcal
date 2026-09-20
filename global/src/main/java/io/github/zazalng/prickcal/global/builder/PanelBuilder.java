@@ -193,7 +193,7 @@ public class PanelBuilder {
                 TextDisplay.of("# 🎮 Prickcal Control Panel"),
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
-                        Button.primary(btnPrefix + "apostle", "👤 Apostle"),
+                        Button.primary(btnPrefix + "apostle", "📜 Apostle"),
                         Button.primary(btnPrefix + "crayon", "🖍️ Crayon"),
                         Button.primary(btnPrefix + "profile", "👤 Profile")
                 ),
@@ -454,16 +454,11 @@ public class PanelBuilder {
         if (searchResult.size() == 1) {
             Apostle apostle = searchResult.getFirst();
 
-            sessionManager.setCurrentApostle(
-                    account.getId(),
-                    apostle
-            );
+            sessionManager.setCurrentApostle(account.getId(), apostle);
             sessionManager.removeApostleTrackState(account.getId());
+            sessionManager.removeApostleSearch(account.getId());
 
-            return buildApostleComponent(
-                    account,
-                    apostle
-            );
+            return buildApostleComponent(account, apostle);
         }
 
         int startIndex = apostleSearch.getSfStartIndex();

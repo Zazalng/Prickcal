@@ -195,11 +195,10 @@ public class AccountManager extends AbstractManager {
     public Account deleteAllUserData(String uid) {
         int count = 0;
 
-        Optional<Account> account = findByUid(uid);
-        if (account.isEmpty()) return null;
+        Account account = sessionManager().getAccountCache(uid);
 
         var trackCount = repos.apostleTrackers().query()
-                .where("uid", account.get().getId())
+                .where("uid", account.getId())
                 .list();
         for (var t : trackCount) {
             repos.apostleTrackers().delete(t);
@@ -207,7 +206,7 @@ public class AccountManager extends AbstractManager {
         count += trackCount.size();
 
         var crayonCount = repos.crayonRecords().query()
-                .where("uid", account.get().getId())
+                .where("uid", account.getId())
                 .list();
         for (var c : crayonCount) {
             repos.crayonRecords().delete(c);
@@ -215,7 +214,7 @@ public class AccountManager extends AbstractManager {
         count += crayonCount.size();
 
         var remarkCount = repos.apostleRemarkables().query()
-                .where("uid", account.get().getId())
+                .where("uid", account.getId())
                 .list();
         for (var r : remarkCount) {
             repos.apostleRemarkables().delete(r);
@@ -223,7 +222,7 @@ public class AccountManager extends AbstractManager {
         count += remarkCount.size();
 
         var giftCount = repos.giftAcquires().query()
-                .where("uid", account.get().getId())
+                .where("uid", account.getId())
                 .list();
         for (var r : giftCount) {
             repos.giftAcquires().delete(r);
@@ -231,17 +230,17 @@ public class AccountManager extends AbstractManager {
         count += giftCount.size();
 
         var remarkLogCount = repos.remarkableRecords().query()
-                .where("uid", account.get().getId())
+                .where("uid", account.getId())
                 .list();
         for (var r : remarkLogCount) {
             repos.remarkableRecords().delete(r);
         }
         count += remarkLogCount.size();
 
-        repo.delete(account.get());
+        repo.delete(account);
         count++;
 
-        logDeleted(account.get().getId(), "a User has deleted all their data (" + count + " records)");
-        return account.get();
+        logDeleted(account.getId(), "a User has deleted all their data (" + count + " records)");
+        return account;
     }
 }
