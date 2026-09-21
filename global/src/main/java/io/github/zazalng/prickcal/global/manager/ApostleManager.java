@@ -90,7 +90,7 @@ public class ApostleManager extends AbstractManager {
 
     /** List all apostles. */
     public List<Apostle> listAll() {
-        return repoApostle.query().list();
+        return repoApostle.query().orderByAsc("name").list();
     }
 
     /**
