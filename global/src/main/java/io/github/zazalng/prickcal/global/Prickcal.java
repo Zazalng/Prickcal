@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Plugin(
         name = "Prickcal [Global]",
-        version = "0.0.1-indev",
+        version = "1.0.0",
         author = "Zazalng",
         description = "A plugin for personally tracking & collection Trickcal progression."
 )

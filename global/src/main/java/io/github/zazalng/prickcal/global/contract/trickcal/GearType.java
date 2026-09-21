@@ -18,13 +18,13 @@
 package io.github.zazalng.prickcal.global.contract.trickcal;
 
 public enum GearType implements EnumInterface {
-    PDEF((short) 1, "Physical Defense"),
-    MDEF((short) 2, "Magical Defense"),
+    HP((short) 1, "Health Point"),
+    PDEF((short) 2, "Physical Defense"),
     CRIT((short) 3, "Crit Rate/Dmg"),
-    CRES((short) 4, "Crit Resistance"),
-    HP((short) 5, "Health Point"),
-    PATK((short) 61, "Physical Attack"),
-    MATK((short) 62, "Magical Attack"),
+    MDEF((short) 4, "Magical Defense"),
+    CRES((short) 5, "Crit Resistance"),
+    PATK((short) 62, "Physical Attack"),
+    MATK((short) 64, "Magical Attack"),
     UNKNOWN((short) 0, "Invalid", false);
 
     private final short no;
@@ -43,6 +43,7 @@ public enum GearType implements EnumInterface {
 
     public static GearType fromNo(short no) {
         for(GearType g:GearType.values()){
+
             if (no == g.no) return g;
         }
         return UNKNOWN;

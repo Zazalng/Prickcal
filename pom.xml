@@ -6,7 +6,7 @@
 
     <groupId>io.github.zazalng</groupId>
     <artifactId>prickcal</artifactId>
-    <version>0.0.1-indev</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>Trickcal for Pudel</name>
     <description>A Pudel's Plugin for collecting Trickcal's personal tracking.</description>

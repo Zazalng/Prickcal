@@ -75,7 +75,7 @@ public class PanelBuilder {
 
     public Container buildConsentPanel() {
         return Container.of(
-                TextDisplay.of("# 🙏 Consent & Data Transparency Notice"),
+                TextDisplay.of("# 🙏 Consent & Data Transparency Notice - v1.0.0"),
                 Separator.create(true, Separator.Spacing.SMALL),
                 TextDisplay.of("""
                         Before we can track your **Trickcal progression**, we need your consent to collect and process the information described below.
@@ -316,9 +316,9 @@ public class PanelBuilder {
 
         ApostleTrack state = sessionManager.getApostleTrackState(account.getId());
 
-        ActionRow row1 = buildCrayonRow(0, 3, state.getCrayons(), houseLabels);
-        ActionRow row2 = buildCrayonRow(3, 6, state.getCrayons(), houseLabels);
-        ActionRow row3 = buildCrayonRow(6, 9, state.getCrayons(), houseLabels);
+        ActionRow row1 = buildCrayonRow(0, 2, state.getCrayons(), houseLabels);
+        ActionRow row2 = buildCrayonRow(2, 5, state.getCrayons(), houseLabels);
+        ActionRow row3 = buildCrayonRow(5, 9, state.getCrayons(), houseLabels);
 
         return Container.of(
                 TextDisplay.of("### 🖍️ Crayon Grid — " + apostle.trueName()),
