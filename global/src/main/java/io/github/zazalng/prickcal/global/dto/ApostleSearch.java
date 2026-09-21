@@ -27,8 +27,7 @@ public final class ApostleSearch {
         this.sfPositionFilter = sfPositionFilter;
     }
 
-    public ApostleSearch(String sfGuessName
-    ) {
+    public ApostleSearch(String sfGuessName) {
         this.sfGuessName = sfGuessName;
         this.sfRaceFilter = new ArrayList<>();
         this.sfColorFilter = new ArrayList<>();

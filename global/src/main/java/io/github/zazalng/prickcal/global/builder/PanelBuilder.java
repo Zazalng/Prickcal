@@ -215,18 +215,23 @@ public class PanelBuilder {
     public MessageEmbed buildTrackEmbed(Account account, Apostle apostle) {
         ApostleTrack track = apostleManager.findTrack(account, apostle);
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setAuthor("%s | %s | %s | %s".formatted(
+        embed.setTitle(apostle.trueName());
+        embed.setDescription("""
+                🎭: %s
+                🚩: %s
+                🏹: %s
+                ⭐: %s
+                """.formatted(
                 ApostleColor.fromNo(apostle.getColor()).getPersonality(),
                 ApostleRace.fromNo(apostle.getRace()).getName(),
                 ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
                 track.getCurrentStar() < apostle.getInit() ? "Not Owned" :
-                        "⭐ %d / %d%s".formatted(
+                        "%d / %d%s".formatted(
                                 track.getCurrentStar(),
                                 apostle.getMax(),
                                 apostle.missingPiece(track)
                         )
         ));
-        embed.setTitle(apostle.trueName());
 
         if (apostle.getPic() != null) {
             embed.setThumbnail(apostle.getPic());
@@ -270,17 +275,17 @@ public class PanelBuilder {
         embed.setTimestamp(apostle.getUpdatedAt());
         embed.setColor(ApostleColor.fromNo(apostle.getColor()).getColor());
         embed.setDescription("""
-                Personality: %s
-                Race: %s
-                Position: %s
-                Yearning: %s
+                🎭: %s
+                🚩: %s
+                🏹: %s
+                🌸: %s
                 ### Hashtag
                 %s
                 """.formatted(
                 ApostleColor.fromNo(apostle.getColor()).getPersonality(),
                 ApostleRace.fromNo(apostle.getRace()).getName(),
                 ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
-                apostle.getMax() > 5 ? "✅" : "❌",
+                apostle.getMax() > 5 ? "✅ Has Release." : "❌ Not Release.",
                 apostleManager.parseHashTag(apostle)
         ));
         CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
@@ -330,11 +335,11 @@ public class PanelBuilder {
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
                         Button.danger(btnPrefix + "apostle_increase_false", "➖⭐"),
-                        Button.success(btnPrefix + "apostle_increase_true", "➕⭐")
+                        Button.success(btnPrefix + "apostle_increase_true", "➕⭐"),
+                        Button.secondary(btnPrefix + "crayon_reset", "🔄 Reset")
                 ),
                 ActionRow.of(
                         Button.success(btnPrefix + "crayon_confirm", "✅ Confirm"),
-                        Button.secondary(btnPrefix + "crayon_reset", "🔄 Reset"),
                         Button.primary(btnPrefix + "apostle_switching", "🔀 Switch Apostle")
                 ),
                 ActionRow.of(
