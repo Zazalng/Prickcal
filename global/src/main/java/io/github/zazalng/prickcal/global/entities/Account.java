@@ -166,7 +166,7 @@ public class Account {
         return ops <= level.getValue();
     }
 
-    public String getWish(String section) {
+    public String getDefaultText(String section) {
         return switch (section) {
             case "ign" -> getIgn();
             case "code" -> getFriendCode();
@@ -174,5 +174,9 @@ public class Account {
             default ->
                     throw new PrickcalException(PrickcalEnum.ARGS_EXCEPTION, "Unexpect Argument on Account.getWish(%s)".formatted(section));
         };
+    }
+
+    public void validateFormat(String value) {
+        String[] regexFixed = {"%dd", "%dm", "%dy", "%cs", "%ca"};
     }
 }

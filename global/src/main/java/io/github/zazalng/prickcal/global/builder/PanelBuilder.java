@@ -378,7 +378,7 @@ public class PanelBuilder {
                 ActionRow.of(
                         Button.primary(btnPrefix + "profile_ign", "Change IGN"),
                         Button.primary(btnPrefix + "profile_code", "Change Friend Code"),
-                        Button.primary(btnPrefix + "profile_format", "Change Crayon Format"),
+                        Button.primary(btnPrefix + "profile_format", "Change Crayon Format").asDisabled(),
                         Button.danger(btnPrefix + "profile_leak", "Leak?")
                 ),
                 ActionRow.of(

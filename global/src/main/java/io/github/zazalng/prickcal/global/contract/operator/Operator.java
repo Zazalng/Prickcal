@@ -58,7 +58,7 @@ public enum Operator implements EnumInterface {
     }
 
     Operator(short value, String... abilities) {
-        this(value, true);
+        this(value, true, abilities);
     }
 
     public static short defaultUser() {

@@ -97,7 +97,10 @@ public class PrickcalButtonHandler {
                 handleAdministrator(event);
             }
         } else if (buttonId.startsWith("profile")) {
-            if (buttonId.contains("_")) {
+            if(buttonId.endsWith("_leak")) {
+                handleProfileLeak(event);
+            } else if (buttonId.contains("_")) {
+                // {ign, code, format}
                 handleProfileUpdate(event, buttonId.substring("profile_".length()));
             } else {
                 handleProfile(event);
@@ -263,8 +266,24 @@ public class PrickcalButtonHandler {
 
     // ==================== Profile ====================
 
-    private void handleProfile(ButtonInteractionEvent event) {
+    private void showProfilePanel(ButtonInteractionEvent event, Account account) {
+        event.deferEdit().queue(i ->
+                i.editOriginalComponents(
+                        panelBuilder.buildProfileComponent(account)
+                ).useComponentsV2(true).queue()
+        );
 
+        if(sessionManager.getControlMessages(account.getId()) != null) {
+            event.getHook().editMessageEmbedsById(
+                    sessionManager.getControlMessages(account.getId()).getId(),
+                    panelBuilder.buildMainMenuEmbed(event.getUser(), account)
+            ).queue(m -> sessionManager.setControlMessages(account.getId(), m));
+        }
+    }
+
+    private void handleProfile(ButtonInteractionEvent event) {
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+        showProfilePanel(event, account);
     }
 
     private void handleProfileUpdate(ButtonInteractionEvent event, String section) {
@@ -274,13 +293,22 @@ public class PrickcalButtonHandler {
                 Modal.create(modalPrefix + "profile_update_" + section, "Profile %s Update".formatted(section))
                         .addComponents(
                                 Label.of("Text Input field for %s".formatted(section),
-                                        TextInput.create("profile_update_" + section, TextInputStyle.SHORT)
+                                        TextInput.create(section, TextInputStyle.SHORT)
                                                 .setRequired(true)
-                                                .setValue(account.getWish(section))
+                                                .setValue(account.getDefaultText(section))
                                                 .build()
                                 )
                         ).build()
         ).queue();
+    }
+
+    private void handleProfileLeak(ButtonInteractionEvent event) {
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+        account.setLeak(!account.isLeak());
+
+        factory.getRepos().accounts().save(account);
+
+        showProfilePanel(event, account);
     }
 
     // ==================== DEEP SEARCH ====================
