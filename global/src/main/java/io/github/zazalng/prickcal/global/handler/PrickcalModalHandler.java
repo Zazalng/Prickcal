@@ -116,8 +116,6 @@ public class PrickcalModalHandler {
                 .filter(s -> !s.isEmpty())
                 .orElse("");
 
-        factory.getCtx().log("DEBUG", "%s / %s".formatted(section, value));
-
         if(!value.isEmpty()) {
             switch(section) {
                 case "ign" -> account.setIgn(value);
