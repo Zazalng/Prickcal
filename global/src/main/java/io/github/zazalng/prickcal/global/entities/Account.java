@@ -20,6 +20,8 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 import io.github.zazalng.prickcal.global.contract.operator.Operator;
+import io.github.zazalng.prickcal.global.exception.PrickcalEnum;
+import io.github.zazalng.prickcal.global.exception.PrickcalException;
 
 import java.time.Instant;
 
@@ -162,5 +164,15 @@ public class Account {
 
     public boolean isActionable(Operator level) {
         return ops <= level.getValue();
+    }
+
+    public String getWish(String section) {
+        return switch (section) {
+            case "ign" -> getIgn();
+            case "code" -> getFriendCode();
+            case "format" -> getCrayonFormat();
+            default ->
+                    throw new PrickcalException(PrickcalEnum.ARGS_EXCEPTION, "Unexpect Argument on Account.getWish(%s)".formatted(section));
+        };
     }
 }

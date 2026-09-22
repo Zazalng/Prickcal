@@ -96,6 +96,12 @@ public class PrickcalButtonHandler {
             } else {
                 handleAdministrator(event);
             }
+        } else if (buttonId.startsWith("profile")) {
+            if (buttonId.contains("_")) {
+                handleProfileUpdate(event, buttonId.substring("profile_".length()));
+            } else {
+                handleProfile(event);
+            }
         } else if (buttonId.equals("import_export")) {
             handleImportExport(event);
         } else if (buttonId.equals("database")) {
@@ -208,7 +214,7 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
-    // ==================== CRAYON TOGGLE ====================
+    // ==================== CRAYON ====================
 
     private void handleCrayonToggle(ButtonInteractionEvent event, String buttonId) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
@@ -230,8 +236,6 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
-    // ==================== CRAYON CONFIRM ====================
-
     private void handleCrayonConfirm(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -244,8 +248,6 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
-    // ==================== CRAYON RESET ====================
-
     private void handleCrayonReset(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -257,6 +259,28 @@ public class PrickcalButtonHandler {
         sessionManager.setApostleTrackState(account.getId(), track);
 
         showApostlePanel(event, account, apostle);
+    }
+
+    // ==================== Profile ====================
+
+    private void handleProfile(ButtonInteractionEvent event) {
+
+    }
+
+    private void handleProfileUpdate(ButtonInteractionEvent event, String section) {
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+
+        event.replyModal(
+                Modal.create(modalPrefix + "profile_update_" + section, "Profile %s Update".formatted(section))
+                        .addComponents(
+                                Label.of("Text Input field for %s".formatted(section),
+                                        TextInput.create("profile_update_" + section, TextInputStyle.SHORT)
+                                                .setRequired(true)
+                                                .setValue(account.getWish(section))
+                                                .build()
+                                )
+                        ).build()
+        ).queue();
     }
 
     // ==================== DEEP SEARCH ====================

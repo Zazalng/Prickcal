@@ -17,6 +17,7 @@
  */
 package io.github.zazalng.prickcal.global.builder;
 
+import io.github.zazalng.prickcal.global.contract.operator.Operator;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
@@ -178,11 +179,12 @@ public class PanelBuilder {
             BigDecimal crayonRate;
             {
                 BigDecimal denominator = candySpend.divide(BigDecimal.valueOf(20), 0, RoundingMode.UP);
-                crayonRate = denominator.signum() == 0 ? BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP) : crayonAcquired.divide(denominator, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100.00")).setScale(2, RoundingMode.HALF_UP);
+                crayonRate = denominator.signum() == 0 ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP) : crayonAcquired.divide(denominator, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100.00")).setScale(2, RoundingMode.HALF_UP);
             }
             embed.addField("Candy Spent", candySpend.toPlainString(), true);
             embed.addField("Crayon Acquired", crayonAcquired.toPlainString(), true);
             embed.addField("Crayon Rate", "%s%%".formatted(crayonRate.toPlainString()), true);
+            embed.addField("First Date of Record", "<t:%d:R>".formatted(accountManager.getFirstDateOfRecord(account).getEpochSecond()), false);
         }
 
         return embed.build();
@@ -204,8 +206,7 @@ public class PanelBuilder {
                 ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "import_export", "📦 Import/Export"),
-                        Button.success(btnPrefix + "post_profile", "📢 Post Profile"),
-                        Button.danger(btnPrefix + "delete_data", "🗑️ Delete Data")
+                        Button.success(btnPrefix + "post_profile", "📢 Post Profile")
                 )
         ).withAccentColor(ACCENT_MAIN);
     }
@@ -352,6 +353,41 @@ public class PanelBuilder {
         ).withAccentColor(ApostleColor.fromNo(apostle.getColor()).getColor());
     }
 
+    public Container buildProfileComponent(Account account) {
+        return Container.of(
+                TextDisplay.of("### Profile Editor — <@%s>".formatted(account.getUid())),
+                Separator.create(true, Separator.Spacing.SMALL),
+                TextDisplay.of("""
+                        Operator: %s
+                        IGN: `%s`
+                        Friend Code: `%s`
+                        Crayon Formatted: `%s`
+                        
+                        ### Ability
+                        %s
+                        %s
+                        """.formatted(
+                        Operator.fromValue(account.getOps()).name(),
+                        account.getIgn(),
+                        account.getFriendCode(),
+                        account.getCrayonFormat(),
+                        Operator.fromValue(account.getOps()).getAbilities(),
+                        account.isLeak() ? "- Leak Content Visibility" : ""
+                )),
+                Separator.create(true, Separator.Spacing.SMALL),
+                ActionRow.of(
+                        Button.primary(btnPrefix + "profile_ign", "Change IGN"),
+                        Button.primary(btnPrefix + "profile_code", "Change Friend Code"),
+                        Button.primary(btnPrefix + "profile_format", "Change Crayon Format"),
+                        Button.danger(btnPrefix + "profile_leak", "Leak?")
+                ),
+                ActionRow.of(
+                        Button.secondary(btnPrefix + "back_main", "⬅️ Back"),
+                        Button.danger(btnPrefix + "delete_data", "🗑️ Delete Data")
+                )
+        ).withAccentColor(ACCENT_APOSTLE);
+    }
+
     private ActionRow buildCrayonRow(int start, int end, List<Boolean> state, String[] labels) {
         List<Button> buttons = new ArrayList<>();
         for (int i = start; i < end; i++) {
@@ -375,9 +411,14 @@ public class PanelBuilder {
             sb.append("_No recent activity._");
         } else {
             for (Log log : recentLogs) {
-                sb.append("• `[").append(log.getAction()).append("]` ")
-                        .append(log.getTableName()).append(" - ")
-                        .append(log.getToString()).append("\n");
+                sb.append("* <t:%s:R> `[%s - %s]` %s\n"
+                        .formatted(
+                                log.getCreatedAt(),
+                                log.getAction(),
+                                log.getTableName(),
+                                log.getToString()
+                        )
+                );
             }
         }
 
@@ -527,6 +568,6 @@ public class PanelBuilder {
                                 "⬅️ Back"
                         )
                 )
-        ).withAccentColor(ACCENT_APOSTLE);
+        ).withAccentColor(ACCENT_SEARCH);
     }
 }

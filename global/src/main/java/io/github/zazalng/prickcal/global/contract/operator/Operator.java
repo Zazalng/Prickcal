@@ -23,54 +23,41 @@ import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
  * An enum to document & describe which enum can do which thing
  */
 public enum Operator implements EnumInterface {
-    /**
-     * A Level that had ability to
-     * <ul>
-     *     <li>inherit ability from Operator that had its value + 1</li>
-     *     <li>Create/Delete any row in Apostle record</li>
-     *     <li>Create/Delete any row in CrayonLineUp record</li>
-     *     <li>Update any row in Remarkable record</li>
-     *     <li>Create/Delete any row in StageGearDrop record</li>
-     * </ul>
-     */
-    ADMIN((short) 0),
-    /**
-     * A Level that had ability to
-     * <ul>
-     *     <li>inherit ability from Operator that had its value + 1</li>
-     *     <li>Update any row in Apostle record</li>
-     *     <li>Update any row in CrayonLineUp record</li>
-     *     <li>Create/Update/Delete any row in GiftCode record</li>
-     *     <li>Create/Update/Delete any row in HashTag record</li>
-     *     <li>Update any row in StageGearDrop record</li>
-     * </ul>
-     */
-    EDITOR((short) 1),
-    /**
-     * A Level that had ability to
-     * <ul>
-     *     <li>Update own uid match in Account record</li>
-     *     <li>Update own uid match in ApostleTrack record</li>
-     *     <li>Create/Update/Delete own uid match in CrayonRecord record</li>
-     *     <li>Create/Delete own uid match in GiftAcquired record</li>
-     *     <li>Create/Update/Delete own uid match in ApostleRemarkable record</li>
-     * </ul>
-     */
-    USER((short) 2),
-    /**
-     * A level that had 0 ability to do anything
-     */
-    UNKNOWN((short) -1, false);
+    ADMIN((short) 0,
+            "Inherit ability from `Editor`",
+            "Create/Delete any row in Apostle record",
+            "Create/Delete any row in CrayonLineUp record",
+            "Update any row in Remarkable record",
+            "Create/Delete any row in StageGearDrop record"
+    ),
+    EDITOR((short) 1,
+            "Inherit ability from `User`",
+            "Update any row in Apostle record",
+            "Update any row in CrayonLineUp record",
+            "Create/Update/Delete any row in GiftCode record",
+            "Create/Update/Delete any row in HashTag record",
+            "Update any row in StageGearDrop record"
+    ),
+    USER((short) 2,
+            "Update own uid match in Account record",
+            "Update own uid match in ApostleTrack record",
+            "Create/Update/Delete own uid match in CrayonRecord record",
+            "Create/Delete own uid match in GiftAcquired record",
+            "Create/Update/Delete own uid match in ApostleRemarkable record"
+    ),
+    UNKNOWN((short) -1, false, "Restrict to perform any action.");
 
     private final short value;
     private final boolean valid;
+    private final String[] abilities;
 
-    Operator(short value, boolean valid) {
+    Operator(short value, boolean valid, String... abilities) {
         this.value = value;
         this.valid = valid;
+        this.abilities = abilities;
     }
 
-    Operator(short value) {
+    Operator(short value, String... abilities) {
         this(value, true);
     }
 
@@ -108,5 +95,13 @@ public enum Operator implements EnumInterface {
     @Override
     public boolean isValid() {
         return valid;
+    }
+
+    public String getAbilities() {
+        StringBuilder text = new StringBuilder();
+        for (String s : abilities) {
+            text.append("- %s\n".formatted(s));
+        }
+        return text.toString();
     }
 }

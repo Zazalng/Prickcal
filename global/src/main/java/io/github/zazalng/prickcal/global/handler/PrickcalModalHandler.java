@@ -53,8 +53,10 @@ public class PrickcalModalHandler {
     public void handle(ModalInteractionEvent event) {
         String modalId = event.getModalId().substring(modalPrefix.length());
 
-        switch (modalId) {
-            case "apostle_switch_search" -> handleSwitchApostleSearch(event);
+        if (modalId.startsWith("apostle_")) {
+            handleSwitchApostleSearch(event);
+        } else if (modalId.startsWith("profile_")) {
+            handleProfileUpdate(event);
         }
     }
 
@@ -102,6 +104,12 @@ public class PrickcalModalHandler {
                     }
                 })
         );
+    }
+
+    // ==================== SWITCH APOSTLE SEARCH ====================
+
+    private void handleProfileUpdate(ModalInteractionEvent event) {
+
     }
 
     // ==================== Helper ====================

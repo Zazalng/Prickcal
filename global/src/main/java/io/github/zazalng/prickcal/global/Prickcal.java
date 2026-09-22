@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Plugin(
         name = "Prickcal [Global]",
-        version = "1.0.1",
+        version = "1.1.0",
         author = "Zazalng",
         description = "A plugin for personally tracking & collection Trickcal progression."
 )
@@ -356,8 +356,8 @@ public class Prickcal {
     )
     public void ephemeralViewRecord(UserContextInteractionEvent event) {
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
-        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
-        if (account.isEmpty()) {
+        Optional<Account> accounts = accountManager.findByUid(event.getUser().getId());
+        if (accounts.isEmpty()) {
             event.replyComponents(panelBuilder.buildConsentPanel()).useComponentsV2(true).setEphemeral(true).queue();
             return;
         }
@@ -392,9 +392,9 @@ public class Prickcal {
     )
     public void CrayonRecording(MessageContextInteractionEvent event) {
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
-        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        Optional<Account> accounts = accountManager.findByUid(event.getUser().getId());
 
-        if (account.isEmpty()) {
+        if (accounts.isEmpty()) {
             event.replyComponents(panelBuilder.buildConsentPanel())
                     .useComponentsV2(true)
                     .setEphemeral(true)
@@ -409,9 +409,9 @@ public class Prickcal {
             return;
         }
 
-        String format = account.get().getCrayonFormat();
+        String format = accounts.get().getCrayonFormat();
         String message = event.getTarget().getContentStripped();
-        String result = parsingRecordCrayon(account.get(), format, message, event.getTarget().getAttachments().getFirst().getUrl());
+        String result = parsingRecordCrayon(accounts.get(), format, message, event.getTarget().getAttachments().getFirst().getUrl());
 
         if(!result.isEmpty()){
             reject(event, result);
