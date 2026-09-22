@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Plugin(
         name = "Prickcal [Global]",
-        version = "1.0.0",
+        version = "1.0.1",
         author = "Zazalng",
         description = "A plugin for personally tracking & collection Trickcal progression."
 )
@@ -358,7 +358,7 @@ public class Prickcal {
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
         Optional<Account> account = accountManager.findByUid(event.getUser().getId());
         if (account.isEmpty()) {
-            event.replyComponents(panelBuilder.buildConsentPanel()).setEphemeral(true).queue();
+            event.replyComponents(panelBuilder.buildConsentPanel()).useComponentsV2(true).setEphemeral(true).queue();
             return;
         }
 
@@ -392,11 +392,11 @@ public class Prickcal {
     )
     public void CrayonRecording(MessageContextInteractionEvent event) {
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
-
         Optional<Account> account = accountManager.findByUid(event.getUser().getId());
 
         if (account.isEmpty()) {
             event.replyComponents(panelBuilder.buildConsentPanel())
+                    .useComponentsV2(true)
                     .setEphemeral(true)
                     .queue();
             return;

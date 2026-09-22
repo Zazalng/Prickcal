@@ -11,6 +11,7 @@
 
     <name>Trickcal for Pudel [Global]</name>
     <artifactId>global</artifactId>
+    <version>1.0.1</version>
 
     <licenses>
         <license>
