@@ -45,10 +45,7 @@ public final class ApostleSearch {
     }
 
     public ApostleSearch(String sfGuessName) {
-        this.sfGuessName = sfGuessName;
-        this.sfRaceFilter = new ArrayList<>();
-        this.sfColorFilter = new ArrayList<>();
-        this.sfPositionFilter = new ArrayList<>();
+        this(sfGuessName, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
     public String getSfGuessName() {

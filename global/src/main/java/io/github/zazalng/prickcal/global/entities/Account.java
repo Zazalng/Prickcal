@@ -177,6 +177,16 @@ public class Account {
     }
 
     public void validateFormat(String value) {
-        String[] regexFixed = {"%dd", "%dm", "%dy", "%cs", "%ca"};
+        for (String token : new String[]{"%dd", "%dm", "%dy", "%cs", "%ca"}) {
+            if (!value.contains(token)) {
+                return;
+            }
+        }
+
+        if (value.contains("%cs%ca") || value.contains("%ca%cs")) {
+            return;
+        }
+
+        setCrayonFormat(value);
     }
 }
