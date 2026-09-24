@@ -30,6 +30,8 @@ import io.github.zazalng.prickcal.global.exception.PrickcalEnum;
 import io.github.zazalng.prickcal.global.exception.PrickcalException;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,18 +71,8 @@ public class AccountManager extends AbstractManager {
                 .findOne();
     }
 
-    public Account findById(long id) {
-        return repo.query()
-                .where("id", id)
-                .findOne().orElseThrow(() -> new PrickcalException(PrickcalEnum.INVALID_ACCOUNT, id + "(id)"));
-    }
-
     public boolean isValid(Account user) {
         return Operator.fromValue(user.getOps()) != Operator.UNKNOWN;
-    }
-
-    public boolean isValid(long id) {
-        return isValid(findById(id));
     }
 
     /** Create a new account (consent agreement). Logs the creation. */
@@ -96,22 +88,22 @@ public class AccountManager extends AbstractManager {
 
     /** Check if the user has a specific operator level. */
     public boolean hasOperator(Account account, Operator required) {
-        return findById(account.getId()).getOps() == required.getValue();
+        return account.getOps() == required.getValue();
     }
 
     /** Check if the user is at least a given operator level (lower value = higher rank). */
     public boolean hasMinOperator(Account account, Operator minimum) {
-        return findById(account.getId()).getOps() <= minimum.getValue();
+        return account.getOps() <= minimum.getValue();
+    }
+
+    public Instant getFirstDateOfRecord(Account account) {
+        return factory.getRepos().crayonRecords().query().where("uid", account.getId()).orderByAsc("record_date").list().getFirst().getRecordDate().atStartOfDay(ZoneId.systemDefault()).toInstant();
     }
 
     public String crayonCountByStats(Account account, CrayonStats stats) {
-        return crayonCountByStats(account.getId(), stats);
-    }
-
-    public String crayonCountByStats(Long id, CrayonStats stats) {
         if (stats == CrayonStats.UNKNOWN) return "-1,-1";
 
-        List<ApostleTrack> userApostles = apostleManager().findTracks(findById(id));
+        List<ApostleTrack> userApostles = apostleManager().findTracks(account);
         if (userApostles == null || userApostles.isEmpty()) {
             return "0,0";
         }
@@ -168,10 +160,6 @@ public class AccountManager extends AbstractManager {
         return new BigDecimal(candySpent);
     }
 
-    public BigDecimal getCrayonsSpent(Long id) {
-        return getCrayonsSpent(findById(id));
-    }
-
     public BigDecimal getCrayonsAcquired(Account account) {
         int crayonAcquired = 0;
         for (CrayonRecord record : repos.crayonRecords().findBy("uid", account.getId())) {
@@ -180,12 +168,8 @@ public class AccountManager extends AbstractManager {
         return new BigDecimal(crayonAcquired);
     }
 
-    public BigDecimal getCrayonsAcquired(Long id) {
-        return getCrayonsAcquired(findById(id));
-    }
-
     public int getApostleOwned(Account account) {
-        return Math.toIntExact(repos.apostleTrackers().query().where("uid", account.getId()).whereNot("current_star", 0).list().size());
+        return repos.apostleTrackers().query().where("uid", account.getId()).whereNot("current_star", 0).list().size();
     }
 
     /**

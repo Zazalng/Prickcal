@@ -17,6 +17,7 @@
  */
 package io.github.zazalng.prickcal.global.builder;
 
+import io.github.zazalng.prickcal.global.contract.operator.Operator;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
@@ -135,8 +136,8 @@ public class PanelBuilder {
 
     public MessageEmbed buildMainMenuEmbed(User discordUser, Account account) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getName()));
-        embed.setDescription("""
+        embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getName()))
+                .setDescription("""
                 Consent at <t:%s:R>
                 Apostle: %d out of %d |  CP: %d
                 """.formatted(
@@ -144,12 +145,11 @@ public class PanelBuilder {
                 accountManager.getApostleOwned(account),
                 apostleManager.listAll().size(),
                 account.getCp()
-                )
-        );
-        embed.setThumbnail(discordUser.getEffectiveAvatarUrl());
-        embed.setFooter("Friend Code: %s".formatted(account.getFriendCode() != null ? account.getFriendCode() : "*null*"));
-        embed.setTimestamp(account.getUpdatedAt());
-        embed.setColor(new Color(new Random().nextInt(256), new Random().nextInt(256), new Random().nextInt(256)));
+                ))
+                .setThumbnail(discordUser.getEffectiveAvatarUrl())
+                .setFooter("Friend Code: %s".formatted(account.getFriendCode() != null ? account.getFriendCode() : "*null*"))
+                .setTimestamp(account.getUpdatedAt())
+                .setColor(new Color(new Random().nextInt(256), new Random().nextInt(256), new Random().nextInt(256)));
 
         {
             int crayonSpend = 0;
@@ -178,17 +178,18 @@ public class PanelBuilder {
             BigDecimal crayonRate;
             {
                 BigDecimal denominator = candySpend.divide(BigDecimal.valueOf(20), 0, RoundingMode.UP);
-                crayonRate = denominator.signum() == 0 ? BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP) : crayonAcquired.divide(denominator, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100.00")).setScale(2, RoundingMode.HALF_UP);
+                crayonRate = denominator.signum() == 0 ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP) : crayonAcquired.divide(denominator, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100.00")).setScale(2, RoundingMode.HALF_UP);
             }
-            embed.addField("Candy Spent", candySpend.toPlainString(), true);
-            embed.addField("Crayon Acquired", crayonAcquired.toPlainString(), true);
-            embed.addField("Crayon Rate", "%s%%".formatted(crayonRate.toPlainString()), true);
+            embed.addField("Candy Spent", candySpend.toPlainString(), true)
+                    .addField("Crayon Acquired", crayonAcquired.toPlainString(), true)
+                    .addField("Crayon Rate", "%s%%".formatted(crayonRate.toPlainString()), true)
+                    .addField("First Date of Record", "<t:%d:R>".formatted(accountManager.getFirstDateOfRecord(account).getEpochSecond()), false);
         }
 
         return embed.build();
     }
 
-    public Container buildMainMenuComponent() {
+    public Container buildMainMenuComponent(Account account) {
         return Container.of(
                 TextDisplay.of("# 🎮 Prickcal Control Panel"),
                 Separator.create(true, Separator.Spacing.SMALL),
@@ -198,14 +199,13 @@ public class PanelBuilder {
                         Button.primary(btnPrefix + "profile", "👤 Profile")
                 ),
                 ActionRow.of(
-                        Button.secondary(btnPrefix + "database", "🗄️ Database"),
                         Button.secondary(btnPrefix + "logs", "📋 Public Logs"),
-                        Button.secondary(btnPrefix + "administrator", "🔧 Administrator")
+                        Button.secondary(btnPrefix + "database", "🗄️ Database").withDisabled(!account.isActionable(Operator.EDITOR)),
+                        Button.secondary(btnPrefix + "administrator", "🔧 Administrator").withDisabled(!account.isActionable(Operator.ADMIN))
                 ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "import_export", "📦 Import/Export"),
-                        Button.success(btnPrefix + "post_profile", "📢 Post Profile"),
-                        Button.danger(btnPrefix + "delete_data", "🗑️ Delete Data")
+                        Button.success(btnPrefix + "post_profile", "📢 Post Profile")
                 )
         ).withAccentColor(ACCENT_MAIN);
     }
@@ -267,14 +267,11 @@ public class PanelBuilder {
 
     public MessageEmbed buildApostleEmbed(Apostle apostle) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(apostle.trueName());
-        if (apostle.getPic() != null) {
-            embed.setThumbnail(apostle.getPic());
-        }
-        embed.setFooter("Last Updated");
-        embed.setTimestamp(apostle.getUpdatedAt());
-        embed.setColor(ApostleColor.fromNo(apostle.getColor()).getColor());
-        embed.setDescription("""
+        embed.setTitle(apostle.trueName())
+                .setFooter("Last Updated")
+                .setTimestamp(apostle.getUpdatedAt())
+                .setColor(ApostleColor.fromNo(apostle.getColor()).getColor())
+                .setDescription("""
                 🎭: %s
                 🚩: %s
                 🏹: %s
@@ -288,6 +285,9 @@ public class PanelBuilder {
                 apostle.getMax() > 5 ? "✅ Has Release." : "❌ Not Release.",
                 apostleManager.parseHashTag(apostle)
         ));
+        if (apostle.getPic() != null) {
+            embed.setThumbnail(apostle.getPic());
+        }
         CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
         if (lineUp != null) {
             List<Short> lineUpValues = lineUp.getLineUp();
@@ -305,9 +305,10 @@ public class PanelBuilder {
                         : "Invalid Stat";
                 embed.addField(houseLabels[i], fieldValue, true);
             }
+            embed.addField("Crayons Needed", String.valueOf(lineUp.totalCost()), false)
+                    .addField("Certificate Needed", apostle.missingPiece(), true);
         }
-        embed.addField("Crayons Needed", String.valueOf(lineUp.totalCost()), false);
-        embed.addField("Certificate Needed", apostle.missingPiece(), true);
+
 
         return embed.build();
     }
@@ -352,6 +353,43 @@ public class PanelBuilder {
         ).withAccentColor(ApostleColor.fromNo(apostle.getColor()).getColor());
     }
 
+    public Container buildProfileComponent(Account account) {
+        return Container.of(
+                TextDisplay.of("### Profile Editor — <@%s>".formatted(account.getUid())),
+                Separator.create(true, Separator.Spacing.SMALL),
+                TextDisplay.of("""
+                        Operator: %s
+                        IGN: `%s`
+                        Friend Code: `%s`
+                        Crayon Formatted: `%s`
+                        
+                        ### Ability
+                        %s%s
+                        """.formatted(
+                        Operator.fromValue(account.getOps()).name(),
+                        account.getIgn(),
+                        account.getFriendCode(),
+                        account.getCrayonFormat(),
+                        Operator.fromValue(account.getOps()).getAbilities(),
+                        account.isLeak() ? "\n- Leak Content Visibility" : ""
+                )),
+                Separator.create(true, Separator.Spacing.SMALL),
+                ActionRow.of(
+                        Button.primary(btnPrefix + "profile_ign", "🪶 IGN"),
+                        Button.primary(btnPrefix + "profile_code", "🪶 Friend Code"),
+                        Button.primary(btnPrefix + "profile_format", "🪶 Crayon Format"),
+                        account.isLeak() ? Button.danger(btnPrefix + "profile_leak", "Leak?") : Button.success(btnPrefix + "profile_leak", "Leak?")
+                ),
+                ActionRow.of(
+                        Button.primary(btnPrefix + "upload_pdf", "Upload Templated").withDisabled(!account.isActionable(Operator.DEV))
+                ),
+                ActionRow.of(
+                        Button.secondary(btnPrefix + "back_main", "⬅️ Back"),
+                        Button.danger(btnPrefix + "delete_data", "🗑️ Delete Data")
+                )
+        ).withAccentColor(ACCENT_APOSTLE);
+    }
+
     private ActionRow buildCrayonRow(int start, int end, List<Boolean> state, String[] labels) {
         List<Button> buttons = new ArrayList<>();
         for (int i = start; i < end; i++) {
@@ -375,14 +413,19 @@ public class PanelBuilder {
             sb.append("_No recent activity._");
         } else {
             for (Log log : recentLogs) {
-                sb.append("• `[").append(log.getAction()).append("]` ")
-                        .append(log.getTableName()).append(" - ")
-                        .append(log.getToString()).append("\n");
+                sb.append("* <t:%s:R> `[%s - %s]` %s\n"
+                        .formatted(
+                                log.getCreatedAt(),
+                                log.getAction(),
+                                log.getTableName(),
+                                log.getToString()
+                        )
+                );
             }
         }
 
         return Container.of(
-                TextDisplay.of(sb.toString()),
+                TextDisplay.of(sb.toString().stripTrailing()),
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "back_main", "⬅️ Back")
@@ -527,6 +570,6 @@ public class PanelBuilder {
                                 "⬅️ Back"
                         )
                 )
-        ).withAccentColor(ACCENT_APOSTLE);
+        ).withAccentColor(ACCENT_SEARCH);
     }
 }

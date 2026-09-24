@@ -96,6 +96,15 @@ public class PrickcalButtonHandler {
             } else {
                 handleAdministrator(event);
             }
+        } else if (buttonId.startsWith("profile")) {
+            if(buttonId.endsWith("_leak")) {
+                handleProfileLeak(event);
+            } else if (buttonId.contains("_")) {
+                // {ign, code, format}
+                handleProfileUpdate(event, buttonId.substring("profile_".length()));
+            } else {
+                handleProfile(event);
+            }
         } else if (buttonId.equals("import_export")) {
             handleImportExport(event);
         } else if (buttonId.equals("database")) {
@@ -134,7 +143,7 @@ public class PrickcalButtonHandler {
                 ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.getId(), m));
 
                 event.deferReply(true).queue(i ->
-                        i.sendMessageComponents(panelBuilder.buildMainMenuComponent())
+                        i.sendMessageComponents(panelBuilder.buildMainMenuComponent(account))
                                 .useComponentsV2(true)
                                 .setEphemeral(true)
                                 .queue()
@@ -208,7 +217,7 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
-    // ==================== CRAYON TOGGLE ====================
+    // ==================== CRAYON ====================
 
     private void handleCrayonToggle(ButtonInteractionEvent event, String buttonId) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
@@ -230,8 +239,6 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
-    // ==================== CRAYON CONFIRM ====================
-
     private void handleCrayonConfirm(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -244,8 +251,6 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
-    // ==================== CRAYON RESET ====================
-
     private void handleCrayonReset(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -257,6 +262,53 @@ public class PrickcalButtonHandler {
         sessionManager.setApostleTrackState(account.getId(), track);
 
         showApostlePanel(event, account, apostle);
+    }
+
+    // ==================== Profile ====================
+
+    private void showProfilePanel(ButtonInteractionEvent event, Account account) {
+        event.deferEdit().queue(i ->
+                i.editOriginalComponents(
+                        panelBuilder.buildProfileComponent(account)
+                ).useComponentsV2(true).queue()
+        );
+
+        if(sessionManager.getControlMessages(account.getId()) != null) {
+            event.getHook().editMessageEmbedsById(
+                    sessionManager.getControlMessages(account.getId()).getId(),
+                    panelBuilder.buildMainMenuEmbed(event.getUser(), account)
+            ).queue(m -> sessionManager.setControlMessages(account.getId(), m));
+        }
+    }
+
+    private void handleProfile(ButtonInteractionEvent event) {
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+        showProfilePanel(event, account);
+    }
+
+    private void handleProfileUpdate(ButtonInteractionEvent event, String section) {
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+
+        event.replyModal(
+                Modal.create(modalPrefix + "profile_update_" + section, "Profile %s Update".formatted(section))
+                        .addComponents(
+                                Label.of("Text Input field for %s".formatted(section),
+                                        TextInput.create(section, TextInputStyle.SHORT)
+                                                .setRequired(true)
+                                                .setValue(account.getDefaultText(section))
+                                                .build()
+                                )
+                        ).build()
+        ).queue();
+    }
+
+    private void handleProfileLeak(ButtonInteractionEvent event) {
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+        account.setLeak(!account.isLeak());
+
+        factory.getRepos().accounts().save(account);
+
+        showProfilePanel(event, account);
     }
 
     // ==================== DEEP SEARCH ====================
@@ -426,7 +478,7 @@ public class PrickcalButtonHandler {
         if (account == null) return;
 
         event.deferEdit().queue(i ->
-                i.editOriginalComponents(panelBuilder.buildMainMenuComponent())
+                i.editOriginalComponents(panelBuilder.buildMainMenuComponent(account))
                         .useComponentsV2(true)
                         .queue()
         );
