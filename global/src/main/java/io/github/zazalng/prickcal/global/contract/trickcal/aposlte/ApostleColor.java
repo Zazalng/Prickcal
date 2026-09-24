@@ -28,7 +28,18 @@ public enum ApostleColor implements EnumInterface {
     TEAL((short) 2, "Composed", new Color(0, 250, 255)),
     RED((short) 3, "Mad", new Color(210, 0, 0)),
     YELLOW((short) 4, "Vivacious", new Color(255, 255, 0)),
-    PURPLE((short) 5, "Depressed", new Color(155, 55, 255));
+    PURPLE((short) 5, "Depressed", new Color(155, 55, 255)),
+    //GT((short) 12, "Innocent / Composed", new Color(80, 205, 75))
+    //GR((short) 13, "Innocent / Madness", new Color(35, 210, 80))
+    //GY((short) 14, "Innocent / Vivacious", new Color(80,210,80))
+    GP((short) 15, "Innocent / Depressed", new Color(235, 10, 75))
+    //TR((short) 23, "Composed / Madness", new Color(210, 250, 255))
+    //TY((short) 24, "Composed / Vivacious", new Color(255, 250, 255))
+    //TP((short) 25, "Composed / Depressed", new Color(155, 50, 255))
+    //RY((short) 34, "Madness / Vivacious", new Color(210, 255, 0))
+    //RP((short) 35, "Madness / Depressed", new Color(110, 55, 255))
+    //YP((short) 45, "Vivacious / Depressed", new Color(155, 55, 255))
+    ;
 
     private final short no;
     private final String personality;

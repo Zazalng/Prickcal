@@ -76,6 +76,12 @@ public class Account {
     @Column(nullable = false, defaultValue = "%dd/%dm/%dy %cs %ca")
     private String crayonFormat;
 
+    /**
+     * A PDF template url (from discord.attachment)
+     */
+    @Column
+    private String templateUrl;
+
     @Column
     private Instant createdAt;
 
@@ -176,6 +182,14 @@ public class Account {
         };
     }
 
+    /**
+     * Validates that the given format string contains all required placeholders
+     * (%dd, %dm, %dy, %cs, %ca) and does not contain the forbidden combinations
+     * %cs%ca or %ca%cs. If the validation succeeds, the format is stored by
+     * invoking {@link #setCrayonFormat(String)}.
+     *
+     * @param value the format string to validate
+     */
     public void validateFormat(String value) {
         for (String token : new String[]{"%dd", "%dm", "%dy", "%cs", "%ca"}) {
             if (!value.contains(token)) {

@@ -23,14 +23,18 @@ import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
  * An enum to document & describe which enum can do which thing
  */
 public enum Operator implements EnumInterface {
-    ADMIN((short) 0,
+    DEV((short) 0,
+            "Inherit ability from `Admin`",
+            "No restriction affected in this role."
+    ),
+    ADMIN((short) 1,
             "Inherit ability from `Editor`",
             "Create/Delete any row in Apostle record",
             "Create/Delete any row in CrayonLineUp record",
             "Update any row in Remarkable record",
             "Create/Delete any row in StageGearDrop record"
     ),
-    EDITOR((short) 1,
+    EDITOR((short) 2,
             "Inherit ability from `User`",
             "Update any row in Apostle record",
             "Update any row in CrayonLineUp record",
@@ -38,7 +42,7 @@ public enum Operator implements EnumInterface {
             "Create/Update/Delete any row in HashTag record",
             "Update any row in StageGearDrop record"
     ),
-    USER((short) 2,
+    USER((short) 3,
             "Update own uid match in Account record",
             "Update own uid match in ApostleTrack record",
             "Create/Update/Delete own uid match in CrayonRecord record",
@@ -102,6 +106,6 @@ public enum Operator implements EnumInterface {
         for (String s : abilities) {
             text.append("- %s\n".formatted(s));
         }
-        return text.toString();
+        return text.toString().stripTrailing();
     }
 }

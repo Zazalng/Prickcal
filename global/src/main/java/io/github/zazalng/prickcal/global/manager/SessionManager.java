@@ -41,6 +41,10 @@ public class SessionManager extends AbstractManager {
      */
     private final Map<Long, Message> controlMessages = new ConcurrentHashMap<>();
     /**
+     * Respond Message playback when doing action (userId -> String)
+     */
+    private final Map<Long, String> systemMessage = new ConcurrentHashMap<>();
+    /**
      * Currently viewed apostle per user (userId -> Apostle).
      */
     private final Map<Long, Apostle> currentApostle = new ConcurrentHashMap<>();
@@ -107,6 +111,21 @@ public class SessionManager extends AbstractManager {
         return controlMessages.remove(userId);
     }
 
+    // ==================== SYSTEM MESSAGES ====================
+
+    public SessionManager setSystemMessage(Long userId, String str) {
+        systemMessage.put(userId, str);
+        return this;
+    }
+
+    public String getSystemMessage(Long userId) {
+        return systemMessage.computeIfAbsent(userId, _ -> "");
+    }
+
+    public String removeSystemMessage(Long userId) {
+        return systemMessage.remove(userId);
+    }
+
     // ==================== CURRENT APOSTLE ====================
 
     public SessionManager setCurrentApostle(Long userId, Apostle apostle) {
@@ -159,6 +178,7 @@ public class SessionManager extends AbstractManager {
         removeAccountCache(account.getUid());
         removeControlMessages(account.getId());
         //Prickcal Session
+        removeSystemMessage(account.getId());
         removeCurrentApostle(account.getId());
         removeApostleTrackState(account.getId());
         removeApostleSearch(account.getId());
@@ -170,6 +190,7 @@ public class SessionManager extends AbstractManager {
         accountCache.clear();
         controlMessages.clear();
         apostleSearch.clear();
+        systemMessage.clear();
         currentApostle.clear();
         trackedApostleState.clear();
 

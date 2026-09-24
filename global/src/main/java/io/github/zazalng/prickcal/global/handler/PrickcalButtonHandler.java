@@ -143,7 +143,7 @@ public class PrickcalButtonHandler {
                 ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.getId(), m));
 
                 event.deferReply(true).queue(i ->
-                        i.sendMessageComponents(panelBuilder.buildMainMenuComponent())
+                        i.sendMessageComponents(panelBuilder.buildMainMenuComponent(account))
                                 .useComponentsV2(true)
                                 .setEphemeral(true)
                                 .queue()
@@ -478,7 +478,7 @@ public class PrickcalButtonHandler {
         if (account == null) return;
 
         event.deferEdit().queue(i ->
-                i.editOriginalComponents(panelBuilder.buildMainMenuComponent())
+                i.editOriginalComponents(panelBuilder.buildMainMenuComponent(account))
                         .useComponentsV2(true)
                         .queue()
         );
