@@ -21,6 +21,25 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Parses a template format string containing specific placeholders against an input string.
+ * <p>
+ * The parser recognizes the following placeholders:
+ * %dd – two‑digit day of month (01‑31)
+ * %dm – two‑digit month (01‑12)
+ * %dy – two‑ or four‑digit year
+ * %cs – one or more digits representing candy spent
+ * %ca – one or more digits representing crayons acquired
+ * <p>
+ * Each placeholder is replaced by its corresponding regular‑expression fragment while
+ * literal text between tokens is escaped and included verbatim. The assembled pattern is
+ * anchored at both ends and matched against the supplied input. On a successful match an
+ * {@link Result} containing a map from each placeholder token to its captured substring is
+ * returned wrapped in an {@code Optional}; otherwise an empty {@code Optional} is produced.
+ * <p>
+ * The {@code Result} provides read‑only access to the captured values via its
+ * {@code values()} method.
+ */
 public final class CrayonFormatParser {
     private static final Map<String, String> TOKENS = Map.of(
             "%dd", "(0[1-9]|[12]\\d|3[01])",

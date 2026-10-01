@@ -53,8 +53,10 @@ public class PrickcalModalHandler {
     public void handle(ModalInteractionEvent event) {
         String modalId = event.getModalId().substring(modalPrefix.length());
 
-        switch (modalId) {
-            case "apostle_switch_search" -> handleSwitchApostleSearch(event);
+        if (modalId.startsWith("apostle_")) {
+            handleSwitchApostleSearch(event);
+        } else if (modalId.startsWith("profile_")) {
+            handleProfileUpdate(event);
         }
     }
 
@@ -62,7 +64,6 @@ public class PrickcalModalHandler {
 
     private void handleSwitchApostleSearch(ModalInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
-        if (account == null) return;
 
         String searchName = Optional.ofNullable(event.getValue("search_name"))
                 .map(v -> v.getAsString().trim().toLowerCase())
@@ -102,6 +103,39 @@ public class PrickcalModalHandler {
                     }
                 })
         );
+    }
+
+    // ==================== SWITCH APOSTLE SEARCH ====================
+
+    private void handleProfileUpdate(ModalInteractionEvent event) {
+        String section = event.getModalId().substring((modalPrefix + "profile_update_").length());
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+
+        String value = Optional.ofNullable(event.getValue(section))
+                .map(m -> m.getAsString().trim())
+                .filter(s -> !s.isEmpty())
+                .orElse("");
+
+        if(!value.isEmpty()) {
+            switch(section) {
+                case "ign" -> account.setIgn(value);
+                case "code" -> account.setFriendCode(value);
+                case "format" -> account.validateFormat(value);
+            }
+
+            factory.getRepos().accounts().save(account);
+        }
+
+        event.deferEdit().queue(i ->
+                i.editOriginalComponents(
+                        panelBuilder.buildProfileComponent(account)
+                ).useComponentsV2(true).queue()
+        );
+
+        event.getHook().editMessageEmbedsById(
+                sessionManager.getControlMessages(account.getId()).getId(),
+                panelBuilder.buildMainMenuEmbed(event.getUser(), account)
+        ).queue(m -> sessionManager.setControlMessages(account.getId(), m));
     }
 
     // ==================== Helper ====================

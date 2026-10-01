@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Plugin(
         name = "Prickcal [Global]",
-        version = "1.0.1",
+        version = "1.1.0",
         author = "Zazalng",
         description = "A plugin for personally tracking & collection Trickcal progression."
 )
@@ -323,15 +323,14 @@ public class Prickcal {
             ).setEphemeral(true).queue(m -> sessionManager.setControlMessages(account.getId(), m));
 
             event.deferReply(true).queue(i ->
-                    i.sendMessageComponents(panelBuilder.buildMainMenuComponent())
+                    i.sendMessageComponents(panelBuilder.buildMainMenuComponent(account))
                             .useComponentsV2(true)
                             .setEphemeral(true)
                             .queue()
             );
         } else {
-            String format = account.getCrayonFormat();
             String message = mapping.getAsString();
-            String result = parsingRecordCrayon(account, format, message, null);
+            String result = parsingRecordCrayon(account, message, null);
 
             if(!result.isEmpty()){
                 sendPrivateMessage(event.getUser(), result);
@@ -356,8 +355,8 @@ public class Prickcal {
     )
     public void ephemeralViewRecord(UserContextInteractionEvent event) {
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
-        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
-        if (account.isEmpty()) {
+        Optional<Account> accounts = accountManager.findByUid(event.getUser().getId());
+        if (accounts.isEmpty()) {
             event.replyComponents(panelBuilder.buildConsentPanel()).useComponentsV2(true).setEphemeral(true).queue();
             return;
         }
@@ -392,9 +391,9 @@ public class Prickcal {
     )
     public void CrayonRecording(MessageContextInteractionEvent event) {
         AccountManager accountManager = factory.getManager(ManagersEnum.ACCOUNT);
-        Optional<Account> account = accountManager.findByUid(event.getUser().getId());
+        Optional<Account> accounts = accountManager.findByUid(event.getUser().getId());
 
-        if (account.isEmpty()) {
+        if (accounts.isEmpty()) {
             event.replyComponents(panelBuilder.buildConsentPanel())
                     .useComponentsV2(true)
                     .setEphemeral(true)
@@ -409,9 +408,8 @@ public class Prickcal {
             return;
         }
 
-        String format = account.get().getCrayonFormat();
         String message = event.getTarget().getContentStripped();
-        String result = parsingRecordCrayon(account.get(), format, message, event.getTarget().getAttachments().getFirst().getUrl());
+        String result = parsingRecordCrayon(accounts.get(), message, event.getTarget().getAttachments().getFirst().getUrl());
 
         if(!result.isEmpty()){
             reject(event, result);
@@ -453,12 +451,20 @@ public class Prickcal {
 
     // ==================== HELPER ====================
 
-    private String parsingRecordCrayon(Account account, String format, String message, String url) {
+    /**
+     * Parses a crayon record from the given format and message.
+     *
+     * @param account the account associated with the record
+     * @param message the message to be parsed according to the format
+     * @param url     the image URL to store with the record
+     * @return an empty string if parsing and saving succeeded, otherwise an error message describing the problem
+     */
+    private String parsingRecordCrayon(Account account, String message, String url) {
         Optional<CrayonFormatParser.Result> result =
-                CrayonFormatParser.parse(format, message);
+                CrayonFormatParser.parse(account.getCrayonFormat(), message);
 
         if (result.isEmpty()) {
-            return "Incorrect format of User '%s'".formatted(format);
+            return "Incorrect format of User '%s'".formatted(account.getCrayonFormat());
         }
 
         Map<String, String> values = result.get().values();

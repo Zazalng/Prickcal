@@ -21,6 +21,13 @@ import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
 import net.dv8tion.jda.api.components.checkboxgroup.CheckboxGroup;
 
 public final class LabelByEnum {
+    /**
+     * Creates a {@code CheckboxGroup.Builder} populated with options derived from the supplied enum.
+     *
+     * @param prefix the string prefix used to generate the checkbox group's identifier
+     * @param eClass the enum class whose constants must implement {@code EnumInterface}; each valid constant contributes an option label and value
+     * @return a builder for a checkbox group containing the valid enum options
+     */
     public static <E extends Enum<E> & EnumInterface> CheckboxGroup.Builder createCheckBoxGroup(String prefix, Class<E> eClass) {
         CheckboxGroup.Builder b = CheckboxGroup.create(prefix);
         for (E e : eClass.getEnumConstants()) {

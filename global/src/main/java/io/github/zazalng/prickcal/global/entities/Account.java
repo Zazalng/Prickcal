@@ -20,6 +20,8 @@ package io.github.zazalng.prickcal.global.entities;
 import group.worldstandard.pudel.api.database.Column;
 import group.worldstandard.pudel.api.database.Entity;
 import io.github.zazalng.prickcal.global.contract.operator.Operator;
+import io.github.zazalng.prickcal.global.exception.PrickcalEnum;
+import io.github.zazalng.prickcal.global.exception.PrickcalException;
 
 import java.time.Instant;
 
@@ -73,6 +75,12 @@ public class Account {
      */
     @Column(nullable = false, defaultValue = "%dd/%dm/%dy %cs %ca")
     private String crayonFormat;
+
+    /**
+     * A PDF template url (from discord.attachment)
+     */
+    @Column
+    private String templateUrl;
 
     @Column
     private Instant createdAt;
@@ -162,5 +170,37 @@ public class Account {
 
     public boolean isActionable(Operator level) {
         return ops <= level.getValue();
+    }
+
+    public String getDefaultText(String section) {
+        return switch (section) {
+            case "ign" -> getIgn();
+            case "code" -> getFriendCode();
+            case "format" -> getCrayonFormat();
+            default ->
+                    throw new PrickcalException(PrickcalEnum.ARGS_EXCEPTION, "Unexpect Argument on Account.getWish(%s)".formatted(section));
+        };
+    }
+
+    /**
+     * Validates that the given format string contains all required placeholders
+     * (%dd, %dm, %dy, %cs, %ca) and does not contain the forbidden combinations
+     * %cs%ca or %ca%cs. If the validation succeeds, the format is stored by
+     * invoking {@link #setCrayonFormat(String)}.
+     *
+     * @param value the format string to validate
+     */
+    public void validateFormat(String value) {
+        for (String token : new String[]{"%dd", "%dm", "%dy", "%cs", "%ca"}) {
+            if (!value.contains(token)) {
+                return;
+            }
+        }
+
+        if (value.contains("%cs%ca") || value.contains("%ca%cs")) {
+            return;
+        }
+
+        setCrayonFormat(value);
     }
 }

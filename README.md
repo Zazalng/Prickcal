@@ -2,10 +2,7 @@
 
 A Pudel Discord Bot plugin for personally tracking Trickcal progression.
 
-**Version:** 1.0.0 \
-**Author:** Zazalng (Napapon Kamanee) \
 **License:** GNU Affero General Public License v3.0 \
-**Repository:** https://github.com/Zazalng/Prickcal
 
 ---
 

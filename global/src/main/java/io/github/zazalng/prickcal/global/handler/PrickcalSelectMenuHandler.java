@@ -24,8 +24,6 @@ import io.github.zazalng.prickcal.global.entities.Apostle;
 import io.github.zazalng.prickcal.global.manager.*;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 
-import java.util.Optional;
-
 /**
  * Thin StringSelectMenu interaction router.
  * Delegates all business logic to the Manager layer.
@@ -63,11 +61,7 @@ public class PrickcalSelectMenuHandler {
 
         String value = event.getValues().getFirst();
 
-        Optional<Account> accountOpt = accountManager.findByUid(event.getUser().getId());
-
-        if (accountOpt.isEmpty()) return;
-
-        Account account = accountOpt.get();
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
 
         if (value.startsWith("pagination:")) {
             int direction = Integer.parseInt(value.substring("pagination:".length()));

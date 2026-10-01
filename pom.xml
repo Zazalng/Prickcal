@@ -53,6 +53,8 @@
         <jda.version>6.5.0</jda.version>
         <pudel.version>2.5.0</pudel.version>
         <log.version>2.0.18</log.version>
+        <pdf.version>3.0.8</pdf.version>
+
         <shade.version>3.6.2</shade.version>
 
         <jackson.version>3.2.2</jackson.version>
@@ -76,6 +78,12 @@
             <artifactId>slf4j-api</artifactId>
             <version>${log.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdf.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

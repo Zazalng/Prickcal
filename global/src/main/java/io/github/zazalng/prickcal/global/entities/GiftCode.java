@@ -40,6 +40,11 @@ public class GiftCode {
     @Column
     private String description;
     /**
+     * The image URL associated with reward of this gift code.
+     */
+    @Column
+    private String imgUrl;
+    /**
      * An expiry timestamp of gift code
      */
     @Column
@@ -98,4 +103,13 @@ public class GiftCode {
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public String getImgUrl() {
+        return imgUrl;
+    }
+
+    public void setImgUrl(String imgUrl) {
+        this.imgUrl = imgUrl;
+    }
+
 }
