@@ -2,6 +2,16 @@ package io.github.zazalng.prickcal.korea;
 
 import group.worldstandard.pudel.api.annotation.Plugin;
 
+/**
+ * The Korea-flavoured entry point of the Prickcal plugin.
+ * <p>
+ * Holds the handler ID constants used in the interaction annotations of this module, plus the
+ * schema-scoped runtime prefixes that are meant to be derived from them once the plugin is enabled. The
+ * prefixes are declared but never assigned in this module: the control panel, command and event handling
+ * that would use them currently live in the global module, which carries its own prefixes.
+ * <p>
+ * No lifecycle callback is implemented here yet, so the module registers no listeners of its own.
+ */
 @Plugin(
         name = "Prickcal [Global]",
         version = "0.0.1-indev",

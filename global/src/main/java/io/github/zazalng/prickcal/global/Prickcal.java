@@ -108,6 +108,14 @@ public class Prickcal {
 
     // ==================== LIFECYCLE ====================
 
+    /**
+     * Plugin entry point: migrates the schema, wires the services, then logs readiness.
+     * <p>
+     * Builds the schema-scoped custom ID prefixes from the database schema name, initialises the repositories
+     * and every manager, and constructs the {@link PanelBuilder} and the three thin interaction handlers.
+     *
+     * @param ctx the plugin context supplied by Pudel for this enable cycle
+     */
     @OnEnable
     public void onEnable(PluginContext ctx) {
         this.ctx = ctx;
@@ -125,6 +133,13 @@ public class Prickcal {
         );
     }
 
+    /**
+     * Disables the plugin by shutting every manager down and dropping the stored context.
+     * <p>
+     * A no-op when {@link #onEnable(PluginContext)} never completed, since no factory would exist.
+     *
+     * @param ctx the plugin context supplied by Pudel for this disable cycle
+     */
     @OnDisable
     public void onDisable(PluginContext ctx) {
         if (factory != null) {
@@ -133,6 +148,16 @@ public class Prickcal {
         this.ctx = null;
     }
 
+    /**
+     * Attempts a graceful shutdown of the plugin, reporting whether it succeeded.
+     * <p>
+     * Shuts every manager down, logs the result and returns {@code true}; any exception is logged as an error
+     * and reported as {@code false} so the host can fall back to a hard stop. Unlike {@link #onDisable(PluginContext)}
+     * this runs while the host is still able to log.
+     *
+     * @param ctx the plugin context supplied by Pudel for this shutdown cycle
+     * @return {@code true} when every manager shut down cleanly, {@code false} when an exception was caught
+     */
     @OnShutdown
     public boolean onShutdown(PluginContext ctx) {
         try {
@@ -152,11 +177,26 @@ public class Prickcal {
 
     // ==================== INITIALIZATION ====================
 
+    /**
+     * Prepares the database by migrating the schema and then resolving the repositories from it.
+     * <p>
+     * Must run before any manager is constructed, since the managers read the repositories lazily.
+     *
+     * @param db the database manager of the enabled schema
+     */
     private void initializeDatabase(PluginDatabaseManager db) {
         migrateDatabase(db);
         createRepositories(db);
     }
 
+    /**
+     * Brings the plugin's tables up to date with their entity definitions.
+     * <p>
+     * All twelve entity classes are handed to {@code autoMigrate} in one call, so added, renamed or resized
+     * columns are applied on enable. This is a schema change, not a data migration.
+     *
+     * @param db the database manager of the enabled schema
+     */
     private void migrateDatabase(PluginDatabaseManager db) {
         db.autoMigrate(Account.class,
                 Apostle.class,
@@ -173,6 +213,13 @@ public class Prickcal {
         );
     }
 
+    /**
+     * Resolves a typed repository per entity and holds them as fields for the {@link RepositoryProvider}.
+     * <p>
+     * The repositories themselves are stateless handles onto the migrated tables; nothing is queried here.
+     *
+     * @param db the database manager of the enabled schema
+     */
     private void createRepositories(PluginDatabaseManager db) {
         accounts = db.getRepository(Account.class);
         apostles = db.getRepository(Apostle.class);
@@ -188,6 +235,13 @@ public class Prickcal {
         stageGears = db.getRepository(StageGearDrop.class);
     }
 
+    /**
+     * Constructs the service graph once the repositories exist.
+     * <p>
+     * Builds the {@link RepositoryProvider} over the JDA instance, then the {@link ManagerFactory}, then the
+     * {@link PanelBuilder} and the button, modal and string select handlers. Order matters: the builder and
+     * handlers each resolve managers out of the factory on construction.
+     */
     private void initializeServices() {
         // -- RepositoryProvider (standalone interface, not an inner class) --
         JDA jda = ctx.getJDA();
@@ -209,69 +263,99 @@ public class Prickcal {
                 stringMenuPrefix, panelBuilder, factory);
     }
 
+    /**
+     * Creates the repository accessors handed to the {@link ManagerFactory}.
+     * <p>
+     * Each accessor simply returns the repository field created by {@link #createRepositories(PluginDatabaseManager)},
+     * so the managers never touch the database manager itself.
+     *
+     * @param jda the connected JDA instance, captured for user retrieval; may be {@code null} before the gateway is ready
+     * @return a provider exposing one accessor per repository plus Discord user lookup
+     */
     private RepositoryProvider createRepoProvider(JDA jda) {
         return new RepositoryProvider() {
             @Override
+            /** Returns the {@link Account} repository. */
             public PluginRepository<Account> accounts() {
                 return accounts;
             }
 
             @Override
+            /** Returns the {@link Apostle} repository. */
             public PluginRepository<Apostle> apostles() {
                 return apostles;
             }
 
             @Override
+            /** Returns the {@link ApostleRemarkable} repository. */
             public PluginRepository<ApostleRemarkable> apostleRemarkables() {
                 return apostleRemarkables;
             }
 
             @Override
+            /** Returns the {@link ApostleTrack} repository. */
             public PluginRepository<ApostleTrack> apostleTrackers() {
                 return apostleTrackers;
             }
 
             @Override
+            /** Returns the {@link CrayonLineUp} repository. */
             public PluginRepository<CrayonLineUp> crayonLineups() {
                 return crayonLineups;
             }
 
             @Override
+            /** Returns the {@link CrayonRecord} repository. */
             public PluginRepository<CrayonRecord> crayonRecords() {
                 return crayonRecords;
             }
 
             @Override
+            /** Returns the {@link GiftAcquired} repository. */
             public PluginRepository<GiftAcquired> giftAcquires() {
                 return giftAcquires;
             }
 
             @Override
+            /** Returns the {@link GiftCode} repository. */
             public PluginRepository<GiftCode> giftCodes() {
                 return giftCodes;
             }
 
             @Override
+            /** Returns the {@link Hashtag} repository. */
             public PluginRepository<Hashtag> hashTags() {
                 return hashTags;
             }
 
             @Override
+            /** Returns the {@link Log} repository. */
             public PluginRepository<Log> logs() {
                 return logs;
             }
 
             @Override
+            /** Returns the {@link RemarkableRecord} repository. */
             public PluginRepository<RemarkableRecord> remarkableRecords() {
                 return remarkableRecords;
             }
 
             @Override
+            /** Returns the {@link StageGearDrop} repository. */
             public PluginRepository<StageGearDrop> stageGears() {
                 return stageGears;
             }
 
             @Override
+            /**
+             * Resolves a Discord user, falling back to a REST fetch when the user is not in the local cache.
+             * <p>
+             * The blocking {@code complete()} call is intended for log enrichment, not request handling. Returns
+             * {@code null} when JDA is not ready or the user cannot be fetched, rather than propagating the failure.
+             *
+             * @param uid the Discord user id to resolve
+             * @return the cached or freshly fetched user, or {@code null} if it could not be resolved
+             */
             public User getDiscordUser(String uid) {
                 if (jda == null) return null;
                 User user = jda.getUserById(uid);
@@ -288,6 +372,16 @@ public class Prickcal {
 
     // ==================== SLASH COMMAND ====================
 
+    /**
+     * Serves {@code /prickcal}, which either opens the control panel or records a crayon entry.
+     * <p>
+     * A user with no account is shown the consent notice and nothing else. Otherwise the session is cleared and
+     * re-cached, the main menu embed is posted as the session's control message and the panel is sent as an
+     * ephemeral reply. When the {@code string_record} option is supplied the panel is skipped entirely and the
+     * text is parsed as a crayon record instead, with any parse failure sent to the user's DMs.
+     *
+     * @param event the slash command interaction
+     */
     @SlashCommand(
             name = "prickcal",
             description = "Open Control Panel for personal tracking.",
@@ -345,6 +439,14 @@ public class Prickcal {
 
     // ==================== CONTEXT MENU ====================
 
+    /**
+     * Serves the {@code Prickcal > View Record} user context menu by showing a target's profile summary.
+     * <p>
+     * The caller must have an account or they are shown the consent notice. The target is looked up separately,
+     * so this can render a profile beyond the caller's own; a target with no account gets an ephemeral notice.
+     *
+     * @param event the user context menu interaction
+     */
     @ContextMenu(
             baseName = "Prickcal",
             funcName = "View Record",
@@ -377,6 +479,16 @@ public class Prickcal {
         ).setEphemeral(true).queue();
     }
 
+    /**
+     * Serves the {@code Prickcal > Crayon Record} message context menu by recording a crayon run from a message.
+     * <p>
+     * The caller needs an account, and must be the author of the target message; both failures answer ephemerally.
+     * The message body is parsed with the caller's crayon format, and the first attachment's URL is stored
+     * alongside the record. The target message is then marked: a cross on a parse failure, with the reason sent
+     * to the caller's DMs, otherwise the cross is removed and a tick is added.
+     *
+     * @param event the message context menu interaction
+     */
     @ContextMenu(
             baseName = "Prickcal",
             funcName = "Crayon Record",
@@ -434,16 +546,31 @@ public class Prickcal {
 
     // ==================== HANDLER ROUTERS ====================
 
+    /**
+     * Routes every button interaction prefixed {@code :button:} to {@link PrickcalButtonHandler}.
+     *
+     * @param event the button interaction to dispatch
+     */
     @group.worldstandard.pudel.api.annotation.ButtonHandler(":button:")
     public void handleButton(ButtonInteractionEvent event) {
         prickcalButtonHandler.handle(event);
     }
 
+    /**
+     * Routes every modal submission prefixed {@code :modal:} to {@link PrickcalModalHandler}.
+     *
+     * @param event the modal interaction to dispatch
+     */
     @group.worldstandard.pudel.api.annotation.ModalHandler(":modal:")
     public void handleModal(ModalInteractionEvent event) {
         prickcalModalHandler.handle(event);
     }
 
+    /**
+     * Routes every string select interaction prefixed {@code :string:} to {@link PrickcalSelectMenuHandler}.
+     *
+     * @param event the string select interaction to dispatch
+     */
     @group.worldstandard.pudel.api.annotation.SelectMenuHandler(":string:")
     public void handleSelectMenu(StringSelectInteractionEvent event) {
         prickcalSelectMenuHandler.handle(event);
@@ -525,6 +652,15 @@ public class Prickcal {
         return "";
     }
 
+    /**
+     * Marks the target message as rejected and explains why to the invoking user privately.
+     * <p>
+     * The reason is a parse failure message, so it goes over DM rather than into the channel the run was posted
+     * to, and it self-deletes after 5 seconds.
+     *
+     * @param event  the context menu interaction whose target message failed to parse
+     * @param reason the human-readable failure text to send privately
+     */
     private void reject(
             MessageContextInteractionEvent event,
             String reason
@@ -533,6 +669,16 @@ public class Prickcal {
         sendPrivateMessage(event.getUser(), reason);
     }
 
+    /**
+     * Sends a user a self-deleting DM carrying an operation failure.
+     * <p>
+     * Used for crayon record parse failures, which must not be exposed in the channel the run was posted to.
+     * The DM is queued asynchronously and its delivery is not checked, so a user with closed DMs simply receives
+     * nothing.
+     *
+     * @param user   the user to notify
+     * @param reason the human-readable failure text to send
+     */
     private void sendPrivateMessage(User user, String reason){
         user.openPrivateChannel()
                 .queue(channel ->

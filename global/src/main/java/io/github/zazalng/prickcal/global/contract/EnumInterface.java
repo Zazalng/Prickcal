@@ -15,12 +15,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.zazalng.prickcal.global.contract.trickcal;
+package io.github.zazalng.prickcal.global.contract;
 
+/**
+ * Shared contract of the game-data enums that can be rendered as a Discord select-menu option,
+ * so any of them can be offered to the user without knowing its concrete type.
+ */
 public interface EnumInterface {
+    /**
+     * The text shown to the user as the option name.
+     *
+     * @return a human readable label for this constant
+     */
     String getOptionLabel();
 
+    /**
+     * The value submitted back by Discord when the user picks this option.
+     *
+     * @return a string form of the game-data value that the matching lookup accepts
+     */
     String getOptionValue();
 
+    /**
+     * Whether this constant represents a real game value rather than a placeholder.
+     *
+     * @return {@code true} when the constant maps to actual game data
+     */
     boolean isValid();
 }

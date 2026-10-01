@@ -56,58 +56,76 @@ public class Log {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Key record column require by API
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Key record column require by API
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** Belong to {@link Account}.uid */
     public Long getUid() {
         return uid;
     }
 
+    /** Belong to {@link Account}.uid */
     public void setUid(Long uid) {
         this.uid = uid;
     }
 
+    /** Which table of database get invoice */
     public String getTableName() {
         return tableName;
     }
 
+    /** Which table of database get invoice */
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
 
+    /** Which action this log do (match {@link io.github.zazalng.prickcal.global.contract.operator.Action}) */
     public String getAction() {
         return action;
     }
 
+    /** Which action this log do (match {@link io.github.zazalng.prickcal.global.contract.operator.Action}) */
     public void setAction(String action) {
         this.action = action;
     }
 
+    /** What it does in plaintext */
     public String getToString() {
         return toString;
     }
 
+    /** What it does in plaintext */
     public void setToString(String toString) {
         this.toString = toString;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }

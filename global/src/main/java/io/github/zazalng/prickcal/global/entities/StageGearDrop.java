@@ -61,69 +61,90 @@ public class StageGearDrop {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Creates an empty {@link StageGearDrop} record.
+     */
     public StageGearDrop() {
     }
 
+    /**
+     * Which stage number
+     */
     public int getStage() {
         return stage;
     }
 
+    /** Which stage number */
     public void setStage(int stage) {
         this.stage = stage;
     }
 
+    /** Which map in stage number */
     public int getMap() {
         return map;
     }
 
+    /** Which map in stage number */
     public void setMap(int map) {
         this.map = map;
     }
 
+    /** Which Tier number of this stage hold (can be only \d+\.[0,5] as valid value) */
     public float getInitTier() {
         return initTier;
     }
 
+    /** Which Tier number of this stage hold (can be only \d+\.[0,5] as valid value) */
     public void setInitTier(float initTier) {
         this.initTier = initTier;
     }
 
+    /** Which gear type id from {@link io.github.zazalng.prickcal.global.contract.trickcal.GearType} */
     public int getLowGrade() {
         return lowGrade;
     }
 
+    /** Which gear type id from {@link io.github.zazalng.prickcal.global.contract.trickcal.GearType} */
     public void setLowGrade(int lowGrade) {
         this.lowGrade = lowGrade;
     }
 
+    /** Which gear type id from {@link io.github.zazalng.prickcal.global.contract.trickcal.GearType} */
     public int getHighGrade() {
         return highGrade;
     }
 
+    /** Which gear type id from {@link io.github.zazalng.prickcal.global.contract.trickcal.GearType} */
     public void setHighGrade(int highGrade) {
         this.highGrade = highGrade;
     }
 
+    /** Key record column require by API */
     public Long getId() {
         return id;
     }
 
+    /** Key record column require by API */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }

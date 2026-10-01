@@ -58,6 +58,14 @@ public class PrickcalButtonHandler {
     private final ApostleManager apostleManager;
     private final SessionManager sessionManager;
 
+    /**
+     * Creates the button router for one plugin schema.
+     *
+     * @param btnPrefix    the prefix carried by every button custom ID that {@link PanelBuilder} emits
+     * @param modalPrefix  the prefix used for the modal custom IDs this handler opens from a button
+     * @param panelBuilder the builder that renders every panel this handler edits
+     * @param factory      the manager factory used to resolve the session, account and apostle managers
+     */
     public PrickcalButtonHandler(String btnPrefix, String modalPrefix,
                                  PanelBuilder panelBuilder, ManagerFactory factory) {
         this.btnPrefix = btnPrefix;
@@ -69,6 +77,21 @@ public class PrickcalButtonHandler {
         apostleManager = factory.getManager(ManagersEnum.APOSTLE);
     }
 
+    /**
+     * Routes a button interaction to the handler that owns its custom ID.
+     * <p>
+     * The custom ID is stripped of {@code btnPrefix} and dispatched by prefix: {@code consent_}, then
+     * {@code apostle} (with {@code apostle_switching} and {@code apostle_increase_<true|false>} carved out),
+     * then {@code crayon} (with {@code crayon_toggle_<index>}, {@code crayon_confirm} and {@code crayon_reset}
+     * carved out), then {@code profile} (with {@code profile_leak} and {@code profile_<section>} carved out),
+     * then the remaining exact ids {@code import_export}, {@code database}, {@code administrator}, {@code logs},
+     * {@code delete_data}, {@code deep_search_modal} and {@code back_main}, plus the {@code post_*}
+     * ({@code post_apostle}, {@code post_tracker}, {@code post_profile}) and {@code delete_*} families.
+     * A {@code crayon} id that is not a toggle, confirm or reset falls through to the administrator panel.
+     * Guild-less and member-less interactions are ignored, and unrecognised ids are dropped without a reply.
+     *
+     * @param event the button interaction to dispatch
+     */
     public void handle(ButtonInteractionEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -130,6 +153,16 @@ public class PrickcalButtonHandler {
 
     // ==================== CONSENT ====================
 
+    /**
+     * Serves the consent notice buttons {@code consent_agree} and {@code consent_disagree}.
+     * <p>
+     * Agreeing creates the account through {@link AccountManager#createAccount(String, String)}, caches it
+     * in the {@link SessionManager}, replaces the notice with a new ephemeral main menu and registers that
+     * menu as the session's control message. Disagreeing deletes the notice and answers with an ephemeral
+     * denial that removes itself after 5 seconds.
+     *
+     * @param event the {@code consent_*} button interaction
+     */
     private void handleConsent(ButtonInteractionEvent event) {
         String action = event.getComponentId().substring(btnPrefix.length());
         switch (action) {
@@ -160,6 +193,14 @@ public class PrickcalButtonHandler {
 
     // ==================== APOSTLE ====================
 
+    /**
+     * Serves the {@code apostle} button by opening the crayon panel of a randomly picked apostle.
+     * <p>
+     * The pick is stored as the session's current apostle. Replies ephemerally with an error and returns
+     * when the apostle table is empty, and does nothing when the user has no cached account.
+     *
+     * @param event the {@code apostle} button interaction
+     */
     private void handleApostle(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -175,6 +216,16 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
+    /**
+     * Redraws the crayon panel in place for the given apostle.
+     * <p>
+     * Edits the clicked message's components to {@link PanelBuilder#buildApostleComponent(Account, Apostle)}
+     * and refreshes the session's control message embed to {@link PanelBuilder#buildTrackEmbed(Account, Apostle)}.
+     *
+     * @param event   the button interaction whose message holds the crayon panel
+     * @param account the account whose session holds the control message
+     * @param apostle the apostle the panel is being drawn for
+     */
     private void showApostlePanel(ButtonInteractionEvent event, Account account, Apostle apostle) {
         event.deferEdit().queue(i ->
                 i.editOriginalComponents(panelBuilder.buildApostleComponent(account, apostle))
@@ -189,6 +240,14 @@ public class PrickcalButtonHandler {
         );
     }
 
+    /**
+     * Serves the {@code apostle_switching} button by swapping the crayon panel for the apostle list panel.
+     * <p>
+     * The control message embed is re-rendered for the session's current apostle, but only when a control
+     * message has already been registered for the account.
+     *
+     * @param event the {@code apostle_switching} button interaction
+     */
     private void handleApostleSwitching(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -207,6 +266,16 @@ public class PrickcalButtonHandler {
         }
     }
 
+    /**
+     * Serves the {@code apostle_increase_true} and {@code apostle_increase_false} star buttons.
+     * <p>
+     * Applies {@link ApostleTrack#updateCurrentStar(Apostle, boolean)} to the staged track held in the session,
+     * which clamps the star between the apostle's init and max, then redraws the panel. The change remains
+     * staged until {@code crayon_confirm} persists it.
+     *
+     * @param event the {@code apostle_increase_*} button interaction
+     * @param b     {@code true} to gain a star, {@code false} to lose one
+     */
     private void handleApostleTrackStarIncreasing(ButtonInteractionEvent event, boolean b) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -219,6 +288,16 @@ public class PrickcalButtonHandler {
 
     // ==================== CRAYON ====================
 
+    /**
+     * Serves the per-house {@code crayon_toggle_<index>} buttons.
+     * <p>
+     * Flips the acquired flag at that index of the staged track, raises the staged star to the apostle's
+     * init star when the first crayon becomes acquired, and redraws the panel. The edit stays staged until
+     * {@code crayon_confirm} persists it.
+     *
+     * @param event    the {@code crayon_toggle_*} button interaction
+     * @param buttonId the custom ID with {@code btnPrefix} and {@code crayon_toggle_} already stripped, i.e. the house index
+     */
     private void handleCrayonToggle(ButtonInteractionEvent event, String buttonId) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -239,6 +318,14 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
+    /**
+     * Serves the {@code crayon_confirm} button by persisting the staged crayon grid.
+     * <p>
+     * Removes the staged {@link ApostleTrack} from the session, hands it to
+     * {@link ApostleManager#confirmTrackUpdate(ApostleTrack)} and redraws the panel from the saved state.
+     *
+     * @param event the {@code crayon_confirm} button interaction
+     */
     private void handleCrayonConfirm(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -251,6 +338,14 @@ public class PrickcalButtonHandler {
         showApostlePanel(event, account, apostle);
     }
 
+    /**
+     * Serves the {@code crayon_reset} button by discarding the staged edits.
+     * <p>
+     * Replaces the staged track in the session with the currently persisted one from
+     * {@link ApostleManager#findTrack(Account, Apostle)}, then redraws the panel.
+     *
+     * @param event the {@code crayon_reset} button interaction
+     */
     private void handleCrayonReset(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -266,6 +361,16 @@ public class PrickcalButtonHandler {
 
     // ==================== Profile ====================
 
+    /**
+     * Redraws the profile panel in place.
+     * <p>
+     * Edits the clicked message's components to {@link PanelBuilder#buildProfileComponent(Account)} and, when a
+     * control message is registered, refreshes its embed to {@link PanelBuilder#buildMainMenuEmbed(net.dv8tion.jda.api.entities.User, Account)}
+     * so the summary stays in sync with the edited profile.
+     *
+     * @param event   the button interaction whose message holds the profile panel
+     * @param account the account being displayed and edited
+     */
     private void showProfilePanel(ButtonInteractionEvent event, Account account) {
         event.deferEdit().queue(i ->
                 i.editOriginalComponents(
@@ -281,11 +386,27 @@ public class PrickcalButtonHandler {
         }
     }
 
+    /**
+     * Serves the {@code profile} button by opening the profile panel.
+     * <p>
+     * The cached account is passed straight through without a null check.
+     *
+     * @param event the {@code profile} button interaction
+     */
     private void handleProfile(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         showProfilePanel(event, account);
     }
 
+    /**
+     * Serves the {@code profile_<section>} buttons by opening the edit modal for that section.
+     * <p>
+     * The modal is a single required short text input pre-filled with the section's current value from
+     * {@link Account#getDefaultText(String)}; submission is handled by {@link PrickcalModalHandler}.
+     *
+     * @param event   the {@code profile_*} button interaction
+     * @param section the section key ({@code ign}, {@code code} or {@code format}) with {@code profile_} already stripped
+     */
     private void handleProfileUpdate(ButtonInteractionEvent event, String section) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
 
@@ -302,6 +423,13 @@ public class PrickcalButtonHandler {
         ).queue();
     }
 
+    /**
+     * Serves the {@code profile_leak} button by flipping the account's leak-content visibility.
+     * <p>
+     * The toggled {@link Account} is saved straight to the repository, then the profile panel is redrawn.
+     *
+     * @param event the {@code profile_leak} button interaction
+     */
     private void handleProfileLeak(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         account.setLeak(!account.isLeak());
@@ -313,6 +441,15 @@ public class PrickcalButtonHandler {
 
     // ==================== DEEP SEARCH ====================
 
+    /**
+     * Serves the {@code deep_search_modal} button by opening the apostle search modal.
+     * <p>
+     * The modal carries an optional name text input plus optional race, personality and position checkbox
+     * groups produced by {@link LabelByEnum#createCheckBoxGroup(String, Class)}. Submission is handled by
+     * {@link PrickcalModalHandler} under the {@code apostle_switch_search} id.
+     *
+     * @param event the {@code deep_search_modal} button interaction
+     */
     private void handleDeepSearchModal(ButtonInteractionEvent event) {
         event.replyModal(
                 Modal.create(modalPrefix + "apostle_switch_search", "Search Apostle")
@@ -347,6 +484,13 @@ public class PrickcalButtonHandler {
 
     // ==================== SUB-PANELS ====================
 
+    /**
+     * Serves the {@code import_export} button by editing the message to the import/export panel in place.
+     * <p>
+     * That panel is currently a placeholder; it carries no session state.
+     *
+     * @param event the {@code import_export} button interaction
+     */
     private void handleImportExport(ButtonInteractionEvent event) {
         event.editMessage(
                 new MessageEditBuilder()
@@ -356,6 +500,13 @@ public class PrickcalButtonHandler {
         ).queue();
     }
 
+    /**
+     * Serves the {@code database} button by editing the message to the database panel in place.
+     * <p>
+     * That panel is currently a placeholder; it carries no session state.
+     *
+     * @param event the {@code database} button interaction
+     */
     private void handleDatabase(ButtonInteractionEvent event) {
         event.editMessage(
                 new MessageEditBuilder()
@@ -365,6 +516,14 @@ public class PrickcalButtonHandler {
         ).queue();
     }
 
+    /**
+     * Serves the {@code administrator} button, enforcing the {@link Operator#ADMIN} permission first.
+     * <p>
+     * Answers with an ephemeral refusal that deletes itself after 5 seconds when the cached account is not
+     * actionable at admin level, otherwise edits the message to {@link PanelBuilder#buildAdministratorPanel()}.
+     *
+     * @param event the {@code administrator} button interaction
+     */
     private void handleAdministrator(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -384,6 +543,14 @@ public class PrickcalButtonHandler {
         ).queue();
     }
 
+    /**
+     * Serves the {@code logs} button by editing the message to the public logs panel.
+     * <p>
+     * Reads the 50 most recent {@link Log} rows, newest id first. No permission check is applied because
+     * these logs are part of the public-resource transparency notice.
+     *
+     * @param event the {@code logs} button interaction
+     */
     private void handleLogs(ButtonInteractionEvent event) {
         List<Log> recentLogs = factory.getRepos().logs().query()
                 .orderByDesc("id")
@@ -399,6 +566,13 @@ public class PrickcalButtonHandler {
 
     // ==================== PUBLIC POST ====================
 
+    /**
+     * Serves the {@code post_apostle} button by posting the static apostle embed to the channel.
+     * <p>
+     * Uses the session's current apostle, then answers ephemerally with "Success" that deletes itself.
+     *
+     * @param event the {@code post_apostle} button interaction
+     */
     private void handlePostApostle(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -415,6 +589,13 @@ public class PrickcalButtonHandler {
                 .queue();
     }
 
+    /**
+     * Serves the {@code post_tracker} button by posting the caller's tracker embed to the channel.
+     * <p>
+     * Built from the session's current apostle, then answers ephemerally with "Success" that deletes itself.
+     *
+     * @param event the {@code post_tracker} button interaction
+     */
     private void handlePostTracker(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -432,6 +613,13 @@ public class PrickcalButtonHandler {
                 .queue();
     }
 
+    /**
+     * Serves the {@code post_profile} button by posting the caller's profile summary embed to the channel.
+     * <p>
+     * Then answers ephemerally with "Success" that deletes itself.
+     *
+     * @param event the {@code post_profile} button interaction
+     */
     private void handlePostProfile(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
@@ -448,6 +636,13 @@ public class PrickcalButtonHandler {
 
     // ==================== DELETE DATA ====================
 
+    /**
+     * Serves the {@code delete_data} button by editing the message to the deletion confirmation panel.
+     * <p>
+     * Nothing is deleted here; the panel only offers {@code delete_confirm} and {@code delete_cancel}.
+     *
+     * @param event the {@code delete_data} button interaction
+     */
     private void handleDeleteData(ButtonInteractionEvent event) {
         event.editMessage(
                 new MessageEditBuilder()
@@ -457,6 +652,16 @@ public class PrickcalButtonHandler {
         ).queue();
     }
 
+    /**
+     * Serves the {@code delete_*} family: {@code delete_confirm} erases the caller's data, anything else cancels.
+     * <p>
+     * Confirmation runs {@link AccountManager#deleteAllUserData(String)} and then replaces the message with a
+     * notice that deletes itself after 5 seconds. Any other {@code delete_*} id, such as {@code delete_cancel},
+     * is routed to {@link #handleBackMain(ButtonInteractionEvent)}.
+     *
+     * @param event    the {@code delete_*} button interaction
+     * @param buttonId the custom ID with {@code btnPrefix} already stripped, compared against {@code delete_confirm}
+     */
     private void handleDeleteConfirm(ButtonInteractionEvent event, String buttonId) {
         if (buttonId.equals("delete_confirm")) {
             accountManager.deleteAllUserData(event.getUser().getId());
@@ -473,6 +678,15 @@ public class PrickcalButtonHandler {
 
     // ==================== NAVIGATION ====================
 
+    /**
+     * Serves the {@code back_main} button by returning to the main menu.
+     * <p>
+     * Edits the clicked message back to {@link PanelBuilder#buildMainMenuComponent(Account)}, refreshes the
+     * control message embed, and clears the cached session so no staged crayon, apostle or search state
+     * survives the navigation.
+     *
+     * @param event the {@code back_main} button interaction
+     */
     private void handleBackMain(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;

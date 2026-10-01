@@ -52,6 +52,26 @@ public final class CrayonFormatParser {
     private static final Pattern TOKEN_PATTERN =
             Pattern.compile("%(?:dd|dm|dy|cs|ca)");
 
+    /**
+     * Matches an input string against a template format and extracts the captured placeholder values.
+     * <p>
+     * Each recognised token is substituted with its own regex fragment, every literal run between tokens is
+     * {@link Pattern#quote(String)}-escaped and included verbatim, and the assembled pattern is anchored at both
+     * ends. A format containing no token is therefore treated as a literal and only matches that exact text.
+     * <p>
+     * Malformed input is not an error here: a non-matching input simply yields an empty {@code Optional}. Range
+     * and divisibility rules ({@code %dd} 01-31, {@code %dm} 01-12, a two-digit year, candies spent as a
+     * multiple of 20) are also not enforced beyond the digit shape. Callers such as
+     * {@link io.github.zazalng.prickcal.global.Prickcal#parsingRecordCrayon(Account, String, String)} must check
+     * that all five tokens are present and that the values are semantically valid.
+     * <p>
+     * A token repeated in the format is captured more than once but collapses to a single map entry holding the
+     * last occurrence, because the returned map is keyed by token.
+     *
+     * @param format the template containing the {@code %dd}, {@code %dm}, {@code %dy}, {@code %cs} and {@code %ca} tokens
+     * @param input  the string to match, for example a Discord message body
+     * @return a {@link Result} mapping each token to its captured substring, or {@link Optional#empty()} if the input does not match the format
+     */
     public static Optional<Result> parse(String format, String input) {
         Matcher tokenMatcher = TOKEN_PATTERN.matcher(format);
 
@@ -93,6 +113,15 @@ public final class CrayonFormatParser {
         return Optional.of(new Result(values));
     }
 
+    /**
+     * The captured values of a successful parse.
+     * <p>
+     * The map is keyed by the literal token text, for example {@code %dd}, in the order the tokens appear in the
+     * format, and each value is the substring that token captured. A format with no tokens yields an empty map,
+     * and a format missing some tokens yields a map that lacks those keys.
+     *
+     * @param values the token-to-captured-substring map produced by {@link #parse(String, String)}
+     */
     public record Result(Map<String, String> values) {
     }
 }

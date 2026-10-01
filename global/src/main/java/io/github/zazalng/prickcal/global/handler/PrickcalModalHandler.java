@@ -41,6 +41,13 @@ public class PrickcalModalHandler {
     private final AccountManager accountManager;
     private final ApostleManager apostleManager;
 
+    /**
+     * Creates the modal router for one plugin schema.
+     *
+     * @param modalPrefix  the prefix carried by every modal custom ID this handler dispatches
+     * @param panelBuilder the builder that renders every panel this handler edits
+     * @param factory      the manager factory used to resolve the session, account and apostle managers
+     */
     public PrickcalModalHandler(String modalPrefix, PanelBuilder panelBuilder, ManagerFactory factory) {
         this.modalPrefix = modalPrefix;
         this.panelBuilder = panelBuilder;
@@ -50,6 +57,15 @@ public class PrickcalModalHandler {
         apostleManager = factory.getManager(ManagersEnum.APOSTLE);
     }
 
+    /**
+     * Routes a modal submission to the handler that owns its custom ID.
+     * <p>
+     * The id is stripped of {@code modalPrefix}: the {@code apostle_} family (the deep search modal opened as
+     * {@code apostle_switch_search}) goes to {@link #handleSwitchApostleSearch(ModalInteractionEvent)} and the
+     * {@code profile_} family to {@link #handleProfileUpdate(ModalInteractionEvent)}. Any other id is ignored.
+     *
+     * @param event the modal interaction to dispatch
+     */
     public void handle(ModalInteractionEvent event) {
         String modalId = event.getModalId().substring(modalPrefix.length());
 
@@ -62,6 +78,16 @@ public class PrickcalModalHandler {
 
     // ==================== SWITCH APOSTLE SEARCH ====================
 
+    /**
+     * Serves the apostle search modal by filtering the apostle list and redrawing it.
+     * <p>
+     * The optional name is trimmed and lower-cased, the three checkbox groups are converted to raw stat
+     * numbers, and the resulting {@link ApostleSearch} is filled through {@link ApostleManager#deepFilter(ApostleSearch)}
+     * and stored in the {@link SessionManager} so paging and rendering can reuse it. The list panel replaces the
+     * modal's message and the control message embed is refreshed for the current apostle when one is registered.
+     *
+     * @param event the {@code apostle_*} modal interaction
+     */
     private void handleSwitchApostleSearch(ModalInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
 
@@ -107,6 +133,16 @@ public class PrickcalModalHandler {
 
     // ==================== SWITCH APOSTLE SEARCH ====================
 
+    /**
+     * Serves the {@code profile_update_<section>} modal by writing the submitted text back to the account.
+     * <p>
+     * {@code ign} and {@code code} are assigned directly, while {@code format} goes through
+     * {@link Account#validateFormat(String)} so an invalid format is dropped. A blank submission is ignored
+     * entirely, otherwise the account is saved to the repository. The profile panel replaces the modal's
+     * message and the control message embed is refreshed to the new profile summary.
+     *
+     * @param event the {@code profile_update_*} modal interaction
+     */
     private void handleProfileUpdate(ModalInteractionEvent event) {
         String section = event.getModalId().substring((modalPrefix + "profile_update_").length());
         Account account = sessionManager.getAccountCache(event.getUser().getId());
@@ -140,6 +176,14 @@ public class PrickcalModalHandler {
 
     // ==================== Helper ====================
 
+    /**
+     * Converts a checkbox group's selected values into their raw stat numbers.
+     * <p>
+     * An absent mapping (unchecked group) yields a fresh empty mutable list, not {@code null}.
+     *
+     * @param value the modal mapping of a checkbox group
+     * @return the selected values parsed as {@code short}s, or an empty list when the group was not submitted
+     */
     private List<Short> mapToShort(ModalMapping value) {
         return Optional.ofNullable(value)
                 .map(v -> v.getAsStringList().stream()

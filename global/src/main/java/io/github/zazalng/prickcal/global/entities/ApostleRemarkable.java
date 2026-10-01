@@ -51,50 +51,66 @@ public class ApostleRemarkable {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Key record column require by API (as well using for tracking from {@link RemarkableRecord})
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Key record column require by API (as well using for tracking from {@link RemarkableRecord})
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** Belong to {@link Apostle}.id */
     public Long getApostleId() {
         return apostleId;
     }
 
+    /** Belong to {@link Apostle}.id */
     public void setApostleId(Long apostleId) {
         this.apostleId = apostleId;
     }
 
+    /** Belong to {@link Account}.uid */
     public Long getUid() {
         return uid;
     }
 
+    /** Belong to {@link Account}.uid */
     public void setUid(Long uid) {
         this.uid = uid;
     }
 
+    /** A message that uid post about this character (by {@code ApostleRemarkable.apostleId}) */
     public String getMsg() {
         return msg;
     }
 
+    /** A message that uid post about this character (by {@code ApostleRemarkable.apostleId}) */
     public void setMsg(String msg) {
         this.msg = msg;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }

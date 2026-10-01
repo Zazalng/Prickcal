@@ -61,66 +61,86 @@ public class RemarkableRecord {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Key record column require by API
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Key record column require by API
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** Belong to {@link Account}.uid */
     public Long getUid() {
         return uid;
     }
 
+    /** Belong to {@link Account}.uid */
     public void setUid(Long uid) {
         this.uid = uid;
     }
 
+    /** Which table of database get invoice */
     public String getTableName() {
         return tableName;
     }
 
+    /** Which table of database get invoice */
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
 
+    /** Which id of {@code table} from database get invoice */
     public Long getMarkId() {
         return markId;
     }
 
+    /** Which id of {@code table} from database get invoice */
     public void setMarkId(Long markId) {
         this.markId = markId;
     }
 
+    /** Is this remarkable get void? */
     public Boolean getVoide() {
         return voide;
     }
 
+    /** Is this remarkable get void? */
     public void setVoide(Boolean voide) {
         this.voide = voide;
     }
 
+    /** Given reason to void this remarkable by {@link io.github.zazalng.prickcal.global.contract.operator.Operator}#ADMIN */
     public String getReason() {
         return reason;
     }
 
+    /** Given reason to void this remarkable by {@link io.github.zazalng.prickcal.global.contract.operator.Operator}#ADMIN */
     public void setReason(String reason) {
         this.reason = reason;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }

@@ -17,6 +17,11 @@
  */
 package io.github.zazalng.prickcal.global.manager;
 
+/**
+ * Registry of every manager the plugin can hold, keyed by a stable name.
+ * Each constant carries the manager class that {@link ManagerFactory#getManager(ManagersEnum)}
+ * narrows its lookup result to.
+ */
 public enum ManagersEnum {
     ACCOUNT(AccountManager.class),
     APOSTLE(AbstractManager.class),
@@ -24,10 +29,22 @@ public enum ManagersEnum {
 
     private final Class<? extends Manager> managerClass;
 
+    /**
+     * Binds the constant to the manager class it represents.
+     *
+     * @param managerClass the manager class registered for this key
+     * @param <T>          the manager type, bounded by {@link Manager}
+     */
     <T extends Manager> ManagersEnum(Class<T> managerClass) {
         this.managerClass = managerClass;
     }
 
+    /**
+     * The manager class this key resolves to.
+     *
+     * @param <T> the manager type, bounded by {@link Manager}
+     * @return the manager class registered for this constant
+     */
     @SuppressWarnings("unchecked")
     public <T extends Manager> Class<T> getManagerClass() {
         return (Class<T>) this.managerClass;

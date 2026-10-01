@@ -17,11 +17,31 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal;
 
+/**
+ * The pole of a hashtag claim value, mapping the raw claim number stored on a hashtag row
+ * to its positive, neutral or negative meaning.
+ */
 public enum HashtagClaim {
+    /**
+     * A claim below zero, counting against the hashtag.
+     */
     NEGATIVE,
+    /**
+     * A claim of exactly zero, neither for nor against the hashtag.
+     */
     NATURE,
+    /** A claim above zero, counting in favour of the hashtag. */
     POSITIVE;
 
+    /**
+     * Resolve the pole of a raw hashtag claim number.
+     * The mapping is by sign only, so every possible input resolves to a constant; the method
+     * never returns {@code null} and has no invalid case.
+     *
+     * @param value the claim number stored on a hashtag row
+     * @return {@link #POSITIVE} when {@code value} is greater than zero, {@link #NEGATIVE} when it
+     *         is less than zero, and {@link #NATURE} when it is exactly zero
+     */
     public static HashtagClaim fromValue(int value) {
         if(value > 0){
             return POSITIVE;

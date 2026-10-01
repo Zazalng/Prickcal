@@ -37,6 +37,13 @@ public class PrickcalSelectMenuHandler {
     private final ApostleManager apostleManager;
     private final SessionManager sessionManager;
 
+    /**
+     * Creates the string select menu router for one plugin schema.
+     *
+     * @param stringMenuPrefix the prefix carried by every string select custom ID this handler dispatches
+     * @param panelBuilder     the builder that renders every panel this handler edits
+     * @param factory          the manager factory used to resolve the session, account and apostle managers
+     */
     public PrickcalSelectMenuHandler(String stringMenuPrefix, PanelBuilder panelBuilder, ManagerFactory factory) {
         this.stringMenuPrefix = stringMenuPrefix;
         this.panelBuilder = panelBuilder;
@@ -46,6 +53,14 @@ public class PrickcalSelectMenuHandler {
         sessionManager = factory.getManager(ManagersEnum.SESSION);
     }
 
+    /**
+     * Routes a string select interaction to the handler that owns its custom ID.
+     * <p>
+     * The id is stripped of {@code stringMenuPrefix}; currently only {@code select_apostle} is served and any
+     * other id is ignored.
+     *
+     * @param event the string select interaction to dispatch
+     */
     public void handle(StringSelectInteractionEvent event) {
         String menuId = event.getComponentId().substring(stringMenuPrefix.length());
 
@@ -56,6 +71,16 @@ public class PrickcalSelectMenuHandler {
 
     // ==================== SELECT APOSTLE ====================
 
+    /**
+     * Serves the {@code select_apostle} menu, which both pages and picks within the apostle list panel.
+     * <p>
+     * A {@code pagination:-1} or {@code pagination:1} value pages the session's {@link ApostleSearch} and
+     * redraws the list panel. Any other value is an apostle id: the apostle becomes the session's current one,
+     * any staged crayon state is dropped, the crayon panel replaces the menu, and the control message embed is
+     * refreshed for the newly selected apostle when one is registered. Empty selections and unknown ids are ignored.
+     *
+     * @param event the {@code select_apostle} string select interaction
+     */
     private void handleSelectApostle(StringSelectInteractionEvent event) {
         if (event.getValues().isEmpty()) return;
 

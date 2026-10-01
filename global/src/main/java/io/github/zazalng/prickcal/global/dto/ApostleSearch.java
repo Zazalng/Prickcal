@@ -33,6 +33,14 @@ public final class ApostleSearch {
     private int sfStartIndex = 0;
     private int sfEndIndex = 23;
 
+    /**
+     * Create a search config from a guess name and every filter list.
+     *
+     * @param sfGuessName      a name to filter {@link Apostle} with
+     * @param sfRaceFilter     the race value that must match
+     * @param sfColorFilter    the color value that must match
+     * @param sfPositionFilter the position value that must match
+     */
     public ApostleSearch(String sfGuessName,
                          List<Short> sfRaceFilter,
                          List<Short> sfColorFilter,
@@ -44,61 +52,100 @@ public final class ApostleSearch {
         this.sfPositionFilter = sfPositionFilter;
     }
 
+    /**
+     * Create a search config from a guess name, without any race, color or position filter.
+     *
+     * @param sfGuessName a name to filter {@link Apostle} with
+     */
     public ApostleSearch(String sfGuessName) {
         this(sfGuessName, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
+    /**
+     * A name to filter {@link Apostle} with
+     */
     public String getSfGuessName() {
         return sfGuessName;
     }
 
+    /**
+     * Replace the name to filter {@link Apostle} with.
+     *
+     * @param sfGuessName the new name to filter with
+     * @return this search config
+     */
     public ApostleSearch setSfGuessName(String sfGuessName) {
         this.sfGuessName = sfGuessName;
         return this;
     }
 
+    /** An inclusive start index of the current page. */
     public int getSfStartIndex() {
         return sfStartIndex;
     }
 
+    /**
+     * Move the start of the current page, never below 0.
+     *
+     * @param sfStartIndex the new inclusive start index
+     * @return this search config
+     */
     public ApostleSearch setSfStartIndex(int sfStartIndex) {
         this.sfStartIndex = Math.max(0, sfStartIndex);
         return this;
     }
 
+    /** An exclusive end index of the current page. */
     public int getSfEndIndex() {
         return sfEndIndex;
     }
 
+    /**
+     * Move the end of the current page, never below the current {@link #getSfStartIndex()}.
+     *
+     * @param sfEndIndex the new exclusive end index
+     * @return this search config
+     */
     public ApostleSearch setSfEndIndex(int sfEndIndex) {
         this.sfEndIndex = Math.max(this.sfStartIndex, sfEndIndex);
         return this;
     }
 
+    /** The race value that must match. */
     public List<Short> getSfRaceFilter() {
         return sfRaceFilter;
     }
 
+    /** The color value that must match. */
     public List<Short> getSfColorFilter() {
         return sfColorFilter;
     }
 
+    /** The position value that must match. */
     public List<Short> getSfPositionFilter() {
         return sfPositionFilter;
     }
 
+    /** An apostle that match this search, used as the paging source. */
     public List<Apostle> getSfResult() {
         return sfResult;
     }
 
+    /** Whether the current page is not the first one. */
     public boolean hasPreviousPage() {
         return sfStartIndex > 0;
     }
 
+    /** Whether {@link #getSfResult()} still hold an apostle after the current page. */
     public boolean hasNextPage() {
         return sfEndIndex < sfResult.size();
     }
 
+    /**
+     * Move the current page forward by one page size, stopping at the end of {@link #getSfResult()}.
+     *
+     * @return this search config
+     */
     public ApostleSearch nextPage() {
         sfStartIndex = sfEndIndex;
         sfEndIndex = Math.min(
@@ -109,6 +156,11 @@ public final class ApostleSearch {
         return this;
     }
 
+    /**
+     * Move the current page backward by one page size, stopping at the first page.
+     *
+     * @return this search config
+     */
     public ApostleSearch previousPage() {
         sfEndIndex = sfStartIndex;
         sfStartIndex = Math.max(

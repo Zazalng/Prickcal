@@ -62,6 +62,17 @@ public class PanelBuilder {
     private final String modalPrefix;
     private final String stringMenuPrefix;
 
+    /**
+     * Creates the panel builder for one plugin schema.
+     * <p>
+     * The three prefixes are the schema-scoped bases that every custom ID this builder emits is prefixed with,
+     * which is what lets the handlers in the {@code handler} package route an interaction back to a panel.
+     *
+     * @param factory          the manager factory used to resolve the account, apostle and session managers
+     * @param btnPrefix        the prefix placed on every button custom ID
+     * @param modalPrefix      the prefix placed on every modal custom ID
+     * @param stringMenuPrefix the prefix placed on every string select custom ID
+     */
     public PanelBuilder(ManagerFactory factory, String btnPrefix, String modalPrefix, String stringMenuPrefix) {
         this.factory = factory;
         this.btnPrefix = btnPrefix;
@@ -74,6 +85,14 @@ public class PanelBuilder {
 
     // ==================== CONSENT PANEL ====================
 
+    /**
+     * Builds the first-run consent notice panel.
+     * <p>
+     * A static text-only container: the data transparency notice followed by the {@code consent_agree} and
+     * {@code consent_disagree} buttons. Takes no user state, so it is the same for every user.
+     *
+     * @return a container holding the notice and the two consent buttons
+     */
     public Container buildConsentPanel() {
         return Container.of(
                 TextDisplay.of("# 🙏 Consent & Data Transparency Notice - v1.0.0"),
@@ -134,6 +153,18 @@ public class PanelBuilder {
 
     // ==================== MAIN MENU ====================
 
+    /**
+     * Builds the main menu summary embed shown beside the control panel.
+     * <p>
+     * Renders the account's in-game name, apostle and CP counters, a per-stat crayon field for every
+     * {@link CrayonStats} constant with the total flushed in at {@code UNKNOWN}, the candy spend/acquired/rate
+     * trio and the first date of record. The embed colour is randomised on each build, so two calls for the
+     * same account do not look identical.
+     *
+     * @param discordUser the Discord user the panel belongs to, used for the title fallback and avatar
+     * @param account     the account whose progression is summarised
+     * @return the summary embed
+     */
     public MessageEmbed buildMainMenuEmbed(User discordUser, Account account) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getName()))
@@ -189,6 +220,16 @@ public class PanelBuilder {
         return embed.build();
     }
 
+    /**
+     * Builds the main menu control panel.
+     * <p>
+     * Every button is prefixed with the button prefix. The database and administrator buttons are rendered
+     * disabled unless the account is actionable at the required {@link Operator} level, but the click itself is
+     * still re-checked by the handler.
+     *
+     * @param account the account whose permissions decide which buttons are disabled
+     * @return a container holding the main menu rows
+     */
     public Container buildMainMenuComponent(Account account) {
         return Container.of(
                 TextDisplay.of("# 🎮 Prickcal Control Panel"),
@@ -212,6 +253,17 @@ public class PanelBuilder {
 
     // ==================== APOSTLE PANEL ====================
 
+    /**
+     * Builds the crayon tracking embed for one apostle of one account.
+     * <p>
+     * Shows the apostle's personality, race and seat, its star progress (or "Not Owned" below init), and one
+     * field per house of the resolved {@link CrayonLineUp} marked acquired or not, followed by crayons spent
+     * against the lineup's total cost. The house fields are omitted when the apostle has no lineup.
+     *
+     * @param account the account whose track is rendered
+     * @param apostle the apostle being rendered
+     * @return the tracking embed
+     */
     public MessageEmbed buildTrackEmbed(Account account, Apostle apostle) {
         ApostleTrack track = apostleManager.findTrack(account, apostle);
         EmbedBuilder embed = new EmbedBuilder();
@@ -265,6 +317,15 @@ public class PanelBuilder {
         return embed.build();
     }
 
+    /**
+     * Builds the public, account-independent apostle embed.
+     * <p>
+     * Carries the apostle's identity, release status, hashtags and, when a {@link CrayonLineUp} exists, the
+     * stat required by each house plus the total crayons and certificate pieces still needed.
+     *
+     * @param apostle the apostle being rendered
+     * @return the public apostle embed
+     */
     public MessageEmbed buildApostleEmbed(Apostle apostle) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(apostle.trueName())
@@ -313,6 +374,18 @@ public class PanelBuilder {
         return embed.build();
     }
 
+    /**
+     * Builds the crayon grid control panel for one apostle.
+     * <p>
+     * This is the one builder that writes session state: when the account has no staged track it seeds one from
+     * {@link ApostleManager#findTrack(Account, Apostle)}, so the toggles always have nine house flags to draw.
+     * Each house button is prefixed {@code crayon_toggle_<index>}, and the panel also carries the star
+     * increase/decrease, reset, confirm, switch, post and back buttons.
+     *
+     * @param account the account whose staged track the grid edits
+     * @param apostle the apostle the grid belongs to
+     * @return a container holding the nine toggle buttons and the panel action rows
+     */
     public Container buildApostleComponent(Account account, Apostle apostle) {
         String[] houseLabels = {"1A", "1B", "2A", "2B", "2C", "3A", "3B", "3C", "3D"};
 
@@ -353,6 +426,16 @@ public class PanelBuilder {
         ).withAccentColor(ApostleColor.fromNo(apostle.getColor()).getColor());
     }
 
+    /**
+     * Builds the profile editor panel.
+     * <p>
+     * Displays the account's operator level, IGN, friend code and crayon format, and offers an edit button per
+     * section, the {@code profile_leak} toggle (styled by its current state), an upload button enabled only for
+     * {@link Operator#DEV}, and the delete-data entry point.
+     *
+     * @param account the account being displayed and edited
+     * @return a container holding the profile rows
+     */
     public Container buildProfileComponent(Account account) {
         return Container.of(
                 TextDisplay.of("### Profile Editor — <@%s>".formatted(account.getUid())),
@@ -390,6 +473,18 @@ public class PanelBuilder {
         ).withAccentColor(ACCENT_APOSTLE);
     }
 
+    /**
+     * Builds one row of the crayon grid as toggle buttons.
+     * <p>
+     * Each button is styled by whether its house is acquired, and carries {@code crayon_toggle_<i>} as its
+     * custom id so the button handler can flip that exact flag.
+     *
+     * @param start  the first house index to include, inclusive
+     * @param end    the house index to stop before, exclusive
+     * @param state  the acquired flags being rendered
+     * @param labels the house labels indexed by house number
+     * @return a single action row of house toggle buttons
+     */
     private ActionRow buildCrayonRow(int start, int end, List<Boolean> state, String[] labels) {
         List<Button> buttons = new ArrayList<>();
         for (int i = start; i < end; i++) {
@@ -407,6 +502,15 @@ public class PanelBuilder {
 
     // ==================== LOGS PANEL ====================
 
+    /**
+     * Builds the public logs panel from the most recent {@link Log} rows.
+     * <p>
+     * Each entry is rendered as a relative timestamp with its action and table name; an empty or null list
+     * renders a "no recent activity" note instead.
+     *
+     * @param recentLogs the log rows to display, newest first
+     * @return a container holding the log listing
+     */
     public Container buildLogsPanel(List<Log> recentLogs) {
         StringBuilder sb = new StringBuilder("# 📋 Public Logs\n\n");
         if (recentLogs == null || recentLogs.isEmpty()) {
@@ -435,6 +539,13 @@ public class PanelBuilder {
 
     // ==================== SUB-PANELS ====================
 
+    /**
+     * Builds the database management panel.
+     * <p>
+     * Currently a placeholder with only a back button; the caller is responsible for the permission check.
+     *
+     * @return a container holding the placeholder database panel
+     */
     public Container buildDatabasePanel() {
         return Container.of(
                 TextDisplay.of("# 🗄️ Database Management\n\n_Coming soon — database browsing & editing will be available in a future update._"),
@@ -445,6 +556,13 @@ public class PanelBuilder {
         ).withAccentColor(ACCENT_MAIN);
     }
 
+    /**
+     * Builds the administrator panel.
+     * <p>
+     * Currently a placeholder with only a back button; the caller is responsible for the permission check.
+     *
+     * @return a container holding the placeholder administrator panel
+     */
     public Container buildAdministratorPanel() {
         return Container.of(
                 TextDisplay.of("# 🔧 Administrator Panel\n\n_Admin controls coming in a future update._"),
@@ -455,6 +573,14 @@ public class PanelBuilder {
         ).withAccentColor(ACCENT_DANGER);
     }
 
+    /**
+     * Builds the irreversible data deletion confirmation panel.
+     * <p>
+     * States exactly which record types are removed and offers {@code delete_confirm} or {@code delete_cancel};
+     * no deletion happens until the button handler runs.
+     *
+     * @return a container holding the confirmation warning and the two choices
+     */
     public Container buildDeleteDataConfirmPanel() {
         return Container.of(
                 TextDisplay.of("""
@@ -477,6 +603,13 @@ public class PanelBuilder {
         ).withAccentColor(ACCENT_DANGER);
     }
 
+    /**
+     * Builds the import/export panel.
+     * <p>
+     * Currently a placeholder with only a back button.
+     *
+     * @return a container holding the placeholder import/export panel
+     */
     public Container buildImportExportPanel() {
         return Container.of(
                 TextDisplay.of("# 📦 Import/Export\n\n_Coming in a future update._"),
@@ -489,6 +622,18 @@ public class PanelBuilder {
 
     // ==================== APOSTLE LIST PANEL (for switch) ====================
 
+    /**
+     * Builds the apostle list panel used to switch the session's current apostle.
+     * <p>
+     * Reads the session's {@link ApostleSearch}; when its result set is empty the full apostle list is loaded
+     * into it. A single result short-circuits to {@link #buildApostleComponent(Account, Apostle)}, committing
+     * that apostle as current and clearing the staged track and search. Otherwise it renders the current page of
+     * a single-select string menu, adding {@code pagination:-1} and {@code pagination:1} options only when the
+     * corresponding page exists, plus the deep search and back buttons.
+     *
+     * @param account the account whose session supplies the search and receives the selection
+     * @return the apostle crayon panel when the search resolves to one apostle, otherwise the paging list panel
+     */
     public Container buildApostleListPanel(Account account) {
         ApostleSearch apostleSearch = sessionManager.getApostleSearch(account.getId());
 
@@ -496,7 +641,6 @@ public class PanelBuilder {
 
         if (searchResult.isEmpty()) {
             apostleSearch.getSfResult().addAll(apostleManager.listAll());
-            searchResult.addAll(apostleSearch.getSfResult());
         }
 
         if (searchResult.size() == 1) {

@@ -17,10 +17,29 @@
  */
 package io.github.zazalng.prickcal.global.manager;
 
+/**
+ * Common contract for every manager in the plugin.
+ * A manager owns one slice of state or persistence concern and is reachable
+ * through {@link ManagerFactory} by its {@link ManagersEnum} key.
+ */
 public interface Manager {
+    /**
+     * Prepare this manager for use right after construction.
+     *
+     * @param <T> the concrete manager type, allowing chaining without a cast
+     * @return this manager, typed as {@code T}
+     */
     <T extends Manager> T initialize();
 
+    /**
+     * Refresh any state this manager holds from its backing source.
+     * Implementations without a cache may leave this empty.
+     */
     void reload();
 
+    /**
+     * Release any state or resource this manager holds.
+     * Called by {@link ManagerFactory#shutdownAllManagers()}.
+     */
     void shutdown();
 }

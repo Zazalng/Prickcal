@@ -46,42 +46,56 @@ public class GiftAcquired {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Key record column require by API
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Key record column require by API
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** Belong to {@link GiftCode}.id */
     public Long getCodeId() {
         return codeId;
     }
 
+    /** Belong to {@link GiftCode}.id */
     public void setCodeId(Long codeId) {
         this.codeId = codeId;
     }
 
+    /** Belong to {@link Account}.uid */
     public Long getUid() {
         return uid;
     }
 
+    /** Belong to {@link Account}.uid */
     public void setUid(Long uid) {
         this.uid = uid;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }

@@ -88,90 +88,127 @@ public class Account {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Key record column require by API
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Key record column require by API
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** User's discord id number. <b>NOT SUPPOSED TO BE USED AS FOREIGN KEY.</b> */
     public String getUid() {
         return uid;
     }
 
+    /** User's discord id number. <b>NOT SUPPOSED TO BE USED AS FOREIGN KEY.</b> */
     public void setUid(String uid) {
         this.uid = uid;
     }
 
+    /** User's in-game name */
     public String getIgn() {
         return ign;
     }
 
+    /** User's in-game name */
     public void setIgn(String ign) {
         this.ign = ign;
     }
 
+    /** User's operation level in {@link io.github.zazalng.prickcal.global.contract.operator.Operator} */
     public short getOps() {
         return ops;
     }
 
+    /** User's operation level in {@link io.github.zazalng.prickcal.global.contract.operator.Operator} */
     public void setOps(short ops) {
         this.ops = ops;
     }
 
+    /** Whether the user consults to seeing hidden/unrelease content of in-game data on plugin database. */
     public boolean isLeak() {
         return leak;
     }
 
+    /** User's consult to seeing hidden/unrelease content of in-game data on plugin database */
     public void setLeak(boolean leak) {
         this.leak = leak;
     }
 
+    /** User's contribution point */
     public int getCp() {
         return cp;
     }
 
+    /** User's contribution point */
     public void setCp(int cp) {
         this.cp = cp;
     }
 
+    /** A String of format (%dd, %dm, %dy, %cs, %ca MUST EXIST) that user using to let's Pudel auto-detect and recording to {@link CrayonRecord}. */
     public String getCrayonFormat() {
         return crayonFormat;
     }
 
+    /** A String of format (%dd, %dm, %dy, %cs, %ca MUST EXIST) that user using to let's Pudel auto-detect and recording to {@link CrayonRecord}. */
     public void setCrayonFormat(String crayonFormat) {
         this.crayonFormat = crayonFormat;
     }
 
+    /** User's in-game friend code */
     public String getFriendCode() {
         return friendCode;
     }
 
+    /** User's in-game friend code */
     public void setFriendCode(String friendCode) {
         this.friendCode = friendCode;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }
 
+    /**
+     * Check whether this account's operation level reaches the given level.
+     *
+     * @param level the operator level to compare this account against
+     * @return {@code true} when this account's operation level is not higher than {@code level}
+     */
     public boolean isActionable(Operator level) {
         return ops <= level.getValue();
     }
 
+    /**
+     * Resolve the account field that the given section name refer to.
+     *
+     * @param section one of {@code "ign"}, {@code "code"} or {@code "format"}
+     * @return {@link #getIgn()}, {@link #getFriendCode()} or {@link #getCrayonFormat()} that match the given section
+     * @throws PrickcalException if the section is not one of the supported section names
+     */
     public String getDefaultText(String section) {
         return switch (section) {
             case "ign" -> getIgn();

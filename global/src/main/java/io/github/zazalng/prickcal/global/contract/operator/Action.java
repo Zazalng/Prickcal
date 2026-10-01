@@ -17,6 +17,10 @@
  */
 package io.github.zazalng.prickcal.global.contract.operator;
 
+/**
+ * The kind of change an audit log entry describes, written into the log whenever a manager
+ * creates, updates or deletes a row.
+ */
 public enum Action {
     /**
      * Any action that result to create new row from any table

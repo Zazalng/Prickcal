@@ -46,42 +46,56 @@ public class Hashtag {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Key record column require by API (as well using for tracking from {@link Apostle}.hashTag)
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Key record column require by API (as well using for tracking from {@link Apostle}.hashTag)
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** A title of hashtag to display */
     public String getName() {
         return name;
     }
 
+    /** A title of hashtag to display */
     public void setName(String name) {
         this.name = name;
     }
 
+    /** A claim number of pros/cons of this hashtag that relate from {@link io.github.zazalng.prickcal.global.contract.trickcal.HashtagClaim} */
     public int getClaim() {
         return claim;
     }
 
+    /** A claim number of pros/cons of this hashtag that relate from {@link io.github.zazalng.prickcal.global.contract.trickcal.HashtagClaim} */
     public void setClaim(int claim) {
         this.claim = claim;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }

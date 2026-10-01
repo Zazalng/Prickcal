@@ -42,66 +42,86 @@ public class CrayonRecord {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Key record column require by API
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Key record column require by API
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** Belong to {@link Account}.id */
     public Long getUid() {
         return uid;
     }
 
+    /** Belong to {@link Account}.id */
     public void setUid(Long uid) {
         this.uid = uid;
     }
 
+    /** An image url of this crayon record (from discord.attachment) */
     public String getImgUrl() {
         return imgUrl;
     }
 
+    /** An image url of this crayon record (from discord.attachment) */
     public void setImgUrl(String imgUrl) {
         this.imgUrl = imgUrl;
     }
 
+    /** A candy spent on this crayon record */
     public int getSpent() {
         return spent;
     }
 
+    /** A candy spent on this crayon record */
     public void setSpent(int spent) {
         this.spent = spent;
     }
 
+    /** A crayon acquired on this crayon record */
     public int getCrayon() {
         return crayon;
     }
 
+    /** A crayon acquired on this crayon record */
     public void setCrayon(int crayon) {
         this.crayon = crayon;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }
 
+    /** A date of this crayon record that parsed from the user crayon format */
     public LocalDate getRecordDate() {
         return recordDate;
     }
 
+    /** A date of this crayon record that parsed from the user crayon format */
     public void setRecordDate(LocalDate recordDate) {
         this.recordDate = recordDate;
     }

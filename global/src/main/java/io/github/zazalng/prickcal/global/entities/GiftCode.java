@@ -56,58 +56,76 @@ public class GiftCode {
     @Column
     private Instant updatedAt;
 
+    /**
+     * Key record column require by API (as well as using for tracking from {@link GiftAcquired}.codeId)
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Key record column require by API (as well as using for tracking from {@link GiftAcquired}.codeId)
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** A code of gift */
     public String getCode() {
         return code;
     }
 
+    /** A code of gift */
     public void setCode(String code) {
         this.code = code;
     }
 
+    /** A describe of gift reward */
     public String getDescription() {
         return description;
     }
 
+    /** A describe of gift reward */
     public void setDescription(String description) {
         this.description = description;
     }
 
+    /** An expiry timestamp of gift code */
     public Instant getExpireAt() {
         return expireAt;
     }
 
+    /** An expiry timestamp of gift code */
     public void setExpireAt(Instant expireAt) {
         this.expireAt = expireAt;
     }
 
+    /** Instant of record creation. */
     public Instant getCreatedAt() {
         return createdAt;
     }
 
+    /** Instant of record creation. */
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** Instant of last update. */
     public Instant getUpdatedAt() {
         return updatedAt;
     }
 
+    /** Instant of last update. */
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }
 
+    /** The image URL associated with reward of this gift code. */
     public String getImgUrl() {
         return imgUrl;
     }
 
+    /** The image URL associated with reward of this gift code. */
     public void setImgUrl(String imgUrl) {
         this.imgUrl = imgUrl;
     }

@@ -35,47 +35,89 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Owns {@link Account} rows plus the account-scoped aggregates derived from them:
+ * crayon totals, owned apostle counts and full user data deletion.
+ */
 public class AccountManager extends AbstractManager {
     private final PluginRepository<Account> repo;
 
+    /**
+     * Binds the account repository and runs {@link #initialize()}.
+     *
+     * @param factory the owning factory
+     */
     protected AccountManager(ManagerFactory factory) {
         super(factory);
         repo = factory.getRepos().accounts();
         initialize();
     }
 
+    /**
+     * Table name written into the audit log entries of this manager.
+     *
+     * @return {@code "accounts"}
+     */
     @Override
     public String getTableName() {
         return "accounts";
     }
 
+    /**
+     * No setup is required; the manager is ready once constructed.
+     *
+     * @return this manager
+     */
     @Override
     public AccountManager initialize() {
         return this;
     }
 
+    /**
+     * Intentionally empty: this manager keeps no cache to reload.
+     */
     @Override
     public void reload() {
 
     }
 
+    /**
+     * Intentionally empty: this manager holds no state to release on shutdown.
+     */
     @Override
     public void shutdown() {
 
     }
 
-    /** Find an account by Discord user ID. */
+    /**
+     * Find an account by Discord user ID.
+     *
+     * @param uid the Discord user id stored on the account row
+     * @return the matching account, or {@link Optional#empty()} when the user has no account yet
+     */
     public Optional<Account> findByUid(String uid) {
         return repo.query()
                 .where("uid", uid)
                 .findOne();
     }
 
+    /**
+     * Check that an account carries a recognized operator level.
+     *
+     * @param user the account to inspect
+     * @return {@code true} when the stored operator value maps to a real {@link Operator}
+     */
     public boolean isValid(Account user) {
         return Operator.fromValue(user.getOps()) != Operator.UNKNOWN;
     }
 
-    /** Create a new account (consent agreement). Logs the creation. */
+    /**
+     * Create a new account (consent agreement). Logs the creation.
+     *
+     * @param logInitiatorUid the Discord id of the user giving consent, written to the audit log
+     * @param uid the Discord id of the account being created
+     * @return the persisted account, set to the default user operator level
+     */
     public Account createAccount(String logInitiatorUid, String uid) {
         Account account = new Account();
         account.setUid(uid);
@@ -86,20 +128,48 @@ public class AccountManager extends AbstractManager {
         return account;
     }
 
-    /** Check if the user has a specific operator level. */
+    /**
+     * Check if the user has a specific operator level.
+     *
+     * @param account the account to inspect
+     * @param required the operator level to compare against
+     * @return {@code true} only when both operator values are exactly equal
+     */
     public boolean hasOperator(Account account, Operator required) {
         return account.getOps() == required.getValue();
     }
 
-    /** Check if the user is at least a given operator level (lower value = higher rank). */
+    /**
+     * Check if the user is at least a given operator level (lower value = higher rank).
+     *
+     * @param account the account to inspect
+     * @param minimum the weakest operator level that is still sufficient
+     * @return {@code true} when the account operator value is less than or equal to {@code minimum}
+     */
     public boolean hasMinOperator(Account account, Operator minimum) {
         return account.getOps() <= minimum.getValue();
     }
 
+    /**
+     * Read the earliest crayon record of an account and truncate it to the start of that day.
+     * Assumes the account owns at least one crayon record.
+     *
+     * @param account the account whose crayon records are inspected
+     * @return the earliest recorded day as an instant, at the start of that day in the system default zone
+     */
     public Instant getFirstDateOfRecord(Account account) {
         return factory.getRepos().crayonRecords().query().where("uid", account.getId()).orderByAsc("record_date").list().getFirst().getRecordDate().atStartOfDay(ZoneId.systemDefault()).toInstant();
     }
 
+    /**
+     * Sum the crayons an account has unlocked for one stat across all of its apostle tracks.
+     *
+     * @param account the account whose apostle tracks are inspected
+     * @param stats the crayon stat to total
+     * @return a {@code "{amount},{price}"} string; {@code "-1,-1"} when {@code stats} is
+     *         {@link CrayonStats#UNKNOWN} and {@code "0,0"} when the account tracks no apostle
+     * @throws PrickcalException if a tracked apostle resolves to an invalid crayon line-up
+     */
     public String crayonCountByStats(Account account, CrayonStats stats) {
         if (stats == CrayonStats.UNKNOWN) return "-1,-1";
 
@@ -152,6 +222,12 @@ public class AccountManager extends AbstractManager {
         return "%d,%d".formatted(totalAmount, totalPrice);
     }
 
+    /**
+     * Total the candy an account has spent across every crayon record.
+     *
+     * @param account the account to total
+     * @return the sum of the spent amounts, zero when the account has no record
+     */
     public BigDecimal getCrayonsSpent(Account account) {
         int candySpent = 0;
         for (CrayonRecord record : repos.crayonRecords().findBy("uid", account.getId())) {
@@ -160,6 +236,12 @@ public class AccountManager extends AbstractManager {
         return new BigDecimal(candySpent);
     }
 
+    /**
+     * Total the crayons an account has acquired across every crayon record.
+     *
+     * @param account the account to total
+     * @return the sum of the acquired crayons, zero when the account has no record
+     */
     public BigDecimal getCrayonsAcquired(Account account) {
         int crayonAcquired = 0;
         for (CrayonRecord record : repos.crayonRecords().findBy("uid", account.getId())) {
@@ -168,13 +250,24 @@ public class AccountManager extends AbstractManager {
         return new BigDecimal(crayonAcquired);
     }
 
+    /**
+     * Count the apostles an account currently owns.
+     *
+     * @param account the account to count for
+     * @return the number of apostle tracks whose current star is not zero
+     */
     public int getApostleOwned(Account account) {
         return repos.apostleTrackers().query().where("uid", account.getId()).whereNot("current_star", 0).list().size();
     }
 
     /**
      * Permanently delete all data belonging to a user across all tracked tables.
-     * Returns the number of affected entities (rough count).
+     * Deletes the apostle tracks, crayon records, apostle remarkables, gift acquires and
+     * remarkable records, then the account itself; the record count written to the audit
+     * log is a rough total of the rows visited.
+     *
+     * @param uid the Discord id of the user, whose account is read from the session cache
+     * @return the now-deleted account
      */
     public Account deleteAllUserData(String uid) {
         int count = 0;

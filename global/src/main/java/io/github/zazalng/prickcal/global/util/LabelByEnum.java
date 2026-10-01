@@ -17,7 +17,7 @@
  */
 package io.github.zazalng.prickcal.global.util;
 
-import io.github.zazalng.prickcal.global.contract.trickcal.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.EnumInterface;
 import net.dv8tion.jda.api.components.checkboxgroup.CheckboxGroup;
 
 public final class LabelByEnum {

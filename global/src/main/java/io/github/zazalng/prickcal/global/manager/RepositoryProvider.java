@@ -28,30 +28,51 @@ import net.dv8tion.jda.api.entities.User;
  */
 public interface RepositoryProvider {
 
+    /**
+     * Repository of {@link Account} rows.
+     */
     PluginRepository<Account> accounts();
 
+    /**
+     * Repository of {@link Apostle} rows.
+     */
     PluginRepository<Apostle> apostles();
 
+    /** Repository of {@link ApostleRemarkable} rows. */
     PluginRepository<ApostleRemarkable> apostleRemarkables();
 
+    /** Repository of {@link ApostleTrack} rows. */
     PluginRepository<ApostleTrack> apostleTrackers();
 
+    /** Repository of {@link CrayonLineUp} rows. */
     PluginRepository<CrayonLineUp> crayonLineups();
 
+    /** Repository of {@link CrayonRecord} rows. */
     PluginRepository<CrayonRecord> crayonRecords();
 
+    /** Repository of {@link GiftAcquired} rows. */
     PluginRepository<GiftAcquired> giftAcquires();
 
+    /** Repository of {@link GiftCode} rows. */
     PluginRepository<GiftCode> giftCodes();
 
+    /** Repository of {@link Hashtag} rows. */
     PluginRepository<Hashtag> hashTags();
 
+    /** Repository of {@link Log} rows. */
     PluginRepository<Log> logs();
 
+    /** Repository of {@link RemarkableRecord} rows. */
     PluginRepository<RemarkableRecord> remarkableRecords();
 
+    /** Repository of {@link StageGearDrop} rows. */
     PluginRepository<StageGearDrop> stageGears();
 
-    /** Resolve a Discord user — tries cache first, then REST retrieve. */
+    /**
+     * Resolve a Discord user, trying the cache first and the REST retrieve second.
+     *
+     * @param uid the Discord user id to resolve
+     * @return the resolved Discord user
+     */
     User getDiscordUser(String uid);
 }
