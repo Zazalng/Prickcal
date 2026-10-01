@@ -521,7 +521,7 @@ public class Prickcal {
         }
 
         String message = event.getTarget().getContentStripped();
-        String result = parsingRecordCrayon(accounts.get(), message, event.getTarget().getAttachments().getFirst().getUrl());
+        String result = parsingRecordCrayon(accounts.get(), message, event.getTarget().getAttachments().isEmpty() ? null : event.getTarget().getAttachments().getFirst().getUrl());
 
         if(!result.isEmpty()){
             reject(event, result);
