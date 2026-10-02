@@ -244,7 +244,7 @@ public class PanelBuilder {
                 ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "logs", "📋 Public Logs"),
-                        Button.secondary(btnPrefix + "database", "🗄️ Database").withDisabled(!account.isActionable(Operator.EDITOR)),
+                        Button.secondary(btnPrefix + "db", "🗄️ Database").withDisabled(!account.isActionable(Operator.EDITOR)),
                         Button.secondary(btnPrefix + "administrator", "🔧 Administrator").withDisabled(!account.isActionable(Operator.ADMIN))
                 ),
                 ActionRow.of(
@@ -558,8 +558,11 @@ public class PanelBuilder {
      */
     public Container buildDatabasePanel() {
         return Container.of(
-                TextDisplay.of("# 🗄️ Database Management\n\n_Coming soon — database browsing & editing will be available in a future update._"),
+                TextDisplay.of("# 🗄️ Database Management"),
                 Separator.create(true, Separator.Spacing.SMALL),
+                ActionRow.of(
+                        Button.secondary(btnPrefix + "db_apostle", "📜 Apostle")
+                ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "back_main", "⬅️ Back")
                 )

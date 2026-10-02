@@ -83,7 +83,7 @@ public class PrickcalButtonHandler {
      * {@code apostle} (with {@code apostle_switching} and {@code apostle_increase_<true|false>} carved out),
      * then {@code crayon} (with {@code crayon_toggle_<index>}, {@code crayon_confirm} and {@code crayon_reset}
      * carved out), then {@code profile} (with {@code profile_leak} and {@code profile_<section>} carved out),
-     * then the remaining exact ids {@code import_export}, {@code database}, {@code administrator}, {@code logs},
+     * then the remaining exact ids {@code import_export}, {@code db}, {@code administrator}, {@code logs},
      * {@code delete_data}, {@code deep_search_modal} and {@code back_main}, plus the {@code post_*}
      * ({@code post_apostle}, {@code post_tracker}, {@code post_profile}) and {@code delete_*} families.
      * Guild-less and member-less interactions are ignored, and unrecognized ids are dropped without a reply.
@@ -128,8 +128,12 @@ public class PrickcalButtonHandler {
             }
         } else if (buttonId.equals("import_export")) {
             handleImportExport(event);
-        } else if (buttonId.equals("database")) {
-            handleDatabase(event);
+        } else if (buttonId.startsWith("db")) {
+            if (buttonId.endsWith("_apostle")) {
+
+            } else {
+                handleDatabase(event);
+            }
         } else if (buttonId.equals("administrator")) {
             handleAdministrator(event);
         } else if (buttonId.equals("logs")) {
