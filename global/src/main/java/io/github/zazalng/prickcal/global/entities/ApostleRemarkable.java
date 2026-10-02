@@ -35,7 +35,7 @@ public class ApostleRemarkable {
     @Column(unique = true, nullable = false)
     private Long apostleId;
     /**
-     * Belong to {@link Account}.uid
+     * Belong to {@link Account}.id
      */
     @Column(unique = true, nullable = false)
     private Long uid;
@@ -75,12 +75,14 @@ public class ApostleRemarkable {
         this.apostleId = apostleId;
     }
 
-    /** Belong to {@link Account}.uid */
+    /**
+     * Belong to {@link Account}.id
+     */
     public Long getUid() {
         return uid;
     }
 
-    /** Belong to {@link Account}.uid */
+    /** Belong to {@link Account}.id */
     public void setUid(Long uid) {
         this.uid = uid;
     }

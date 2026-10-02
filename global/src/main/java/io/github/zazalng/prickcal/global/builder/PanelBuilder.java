@@ -158,25 +158,28 @@ public class PanelBuilder {
      * <p>
      * Renders the account's in-game name, apostle and CP counters, a per-stat crayon field for every
      * {@link CrayonStats} constant with the total flushed in at {@code UNKNOWN}, the candy spend/acquired/rate
-     * trio and the first date of record. The embed colour is randomised on each build, so two calls for the
+     * trio and the first date of record. The embed color is randomized on each build, so two calls for the
      * same account do not look identical.
      *
      * @param discordUser the Discord user the panel belongs to, used for the title fallback and avatar
-     * @param account     the account whose progression is summarised
+     * @param account     the account whose progression is summarized
      * @return the summary embed
      */
     public MessageEmbed buildMainMenuEmbed(User discordUser, Account account) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getName()))
-                .setDescription("""
+                .setDescription(
+                        """
                 Consent at <t:%s:R>
                 Apostle: %d out of %d |  CP: %d
-                """.formatted(
-                account.getCreatedAt().getEpochSecond(),
-                accountManager.getApostleOwned(account),
-                apostleManager.listAll().size(),
-                account.getCp()
-                ))
+                                """
+                                .formatted(
+                                        account.getCreatedAt().getEpochSecond(),
+                                        accountManager.getApostleOwned(account),
+                                        apostleManager.listAll().size(),
+                                        account.getCp()
+                                )
+                )
                 .setThumbnail(discordUser.getEffectiveAvatarUrl())
                 .setFooter("Friend Code: %s".formatted(account.getFriendCode() != null ? account.getFriendCode() : "*null*"))
                 .setTimestamp(account.getUpdatedAt())
@@ -267,30 +270,33 @@ public class PanelBuilder {
     public MessageEmbed buildTrackEmbed(Account account, Apostle apostle) {
         ApostleTrack track = apostleManager.findTrack(account, apostle);
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(apostle.trueName());
-        embed.setDescription("""
+        embed.setTitle(apostle.trueName())
+                .setDescription(
+                        """
                 🎭: %s
                 🚩: %s
                 🏹: %s
                 ⭐: %s
-                """.formatted(
-                ApostleColor.fromNo(apostle.getColor()).getPersonality(),
-                ApostleRace.fromNo(apostle.getRace()).getName(),
-                ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
-                track.getCurrentStar() < apostle.getInit() ? "Not Owned" :
-                        "%d / %d%s".formatted(
-                                track.getCurrentStar(),
-                                apostle.getMax(),
-                                apostle.missingPiece(track)
-                        )
-        ));
+                                """
+                                .formatted(
+                                        ApostleColor.fromNo(apostle.getColor()).getPersonality(),
+                                        ApostleRace.fromNo(apostle.getRace()).getName(),
+                                        ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
+                                        track.getCurrentStar() < apostle.getInit() ? "Not Owned" :
+                                                "%d / %d%s".formatted(
+                                                        track.getCurrentStar(),
+                                                        apostle.getMax(),
+                                                        apostle.missingPiece(track)
+                                                )
+                                )
+                )
+                .setFooter("Last Updated")
+                .setTimestamp(track.getUpdatedAt())
+                .setColor(ApostleColor.fromNo(apostle.getColor()).getColor());
 
         if (apostle.getPic() != null) {
             embed.setThumbnail(apostle.getPic());
         }
-        embed.setFooter("Last Updated");
-        embed.setTimestamp(track.getUpdatedAt());
-        embed.setColor(ApostleColor.fromNo(apostle.getColor()).getColor());
 
         CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
         if (lineUp != null) {
@@ -332,23 +338,28 @@ public class PanelBuilder {
                 .setFooter("Last Updated")
                 .setTimestamp(apostle.getUpdatedAt())
                 .setColor(ApostleColor.fromNo(apostle.getColor()).getColor())
-                .setDescription("""
+                .setDescription(
+                        """
                 🎭: %s
                 🚩: %s
                 🏹: %s
                 🌸: %s
                 ### Hashtag
                 %s
-                """.formatted(
-                ApostleColor.fromNo(apostle.getColor()).getPersonality(),
-                ApostleRace.fromNo(apostle.getRace()).getName(),
-                ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
-                apostle.getMax() > 5 ? "✅ Has Release." : "❌ Not Release.",
-                apostleManager.parseHashTag(apostle)
-        ));
+                                """
+                                .formatted(
+                                        ApostleColor.fromNo(apostle.getColor()).getPersonality(),
+                                        ApostleRace.fromNo(apostle.getRace()).getName(),
+                                        ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
+                                        apostle.getMax() > 5 ? "✅ Has Release." : "❌ Not Release.",
+                                        apostleManager.parseHashTag(apostle)
+                                )
+                );
+
         if (apostle.getPic() != null) {
             embed.setThumbnail(apostle.getPic());
         }
+
         CrayonLineUp lineUp = apostleManager.findLineUp(apostle);
         if (lineUp != null) {
             List<Short> lineUpValues = lineUp.getLineUp();
@@ -366,10 +377,9 @@ public class PanelBuilder {
                         : "Invalid Stat";
                 embed.addField(houseLabels[i], fieldValue, true);
             }
-            embed.addField("Crayons Needed", String.valueOf(lineUp.totalCost()), false)
-                    .addField("Certificate Needed", apostle.missingPiece(), true);
+            embed.addField("Crayons Needed", String.valueOf(lineUp.totalCost()), false);
         }
-
+        embed.addField("Certificate Needed", apostle.missingPiece(), true);
 
         return embed.build();
     }
@@ -405,7 +415,7 @@ public class PanelBuilder {
                 row1,
                 row2,
                 row3,
-                TextDisplay.of("### %s".formatted(state.printStar(apostle))),
+                TextDisplay.of("### " + state.printStar(apostle)),
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
                         Button.danger(btnPrefix + "apostle_increase_false", "➖⭐"),
@@ -663,7 +673,7 @@ public class PanelBuilder {
                 StringSelectMenu.create(
                                 stringMenuPrefix + "select_apostle"
                         )
-                        .setPlaceholder("Select an Apostle to view")
+                        .setPlaceholder("Select an Apostle to view (Found: %d apostles)".formatted(searchResult.size()))
                         .setRequiredRange(1, 1)
                         .setRequired(true);
 

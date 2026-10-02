@@ -123,8 +123,15 @@ public class AccountManager extends AbstractManager {
         account.setUid(uid);
         account.setOps(Operator.defaultUser());
         account = repo.save(account);
-        logRecord(0, Action.CREATE,
-                "<@" + logInitiatorUid + "> created account for <@" + uid + "> (given access '" + Operator.fromValue(Operator.defaultUser()).name() + "')");
+        logRecord(0, Action.CREATE, """
+                <@%s> created account for <@%s> (given access '%s')
+                """
+                .formatted(
+                        logInitiatorUid,
+                        uid,
+                        Operator.fromValue(account.getOps()).name()
+                )
+        );
         return account;
     }
 
@@ -158,7 +165,14 @@ public class AccountManager extends AbstractManager {
      * @return the earliest recorded day as an instant, at the start of that day in the system default zone
      */
     public Instant getFirstDateOfRecord(Account account) {
-        return factory.getRepos().crayonRecords().query().where("uid", account.getId()).orderByAsc("record_date").list().getFirst().getRecordDate().atStartOfDay(ZoneId.systemDefault()).toInstant();
+        return factory.getRepos().crayonRecords().query()
+                .where("uid", account.getId())
+                .orderByAsc("record_date")
+                .list()
+                .getFirst()
+                .getRecordDate()
+                .atStartOfDay(ZoneId.systemDefault())
+                .toInstant();
     }
 
     /**
@@ -257,7 +271,11 @@ public class AccountManager extends AbstractManager {
      * @return the number of apostle tracks whose current star is not zero
      */
     public int getApostleOwned(Account account) {
-        return repos.apostleTrackers().query().where("uid", account.getId()).whereNot("current_star", 0).list().size();
+        return repos.apostleTrackers().query()
+                .where("uid", account.getId())
+                .whereNot("current_star", 0)
+                .list()
+                .size();
     }
 
     /**

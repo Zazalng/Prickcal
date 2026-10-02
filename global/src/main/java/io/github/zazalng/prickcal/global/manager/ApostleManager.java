@@ -95,8 +95,6 @@ public class ApostleManager extends AbstractManager {
 
     }
 
-    // ==================== LOOKUPS ====================
-
     /**
      * Intentionally empty: this manager holds no state to release on shutdown.
      */
@@ -104,6 +102,8 @@ public class ApostleManager extends AbstractManager {
     public void shutdown() {
 
     }
+
+    // ==================== LOOKUPS ====================
 
     /**
      * Find an apostle by its primary key.
@@ -302,11 +302,11 @@ public class ApostleManager extends AbstractManager {
     }
 
     /**
-     * Render the hashtag claims of an apostle as a markdown summary.
+     * Render the hashtag claims of an apostle as a Markdown summary.
      * Claim ids that are blank, unknown or unreadable are skipped silently.
      *
      * @param apostle the apostle whose comma separated hashtag ids are resolved
-     * @return a markdown block with a Pros, a Nature and a Cons section, or {@code "*none*"}
+     * @return a Markdown block with a Pros, a Nature and a Cons section, or {@code "*none*"}
      *         when the apostle carries no hashtag
      */
     public String parseHashTag(Apostle apostle) {

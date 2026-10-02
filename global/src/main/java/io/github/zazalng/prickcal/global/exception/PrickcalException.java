@@ -34,7 +34,7 @@ public class PrickcalException extends RuntimeException {
     /**
      * Creates an exception from a raw error code, resolving the type via {@link PrickcalEnum#fromCode(int)}.
      * <p>
-     * An unrecognised code resolves to {@link PrickcalEnum#UNCATEGORY}, so the resulting error code is the
+     * An unrecognized code resolves to {@link PrickcalEnum#UNCATEGORY}, so the resulting error code is the
      * category's rather than the one supplied.
      *
      * @param code     the numeric error code to resolve into a {@link PrickcalEnum}

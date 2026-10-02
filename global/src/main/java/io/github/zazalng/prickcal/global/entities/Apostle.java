@@ -177,7 +177,7 @@ public class Apostle {
     }
 
     /**
-     * Whether the elydn title is stored as a present but empty value.
+     * Whether the elydn title is stored as a present.
      */
     public boolean isItElydn() {
         return getElydn() != null && !getElydn().isEmpty();
@@ -241,7 +241,7 @@ public class Apostle {
      * @return display name of this character with the elydn title
      */
     public String trueName() {
-        return "%s %s".formatted(getName(), getElydn() == null ? ":star_of_david:" : ":six_pointed_star: %s".formatted(getElydn()));
+        return "%s %s".formatted(getName(), isItElydn() ? ":six_pointed_star: %s".formatted(getElydn()) : ":star_of_david:");
     }
 
     /**

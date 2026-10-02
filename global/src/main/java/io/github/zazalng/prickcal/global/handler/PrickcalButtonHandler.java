@@ -34,7 +34,6 @@ import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.modals.Modal;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 
@@ -87,8 +86,7 @@ public class PrickcalButtonHandler {
      * then the remaining exact ids {@code import_export}, {@code database}, {@code administrator}, {@code logs},
      * {@code delete_data}, {@code deep_search_modal} and {@code back_main}, plus the {@code post_*}
      * ({@code post_apostle}, {@code post_tracker}, {@code post_profile}) and {@code delete_*} families.
-     * A {@code crayon} id that is not a toggle, confirm or reset falls through to the administrator panel.
-     * Guild-less and member-less interactions are ignored, and unrecognised ids are dropped without a reply.
+     * Guild-less and member-less interactions are ignored, and unrecognized ids are dropped without a reply.
      *
      * @param event the button interaction to dispatch
      */
@@ -205,12 +203,12 @@ public class PrickcalButtonHandler {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
 
-        // Pick the first apostle as default
         List<Apostle> all = apostleManager.listAll();
         if (all.isEmpty()) {
             event.reply("❌ No apostles found in database.").setEphemeral(true).queue();
             return;
         }
+
         Apostle apostle = all.get(new Random().nextInt(all.size()));
         sessionManager.setCurrentApostle(account.getId(), apostle);
         showApostlePanel(event, account, apostle);
@@ -569,7 +567,7 @@ public class PrickcalButtonHandler {
     /**
      * Serves the {@code post_apostle} button by posting the static apostle embed to the channel.
      * <p>
-     * Uses the session's current apostle, then answers ephemerally with "Success" that deletes itself.
+     * Uses the session's current apostle.
      *
      * @param event the {@code post_apostle} button interaction
      */
@@ -577,22 +575,21 @@ public class PrickcalButtonHandler {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
 
+        Apostle apostle = sessionManager.getCurrentApostle(account.getId());
+
         event.getInteraction().getChannel().sendMessageEmbeds(
                 panelBuilder.buildApostleEmbed(
-                        sessionManager.getCurrentApostle(account.getId())
+                        apostle
                 )
         ).queue();
 
-        event.reply("Success")
-                .setEphemeral(true)
-                .flatMap(InteractionHook::deleteOriginal)
-                .queue();
+        showApostlePanel(event, account, sessionManager.getCurrentApostle(account.getId()));
     }
 
     /**
      * Serves the {@code post_tracker} button by posting the caller's tracker embed to the channel.
      * <p>
-     * Built from the session's current apostle, then answers ephemerally with "Success" that deletes itself.
+     * Built from the session's current apostle.
      *
      * @param event the {@code post_tracker} button interaction
      */
@@ -600,23 +597,20 @@ public class PrickcalButtonHandler {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
 
+        Apostle apostle = sessionManager.getCurrentApostle(account.getId());
+
         event.getInteraction().getChannel().sendMessageEmbeds(
                 panelBuilder.buildTrackEmbed(
                         account,
-                        sessionManager.getCurrentApostle(account.getId())
+                        apostle
                 )
         ).queue();
 
-        event.reply("Success")
-                .setEphemeral(true)
-                .flatMap(InteractionHook::deleteOriginal)
-                .queue();
+        showApostlePanel(event, account, apostle);
     }
 
     /**
      * Serves the {@code post_profile} button by posting the caller's profile summary embed to the channel.
-     * <p>
-     * Then answers ephemerally with "Success" that deletes itself.
      *
      * @param event the {@code post_profile} button interaction
      */
@@ -628,10 +622,7 @@ public class PrickcalButtonHandler {
                 panelBuilder.buildMainMenuEmbed(event.getUser(), account)
         ).queue();
 
-        event.reply("Success")
-                .setEphemeral(true)
-                .flatMap(InteractionHook::deleteOriginal)
-                .queue();
+        showProfilePanel(event, account);
     }
 
     // ==================== DELETE DATA ====================

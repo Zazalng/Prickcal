@@ -37,7 +37,9 @@ public enum CrayonStats implements EnumInterface {
     DEF((short) 4, "DEF"),
     /** Critical resistance stat, number 5. */
     CRES((short) 5, "Crit Resistance"),
-    /** Placeholder for a slot that is empty or holds an unrecognised stat number. */
+    /**
+     * Placeholder for a slot that is empty or holds an unrecognized stat number.
+     */
     UNKNOWN((short) 0, "Unknown", false);
 
     /** The stat number as stored in a crayon line-up slot. */

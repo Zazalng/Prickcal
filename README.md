@@ -2,13 +2,12 @@
 
 A Pudel Discord Bot plugin for personally tracking Trickcal progression.
 
-**License:** GNU Affero General Public License v3.0 \
-
 ---
 
 ## About
 
-Prickcal (Trickcal for Pudel) is a plugin for the [Pudel Discord Bot](https://github.com/World-Standard-Group) that
+Prickcal (Trickcal for Pudel) is a plugin for
+the [Pudel Discord Bot](https://github.com/World-Standard-Group/Pudel-Spring-Boot) that
 provides interactive control panels for tracking in-game progression — including Apostle (character) collection, Crayon
 (farming) records, gift codes, hashtags, and stages.
 

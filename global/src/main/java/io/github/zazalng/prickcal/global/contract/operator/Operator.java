@@ -68,7 +68,10 @@ public enum Operator implements EnumInterface {
      * Placeholder for a stored operator value this enum does not cover; it performs no action at
      * all. Stored value -1.
      */
-    UNKNOWN((short) -1, false, "Restrict to perform any action.");
+    UNKNOWN((short) -1, false,
+            "Restrict to perform any action.",
+            "Consider to report this to developer."
+    );
 
     /**
      * The operator value persisted on an account row; lower means higher rank.

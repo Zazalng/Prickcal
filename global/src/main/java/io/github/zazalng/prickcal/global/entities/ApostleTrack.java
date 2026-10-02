@@ -45,7 +45,7 @@ public class ApostleTrack {
     @Column(unique = true, nullable = false)
     private Long uid;
     /**
-     * Character of {@code Apostle.id} from {@code Account.uid}'s star level (cannot below {@code Apostle.init} or above {@code Apostle.max})
+     * Character of {@code Apostle.id} from {@code Account.id}'s star level (cannot below {@code Apostle.init} or above {@code Apostle.max})
      */
     @Column
     private short currentStar;
@@ -110,32 +110,39 @@ public class ApostleTrack {
     }
 
     /**
-     * Move this track's star level one step and keep it inside the character star range.
-     * An increase never falls below {@code apostle.init}, a decrease falls back to {@code 0} once it drop
-     * under {@code apostle.init}, and both are capped at {@code apostle.max}.
+     * Moves this track's current star level one step.
      *
-     * @param apostle the character that this track belong to
-     * @param increase {@code true} to raise the star level, {@code false} to lower it
+     * <p>When increasing, the star level cannot fall below {@code apostle.init}.
+     * When decreasing, the star level becomes {@code 0} if it drops below
+     * {@code apostle.init}. In either direction, it cannot exceed
+     * {@code apostle.max}.</p>
+     *
+     * @param apostle the character this track belongs to
+     * @param increase {@code true} to increase the star level,
+     *                 {@code false} to decrease it
      * @return this track
      */
     public ApostleTrack updateCurrentStar(Apostle apostle, boolean increase) {
-        if(increase){
-            setCurrentStar((short) (getCurrentStar() + 1));
-            if(getCurrentStar() <= apostle.getInit()) setCurrentStar(apostle.getInit());
-        } else {
-            setCurrentStar((short) (getCurrentStar() -1));
-            if(getCurrentStar() < apostle.getInit()) setCurrentStar((short) 0);
+        int current = getCurrentStar() + (increase ? 1 : -1);
+
+        if (increase) {
+            current = Math.max(current, apostle.getInit());
+        } else if (current < apostle.getInit()) {
+            current = 0;
         }
-        if(getCurrentStar() > apostle.getMax()) setCurrentStar(apostle.getMax());
+
+        setCurrentStar((short) Math.min(current, apostle.getMax()));
         return this;
     }
 
-    /** Crayon record for this Character of {@code Apostle.id} from {@code Account.uid} */
+    /**
+     * Crayon record for this Character of {@code Apostle.id} from {@code Account.id}
+     */
     public String getCrayon() {
         return crayon;
     }
 
-    /** Crayon record for this Character of {@code Apostle.id} from {@code Account.uid} */
+    /** Crayon record for this Character of {@code Apostle.id} from {@code Account.id} */
     public void setCrayon(String crayon) {
         this.crayon = crayon;
     }

@@ -25,7 +25,7 @@ public interface EnumInterface {
     /**
      * The text shown to the user as the option name.
      *
-     * @return a human readable label for this constant
+     * @return a human-readable label for this constant
      */
     String getOptionLabel();
 

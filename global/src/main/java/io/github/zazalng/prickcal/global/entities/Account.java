@@ -240,4 +240,12 @@ public class Account {
 
         setCrayonFormat(value);
     }
+
+    public String getTemplateUrl() {
+        return templateUrl;
+    }
+
+    public void setTemplateUrl(String templateUrl) {
+        this.templateUrl = templateUrl;
+    }
 }

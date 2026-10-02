@@ -33,10 +33,12 @@ public enum PrickcalEnum {
     INVALID_APOSTLE(402, "Invalid Apostle Index of %s"),
     /** Raised when a referenced crayon line-up id or index has no matching record. */
     INVALID_CRAYONLINEUP(403, "Invalid Crayon Line Up Index of %s"),
-    /** Raised when a caller passes an argument this plugin does not recognise or support. */
+    /**
+     * Raised when a caller passes an argument this plugin does not recognize or support.
+     */
     ARGS_EXCEPTION(100, "%s"),
 
-    /** The catch-all for an exception raised without a categorised error condition. */
+    /** The catch-all for an exception raised without a categorized error condition. */
     UNCATEGORY(-1, "Who da heck cause this exception without proper tell what cause error");
 
     private final int errCode;
