@@ -129,11 +129,7 @@ public class PrickcalButtonHandler {
         } else if (buttonId.equals("import_export")) {
             handleImportExport(event);
         } else if (buttonId.startsWith("db")) {
-            if (buttonId.endsWith("_apostle")) {
-
-            } else {
-                handleDatabase(event);
-            }
+            handleDatabase(event);
         } else if (buttonId.equals("administrator")) {
             handleAdministrator(event);
         } else if (buttonId.equals("logs")) {
@@ -513,7 +509,7 @@ public class PrickcalButtonHandler {
         event.editMessage(
                 new MessageEditBuilder()
                         .useComponentsV2(true)
-                        .setComponents(panelBuilder.buildDatabasePanel())
+                        .setComponents(panelBuilder.buildDatabasePanel(sessionManager.getAccountCache(event.getUser().getId())))
                         .build()
         ).queue();
     }

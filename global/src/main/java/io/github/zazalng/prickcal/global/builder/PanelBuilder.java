@@ -168,11 +168,9 @@ public class PanelBuilder {
     public MessageEmbed buildMainMenuEmbed(User discordUser, Account account) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getName()))
-                .setDescription(
-                        """
+                .setDescription("""
                 Consent at <t:%s:R>
-                Apostle: %d out of %d |  CP: %d
-                                """
+                                Apostle: %d out of %d |  CP: %d"""
                                 .formatted(
                                         account.getCreatedAt().getEpochSecond(),
                                         accountManager.getApostleOwned(account),
@@ -271,13 +269,11 @@ public class PanelBuilder {
         ApostleTrack track = apostleManager.findTrack(account, apostle);
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(apostle.trueName())
-                .setDescription(
-                        """
+                .setDescription("""
                 🎭: %s
                 🚩: %s
                 🏹: %s
-                ⭐: %s
-                                """
+                                ⭐: %s"""
                                 .formatted(
                                         ApostleColor.fromNo(apostle.getColor()).getPersonality(),
                                         ApostleRace.fromNo(apostle.getRace()).getName(),
@@ -338,22 +334,20 @@ public class PanelBuilder {
                 .setFooter("Last Updated")
                 .setTimestamp(apostle.getUpdatedAt())
                 .setColor(ApostleColor.fromNo(apostle.getColor()).getColor())
-                .setDescription(
-                        """
+                .setDescription("""
                 🎭: %s
                 🚩: %s
                 🏹: %s
                 🌸: %s
                 ### Hashtag
                 %s
-                                """
-                                .formatted(
-                                        ApostleColor.fromNo(apostle.getColor()).getPersonality(),
-                                        ApostleRace.fromNo(apostle.getRace()).getName(),
-                                        ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
-                                        apostle.getMax() > 5 ? "✅ Has Release." : "❌ Not Release.",
-                                        apostleManager.parseHashTag(apostle)
-                                )
+                                """.formatted(
+                                ApostleColor.fromNo(apostle.getColor()).getPersonality(),
+                                ApostleRace.fromNo(apostle.getRace()).getName(),
+                                ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
+                                apostle.getMax() > 5 ? "✅ Has Release." : "❌ Not Release.",
+                                apostleManager.parseHashTag(apostle)
+                        )
                 );
 
         if (apostle.getPic() != null) {
@@ -556,12 +550,13 @@ public class PanelBuilder {
      *
      * @return a container holding the placeholder database panel
      */
-    public Container buildDatabasePanel() {
+    public Container buildDatabasePanel(Account account) {
         return Container.of(
                 TextDisplay.of("# 🗄️ Database Management"),
                 Separator.create(true, Separator.Spacing.SMALL),
                 ActionRow.of(
-                        Button.secondary(btnPrefix + "db_apostle", "📜 Apostle")
+                        StringSelectMenu.create(stringMenuPrefix + "db_selection")
+                                .build()
                 ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "back_main", "⬅️ Back")

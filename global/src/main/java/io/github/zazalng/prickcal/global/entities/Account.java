@@ -76,12 +76,6 @@ public class Account {
     @Column(nullable = false, defaultValue = "%dd/%dm/%dy %cs %ca")
     private String crayonFormat;
 
-    /**
-     * A PDF template url (from discord.attachment)
-     */
-    @Column
-    private String templateUrl;
-
     @Column
     private Instant createdAt;
 
@@ -239,13 +233,5 @@ public class Account {
         }
 
         setCrayonFormat(value);
-    }
-
-    public String getTemplateUrl() {
-        return templateUrl;
-    }
-
-    public void setTemplateUrl(String templateUrl) {
-        this.templateUrl = templateUrl;
     }
 }
