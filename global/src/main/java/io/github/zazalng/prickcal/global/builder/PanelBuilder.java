@@ -170,13 +170,13 @@ public class PanelBuilder {
         embed.setTitle(account.getIgn() != null ? account.getIgn() + " (%s)".formatted(discordUser.getName()) : "%s".formatted(discordUser.getName()))
                 .setDescription("""
                 Consent at <t:%s:R>
-                                Apostle: %d out of %d |  CP: %d"""
-                                .formatted(
-                                        account.getCreatedAt().getEpochSecond(),
-                                        accountManager.getApostleOwned(account),
-                                        apostleManager.listAll().size(),
-                                        account.getCp()
-                                )
+                                Apostle: %d out of %d |  CP: %d
+                                """.formatted(
+                                account.getCreatedAt().getEpochSecond(),
+                                accountManager.getApostleOwned(account),
+                                apostleManager.listAll().size(),
+                                account.getCp()
+                        )
                 )
                 .setThumbnail(discordUser.getEffectiveAvatarUrl())
                 .setFooter("Friend Code: %s".formatted(account.getFriendCode() != null ? account.getFriendCode() : "*null*"))
@@ -273,18 +273,18 @@ public class PanelBuilder {
                 🎭: %s
                 🚩: %s
                 🏹: %s
-                                ⭐: %s"""
-                                .formatted(
-                                        ApostleColor.fromNo(apostle.getColor()).getPersonality(),
-                                        ApostleRace.fromNo(apostle.getRace()).getName(),
-                                        ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
-                                        track.getCurrentStar() < apostle.getInit() ? "Not Owned" :
-                                                "%d / %d%s".formatted(
-                                                        track.getCurrentStar(),
-                                                        apostle.getMax(),
-                                                        apostle.missingPiece(track)
-                                                )
-                                )
+                                ⭐: %s
+                                """.formatted(
+                                ApostleColor.fromNo(apostle.getColor()).getPersonality(),
+                                ApostleRace.fromNo(apostle.getRace()).getName(),
+                                ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
+                                track.getCurrentStar() < apostle.getInit() ? "Not Owned" :
+                                        "%d / %d%s".formatted(
+                                                track.getCurrentStar(),
+                                                apostle.getMax(),
+                                                apostle.missingPiece(track)
+                                        )
+                        )
                 )
                 .setFooter("Last Updated")
                 .setTimestamp(track.getUpdatedAt())
@@ -366,9 +366,8 @@ public class PanelBuilder {
             for (int i = 0; i < lineUpValues.size() && i < houseLabels.length; i++) {
                 short statValue = lineUpValues.get(i);
                 CrayonStats stat = CrayonStats.fromNo(statValue);
-                String fieldValue = stat != CrayonStats.UNKNOWN
-                        ? (stat.getName())
-                        : "Invalid Stat";
+                String fieldValue = stat != CrayonStats.UNKNOWN ?
+                        (stat.getName()) : "Invalid Stat";
                 embed.addField(houseLabels[i], fieldValue, true);
             }
             embed.addField("Crayons Needed", String.valueOf(lineUp.totalCost()), false);
@@ -635,7 +634,7 @@ public class PanelBuilder {
      * <p>
      * Reads the session's {@link ApostleSearch}; when its result set is empty the full apostle list is loaded
      * into it. A single result short-circuits to {@link #buildApostleComponent(Account, Apostle)}, committing
-     * that apostle as current and clearing the staged track and search. Otherwise it renders the current page of
+     * that apostle as current and clearing the staged track and search. Otherwise, it renders the current page of
      * a single-select string menu, adding {@code pagination:-1} and {@code pagination:1} options only when the
      * corresponding page exists, plus the deep search and back buttons.
      *
@@ -668,9 +667,7 @@ public class PanelBuilder {
         );
 
         StringSelectMenu.Builder menu =
-                StringSelectMenu.create(
-                                stringMenuPrefix + "select_apostle"
-                        )
+                StringSelectMenu.create(stringMenuPrefix + "select_apostle")
                         .setPlaceholder("Select an Apostle to view (Found: %d apostles)".formatted(searchResult.size()))
                         .setRequiredRange(1, 1)
                         .setRequired(true);

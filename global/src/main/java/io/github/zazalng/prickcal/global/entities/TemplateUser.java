@@ -33,12 +33,12 @@ public class TemplateUser {
     /**
      * Belongs to {@link Account}.id
      */
-    @Column
+    @Column(unique = true)
     private long uid;
     /**
      * The type of the template user.
      */
-    @Column
+    @Column(unique = true)
     private String type;
     /**
      * The URL associated with the template user.

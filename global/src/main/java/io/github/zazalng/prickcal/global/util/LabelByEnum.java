@@ -19,6 +19,7 @@ package io.github.zazalng.prickcal.global.util;
 
 import io.github.zazalng.prickcal.global.contract.EnumInterface;
 import net.dv8tion.jda.api.components.checkboxgroup.CheckboxGroup;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 
 public final class LabelByEnum {
     /**
@@ -30,6 +31,22 @@ public final class LabelByEnum {
      */
     public static <E extends Enum<E> & EnumInterface> CheckboxGroup.Builder createCheckBoxGroup(String prefix, Class<E> eClass) {
         CheckboxGroup.Builder b = CheckboxGroup.create(prefix);
+        for (E e : eClass.getEnumConstants()) {
+            if (!e.isValid()) continue;
+            b.addOption(e.getOptionLabel(), e.getOptionValue());
+        }
+        return b;
+    }
+
+    /**
+     * Creates a {@code StringSelectMenu.Builder} populated with options derived from the supplied enum.
+     *
+     * @param prefix the string prefix used to generate the select menu's identifier
+     * @param eClass the enum class whose constants must implement {@code EnumInterface}; each valid constant contributes an option label and value
+     * @return a builder for a string select menu containing the valid enum options
+     */
+    public static <E extends Enum<E> & EnumInterface> StringSelectMenu.Builder createStringSelectMenu(String prefix, Class<E> eClass) {
+        StringSelectMenu.Builder b = StringSelectMenu.create(prefix);
         for (E e : eClass.getEnumConstants()) {
             if (!e.isValid()) continue;
             b.addOption(e.getOptionLabel(), e.getOptionValue());
