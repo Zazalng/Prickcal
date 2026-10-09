@@ -17,7 +17,7 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 import java.awt.*;
 
@@ -25,7 +25,8 @@ import java.awt.*;
  * The personality color of an apostle, keyed by the color number stored on an apostle row,
  * each carrying the display color used when rendering the apostle.
  */
-public enum ApostleColor implements EnumInterface {
+@Deprecated(since = "1.2.0 - Replace by ApostleColorV2", forRemoval = true)
+public enum ApostleColor implements DiscordEnumLabelInterface {
     /**
      * Placeholder for a color number this enum does not cover, drawn in black.
      */

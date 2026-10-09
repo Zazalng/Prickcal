@@ -20,19 +20,29 @@ package io.github.zazalng.prickcal.global.manager;
 import group.worldstandard.pudel.api.database.PluginRepository;
 import io.github.zazalng.prickcal.global.contract.operator.Action;
 import io.github.zazalng.prickcal.global.contract.operator.Operator;
+import io.github.zazalng.prickcal.global.contract.operator.PdfTemplate;
+import io.github.zazalng.prickcal.global.contract.template.UserPlaceholder;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonCosts;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
-import io.github.zazalng.prickcal.global.entities.Account;
-import io.github.zazalng.prickcal.global.entities.ApostleTrack;
-import io.github.zazalng.prickcal.global.entities.CrayonLineUp;
-import io.github.zazalng.prickcal.global.entities.CrayonRecord;
+import io.github.zazalng.prickcal.global.entities.*;
 import io.github.zazalng.prickcal.global.exception.PrickcalEnum;
 import io.github.zazalng.prickcal.global.exception.PrickcalException;
+import io.github.zazalng.prickcal.global.util.TimeFormatUtil;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.apache.pdfbox.pdmodel.interactive.form.PDField;
+import org.apache.pdfbox.rendering.PDFRenderer;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -276,6 +286,116 @@ public class AccountManager extends AbstractManager {
                 .whereNot("current_star", 0)
                 .list()
                 .size();
+    }
+
+    /**
+     * Checks if the specified account has a profile PDF template.
+     *
+     * @param account the account to check for a template
+     * @return {@code true} if a profile template exists for the user, {@code false} otherwise
+     */
+    public boolean hasUserTemplate(Account account) {
+        return repos.templateUsers().query()
+                .where("uid", account.getId())
+                .where("type", PdfTemplate.PROFILE.name())
+                .findOne()
+                .isPresent();
+    }
+
+    public File fillUserTemplate(Account account) {
+        TemplateUser template = repos.templateUsers().query()
+                .where("uid", account.getId())
+                .where("type", PdfTemplate.PROFILE.name())
+                .findOne()
+                .get();
+
+        try {
+            File pdfFile = new File("temp_template_" + account.getUid() + ".pdf");
+
+            factory.getCtx().getJDA().openPrivateChannelById(account.getUid())
+                    .submit().get().retrieveMessageById(template.getMessageId())
+                    .submit().get().getAttachments().getFirst().getProxy().downloadToFile(pdfFile)
+                    .get();
+
+            try (PDDocument document = Loader.loadPDF(pdfFile)) {
+                PDAcroForm acroForm = document.getDocumentCatalog().getAcroForm();
+                if (acroForm == null) return null;
+
+                Map<String, String> data = extractMainMenuData(account);
+
+                for (UserPlaceholder placeholder : UserPlaceholder.values()) {
+                    String fieldName = placeholder.getFieldName();
+                    PDField field = acroForm.getField(fieldName);
+
+                    if (field != null) {
+                        String value = data.get(fieldName);
+
+                        if (placeholder == UserPlaceholder.FIRSTRECORD || placeholder == UserPlaceholder.CONSENT) {
+                            String format = field.getValueAsString();
+                            if (format == null || format.isBlank()) {
+                                format = placeholder.getFieldValue();
+                            }
+
+                            Instant time = (placeholder == UserPlaceholder.FIRSTRECORD)
+                                    ? getFirstDateOfRecord(account)
+                                    : account.getCreatedAt();
+
+                            value = TimeFormatUtil.of(time, format);
+                        }
+
+                        if (value != null) {
+                            field.setValue(value);
+                        }
+                    }
+                }
+
+                acroForm.flatten();
+
+                File outputPdf = new File("filled_" + account.getUid() + ".pdf");
+                document.save(outputPdf);
+
+                PDFRenderer renderer = new PDFRenderer(document);
+                BufferedImage image = renderer.renderImageWithDPI(0, 300);
+
+                File resultPng = new File("profile_" + account.getUid() + ".png");
+                ImageIO.write(image, "png", resultPng);
+
+                pdfFile.delete();
+                outputPdf.delete();
+
+                return resultPng;
+            }
+        } catch (Exception e) {
+            factory.getCtx().log("ERROR", e.getMessage());
+            return null;
+        }
+    }
+
+    private Map<String, String> extractMainMenuData(Account account) {
+        Map<String, String> data = new HashMap<>();
+
+        data.put(UserPlaceholder.IGN.getFieldName(), account.getIgn() != null ? account.getIgn() : "");
+        data.put(UserPlaceholder.FRIENDCODE.getFieldName(), account.getFriendCode() != null ? account.getFriendCode() : "");
+
+        int owned = getApostleOwned(account);
+        int total = apostleManager().listAll().size();
+        data.put(UserPlaceholder.APOSTLEOWN.getFieldName(), String.valueOf(owned));
+        data.put(UserPlaceholder.APOSTLEMAX.getFieldName(), String.valueOf(total));
+
+        for (CrayonStats stats : CrayonStats.values()) {
+            if (stats == CrayonStats.UNKNOWN) continue;
+            String[] tracker = crayonCountByStats(account, stats).split(",", 2);
+            try {
+                UserPlaceholder ph = UserPlaceholder.valueOf(stats.name());
+                data.put(ph.getFieldName(), tracker[0]);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        data.put(UserPlaceholder.CANDYSPEND.getFieldName(), getCrayonsSpent(account).toPlainString());
+        data.put(UserPlaceholder.CRAYONGET.getFieldName(), getCrayonsAcquired(account).toPlainString());
+
+        return data;
     }
 
     /**

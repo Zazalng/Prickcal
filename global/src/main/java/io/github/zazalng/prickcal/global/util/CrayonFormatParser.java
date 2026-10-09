@@ -55,7 +55,7 @@ public final class CrayonFormatParser {
     /**
      * Matches an input string against a template format and extracts the captured placeholder values.
      * <p>
-     * Each recognised token is substituted with its own regex fragment, every literal run between tokens is
+     * Each recognized token is substituted with its own regex fragment, every literal run between tokens is
      * {@link Pattern#quote(String)}-escaped and included verbatim, and the assembled pattern is anchored at both
      * ends. A format containing no token is therefore treated as a literal and only matches that exact text.
      * <p>

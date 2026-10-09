@@ -17,13 +17,13 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 /**
  * The stat slot a piece of gear raises, keyed by the gear stat number used by the game's
  * stage-gear-drop data.
  */
-public enum GearType implements EnumInterface {
+public enum GearType implements DiscordEnumLabelInterface {
     /**
      * Health point slot, number 1.
      */

@@ -69,6 +69,11 @@ public interface RepositoryProvider {
     PluginRepository<StageGearDrop> stageGears();
 
     /**
+     * Repository of {@link TemplateUser} rows.
+     */
+    PluginRepository<TemplateUser> templateUsers();
+
+    /**
      * Resolve a Discord user, trying the cache first and the REST retrieve second.
      *
      * @param uid the Discord user id to resolve

@@ -17,12 +17,12 @@
  */
 package io.github.zazalng.prickcal.global.contract.operator;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 /**
  * An enum to document & describe which enum can do which thing
  */
-public enum Operator implements EnumInterface {
+public enum Operator implements DiscordEnumLabelInterface {
     /**
      * Highest rank; inherits every ability of {@link #ADMIN} and has no restriction of its own.
      * Stored value 0.

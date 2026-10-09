@@ -1,14 +1,16 @@
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The second-generation personality color of an apostle, keyed by a bitmask number rather than
  * a single index, so two personalities can be combined in one value.
  */
-public enum ApostleColorV2 implements EnumInterface {
+public enum ApostleColorV2 implements DiscordEnumLabelInterface {
     /**
      * Placeholder for the empty bitmask, drawn in black.
      */
@@ -75,6 +77,27 @@ public enum ApostleColorV2 implements EnumInterface {
         return color;
     }
 
+    /**
+     * Resolve the personality color of an apostle from its stored color number.
+     * The search covers every declared constant, so the number -1 resolves to {@link #Invalid}
+     * itself; any other unmatched number, including the commented-out dual combinations, also
+     * falls back to {@link #Invalid}.
+     *
+     * @param no the color number read from an apostle row
+     * @return the matching constant, or {@link #Invalid} when no constant carries that number
+     */
+    public static ApostleColorV2 fromNo(short no) {
+        if (no < 0) return Invalid;
+        int val = no & 0xFF;
+        if (val == 0) return Invalid;
+        if (val == 0b11111) return RAINBOW;
+
+        for (ApostleColorV2 a : ApostleColorV2.values()) {
+            if (a != Invalid && a != RAINBOW && val == a.no) return a;
+        }
+        return Invalid;
+    }
+
     /** {@inheritDoc} */
     @Override
     public String getOptionLabel() {
@@ -99,5 +122,26 @@ public enum ApostleColorV2 implements EnumInterface {
     @Override
     public boolean isValid() {
         return valid;
+    }
+
+    /**
+     * Resolve and combine personality names based on the bitmask.
+     *
+     * @param no the color number read from an apostle row
+     * @return the combined personality names, e.g., \"Innocent / Depressed\"
+     */
+    public static String getCombinedPersonality(short no) {
+        if (no < 0) return Invalid.getPersonality();
+        int val = no & 0xFF;
+        if (val == 0) return Invalid.getPersonality();
+        if (val == 0b11111) return RAINBOW.getPersonality();
+
+        List<String> parts = new ArrayList<>();
+        for (ApostleColorV2 a : ApostleColorV2.values()) {
+            if (a != Invalid && a != RAINBOW && (val & a.no) != 0) {
+                parts.add(a.getPersonality());
+            }
+        }
+        return parts.isEmpty() ? Invalid.getPersonality() : String.join(" / ", parts);
     }
 }

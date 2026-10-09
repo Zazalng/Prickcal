@@ -61,7 +61,7 @@ public class Apostle {
     @Column
     private short race;
     /**
-     * Character's personality (color) number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor}
+     * Character's personality (color) number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColorV2}
      */
     @Column
     private short color;
@@ -193,12 +193,16 @@ public class Apostle {
         this.hashtag = hashtag;
     }
 
-    /** Character's personality (color) number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor} */
+    /**
+     * Character's personality (color) number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColorV2}
+     */
     public short getColor() {
         return color;
     }
 
-    /** Character's personality (color) number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor} */
+    /**
+     * Character's personality (color) number that will correction with {@link io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColorV2}
+     */
     public void setColor(short color) {
         this.color = color;
     }

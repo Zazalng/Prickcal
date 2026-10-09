@@ -17,13 +17,13 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 /**
  * The certificate pieces needed to raise an apostle by one star, keyed by the target star
  * number from 1 up to the maximum star an apostle can reach.
  */
-public enum StarUpAmount implements EnumInterface {
+public enum StarUpAmount implements DiscordEnumLabelInterface {
     /**
      * Raising to star 8 costs 60 pieces.
      */
