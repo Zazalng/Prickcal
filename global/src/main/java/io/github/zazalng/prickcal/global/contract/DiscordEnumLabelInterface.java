@@ -21,7 +21,7 @@ package io.github.zazalng.prickcal.global.contract;
  * Shared contract of the game-data enums that can be rendered as a Discord select-menu option,
  * so any of them can be offered to the user without knowing its concrete type.
  */
-public interface EnumInterface {
+public interface DiscordEnumLabelInterface {
     /**
      * The text shown to the user as the option name.
      *

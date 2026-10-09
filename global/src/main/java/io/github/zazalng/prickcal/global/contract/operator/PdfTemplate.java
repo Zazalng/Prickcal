@@ -17,14 +17,14 @@
  */
 package io.github.zazalng.prickcal.global.contract.operator;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 /**
  * Represents the available PDF templates used for generating documents.
- * Implements {@link EnumInterface} to allow rendering as selectable options
+ * Implements {@link DiscordEnumLabelInterface} to allow rendering as selectable options
  * in a user interface.
  */
-public enum PdfTemplate implements EnumInterface {
+public enum PdfTemplate implements DiscordEnumLabelInterface {
     PROFILE("Profile Template"),
     APOSTLE("Apostle Template"),
     INVALID("INVALID", false);

@@ -20,7 +20,7 @@ package io.github.zazalng.prickcal.global.manager;
 import group.worldstandard.pudel.api.database.PluginRepository;
 import group.worldstandard.pudel.api.database.QueryBuilder;
 import io.github.zazalng.prickcal.global.contract.trickcal.HashtagClaim;
-import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
+import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColorV2;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonCosts;
@@ -126,7 +126,7 @@ public class ApostleManager extends AbstractManager {
      * @return {@code true} when color, position and race all not resolve to UNKNOWN
      */
     public boolean isValid(Apostle apostle) {
-        if (ApostleColor.fromNo(apostle.getColor()) == ApostleColor.UNKNOWN) return false;
+        if (ApostleColorV2.fromNo(apostle.getColor()) == ApostleColorV2.Invalid) return false;
         if (ApostlePosition.fromNo(apostle.getPosition()) == ApostlePosition.UNKNOWN) return false;
         if (ApostleRace.fromNo(apostle.getRace()) == ApostleRace.UNKNOWN) return false;
 
@@ -178,8 +178,14 @@ public class ApostleManager extends AbstractManager {
         }
 
         if (results.size() > 1 && !config.getSfColorFilter().isEmpty()) {
-            query.whereIn("color", config.getSfColorFilter());
-            results = query.list();
+            List<Apostle> filtered = results.stream()
+                    .filter(a -> {
+                        int color = a.getColor() & 0xFF;
+                        return config.getSfColorFilter().stream()
+                                .anyMatch(f -> (color & f) != 0);
+                    })
+                    .collect(Collectors.toList());
+            results = filtered;
         }
 
         if (results.size() > 1 && !config.getSfPositionFilter().isEmpty()) {

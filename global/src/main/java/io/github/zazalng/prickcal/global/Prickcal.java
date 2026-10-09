@@ -99,6 +99,7 @@ public class Prickcal {
     private PluginRepository<Log> logs;
     private PluginRepository<RemarkableRecord> remarkableRecords;
     private PluginRepository<StageGearDrop> stageGears;
+    private PluginRepository<TemplateUser> templateUsers;
 
     private ManagerFactory factory;
     private PanelBuilder panelBuilder;
@@ -233,6 +234,7 @@ public class Prickcal {
         logs = db.getRepository(Log.class);
         remarkableRecords = db.getRepository(RemarkableRecord.class);
         stageGears = db.getRepository(StageGearDrop.class);
+        templateUsers = db.getRepository(TemplateUser.class);
     }
 
     /**
@@ -344,6 +346,14 @@ public class Prickcal {
             /** Returns the {@link StageGearDrop} repository. */
             public PluginRepository<StageGearDrop> stageGears() {
                 return stageGears;
+            }
+
+            /**
+             * Returns the {@link TemplateUser} repository.
+             */
+            @Override
+            public PluginRepository<TemplateUser> templateUsers() {
+                return templateUsers;
             }
 
             @Override

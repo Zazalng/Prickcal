@@ -18,7 +18,7 @@
 package io.github.zazalng.prickcal.global.builder;
 
 import io.github.zazalng.prickcal.global.contract.operator.Operator;
-import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
+import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColorV2;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
 import io.github.zazalng.prickcal.global.contract.trickcal.crayon.CrayonStats;
@@ -171,7 +171,8 @@ public class PanelBuilder {
                 .setDescription("""
                 Consent at <t:%s:R>
                                 Apostle: %d out of %d |  CP: %d
-                                """.formatted(
+                                """
+                                .formatted(
                                 account.getCreatedAt().getEpochSecond(),
                                 accountManager.getApostleOwned(account),
                                 apostleManager.listAll().size(),
@@ -275,7 +276,7 @@ public class PanelBuilder {
                 🏹: %s
                                 ⭐: %s
                                 """.formatted(
-                                ApostleColor.fromNo(apostle.getColor()).getPersonality(),
+                        ApostleColorV2.getCombinedPersonality(apostle.getColor()),
                                 ApostleRace.fromNo(apostle.getRace()).getName(),
                                 ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
                                 track.getCurrentStar() < apostle.getInit() ? "Not Owned" :
@@ -288,7 +289,7 @@ public class PanelBuilder {
                 )
                 .setFooter("Last Updated")
                 .setTimestamp(track.getUpdatedAt())
-                .setColor(ApostleColor.fromNo(apostle.getColor()).getColor());
+                .setColor(ApostleColorV2.fromNo(apostle.getColor()).getColor());
 
         if (apostle.getPic() != null) {
             embed.setThumbnail(apostle.getPic());
@@ -333,7 +334,7 @@ public class PanelBuilder {
         embed.setTitle(apostle.trueName())
                 .setFooter("Last Updated")
                 .setTimestamp(apostle.getUpdatedAt())
-                .setColor(ApostleColor.fromNo(apostle.getColor()).getColor())
+                .setColor(ApostleColorV2.fromNo(apostle.getColor()).getColor())
                 .setDescription("""
                 🎭: %s
                 🚩: %s
@@ -342,7 +343,7 @@ public class PanelBuilder {
                 ### Hashtag
                 %s
                                 """.formatted(
-                                ApostleColor.fromNo(apostle.getColor()).getPersonality(),
+                        ApostleColorV2.getCombinedPersonality(apostle.getColor()),
                                 ApostleRace.fromNo(apostle.getRace()).getName(),
                                 ApostlePosition.fromNo(apostle.getPosition()).getSeat(),
                                 apostle.getMax() > 5 ? "✅ Has Release." : "❌ Not Release.",
@@ -426,7 +427,7 @@ public class PanelBuilder {
                 ActionRow.of(
                         Button.primary(btnPrefix + "back_main", "⬅️ Back")
                 )
-        ).withAccentColor(ApostleColor.fromNo(apostle.getColor()).getColor());
+        ).withAccentColor(ApostleColorV2.fromNo(apostle.getColor()).getColor());
     }
 
     /**

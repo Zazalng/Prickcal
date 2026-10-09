@@ -17,12 +17,12 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 /**
  * The race of an apostle, keyed by the race number stored on an apostle row.
  */
-public enum ApostleRace implements EnumInterface {
+public enum ApostleRace implements DiscordEnumLabelInterface {
     /**
      * Placeholder for a race number this enum does not cover.
      */

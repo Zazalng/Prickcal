@@ -17,12 +17,12 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal.aposlte;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 /**
  * The column an apostle stands in, keyed by the position number stored on an apostle row.
  */
-public enum ApostlePosition implements EnumInterface {
+public enum ApostlePosition implements DiscordEnumLabelInterface {
     /**
      * Front column, number 1.
      */

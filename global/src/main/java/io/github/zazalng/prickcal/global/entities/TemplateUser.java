@@ -44,7 +44,7 @@ public class TemplateUser {
      * The URL associated with the template user.
      */
     @Column
-    private String url;
+    private String messageId;
 
     public Long getId() {
         return id;
@@ -70,11 +70,11 @@ public class TemplateUser {
         this.type = type;
     }
 
-    public String getUrl() {
-        return url;
+    public String getMessageId() {
+        return messageId;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
     }
 }

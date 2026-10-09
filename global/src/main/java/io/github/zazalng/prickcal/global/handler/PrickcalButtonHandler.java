@@ -19,7 +19,7 @@ package io.github.zazalng.prickcal.global.handler;
 
 import io.github.zazalng.prickcal.global.builder.PanelBuilder;
 import io.github.zazalng.prickcal.global.contract.operator.Operator;
-import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColor;
+import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleColorV2;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostlePosition;
 import io.github.zazalng.prickcal.global.contract.trickcal.aposlte.ApostleRace;
 import io.github.zazalng.prickcal.global.entities.Account;
@@ -35,8 +35,10 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.modals.Modal;
+import net.dv8tion.jda.api.utils.AttachedFile;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 
+import java.io.File;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -467,7 +469,7 @@ public class PrickcalButtonHandler {
                                 Label.of("Filter by Personality",
                                         LabelByEnum.createCheckBoxGroup(
                                                 "filter_color",
-                                                ApostleColor.class
+                                                ApostleColorV2.class
                                         ).setRequired(false).build()
                                 ),
                                 Label.of("Filter by Position",
@@ -618,9 +620,20 @@ public class PrickcalButtonHandler {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
 
-        event.getInteraction().getChannel().sendMessageEmbeds(
-                panelBuilder.buildMainMenuEmbed(event.getUser(), account)
-        ).queue();
+        File template = null;
+        if (accountManager.hasUserTemplate(account)) {
+            template = accountManager.fillUserTemplate(account);
+        }
+
+        if (template != null) {
+            event.getInteraction().getChannel().sendFiles(
+                    AttachedFile.fromData(template)
+            ).queue();
+        } else {
+            event.getInteraction().getChannel().sendMessageEmbeds(
+                    panelBuilder.buildMainMenuEmbed(event.getUser(), account)
+            ).queue();
+        }
 
         showProfilePanel(event, account);
     }

@@ -1,12 +1,12 @@
 package io.github.zazalng.prickcal.global.contract.entity;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 /**
  * Every database table the plugin tracks, keyed by its physical table name. The constants marked
  * with a {@code false} publication state are the per-user tables.
  */
-public enum TableEntity implements EnumInterface {
+public enum TableEntity implements DiscordEnumLabelInterface {
     /**
      * The account table, holding one row per user.
      */

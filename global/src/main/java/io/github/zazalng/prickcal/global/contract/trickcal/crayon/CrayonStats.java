@@ -17,12 +17,12 @@
  */
 package io.github.zazalng.prickcal.global.contract.trickcal.crayon;
 
-import io.github.zazalng.prickcal.global.contract.EnumInterface;
+import io.github.zazalng.prickcal.global.contract.DiscordEnumLabelInterface;
 
 /**
  * The stat a crayon slot raises, keyed by the stat number stored in a crayon line-up row.
  */
-public enum CrayonStats implements EnumInterface {
+public enum CrayonStats implements DiscordEnumLabelInterface {
     /**
      * Attack stat, number 1.
      */
