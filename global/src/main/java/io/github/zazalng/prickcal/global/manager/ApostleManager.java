@@ -164,7 +164,7 @@ public class ApostleManager extends AbstractManager {
     public List<Apostle> deepFilter(ApostleSearch config) {
         String name = config.getSfGuessName();
 
-        QueryBuilder<Apostle> query = repoApostle.query();
+        QueryBuilder<Apostle> query = repoApostle.query().orderByAsc("name");
 
         if (name != null && !name.isBlank()) {
             query.whereILike("name", "%" + name.trim() + "%");
@@ -178,14 +178,13 @@ public class ApostleManager extends AbstractManager {
         }
 
         if (results.size() > 1 && !config.getSfColorFilter().isEmpty()) {
-            List<Apostle> filtered = results.stream()
+            results = results.stream()
                     .filter(a -> {
                         int color = a.getColor() & 0xFF;
                         return config.getSfColorFilter().stream()
                                 .anyMatch(f -> (color & f) != 0);
                     })
                     .collect(Collectors.toList());
-            results = filtered;
         }
 
         if (results.size() > 1 && !config.getSfPositionFilter().isEmpty()) {

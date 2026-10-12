@@ -107,28 +107,26 @@ public class PrickcalModalHandler {
 
         sessionManager.setApostleSearch(account.getId(), config);
 
-        event.deferEdit().queue(i ->
-                i.editOriginalComponents(
+        event.deferEdit().complete().editOriginalComponents(
                         panelBuilder.buildApostleListPanel(account)
-                ).useComponentsV2(true).queue(_ -> {
-                    if (sessionManager.getControlMessages(account.getId()) != null) {
-                        event.getHook().editMessageEmbedsById(
-                                sessionManager
-                                        .getControlMessages(account.getId())
-                                        .getId(),
-                                panelBuilder.buildTrackEmbed(
-                                        account,
-                                        sessionManager.getCurrentApostle(account.getId())
-                                )
-                        ).queue(message ->
-                                sessionManager.setControlMessages(
-                                        account.getId(),
-                                        message
-                                )
-                        );
-                    }
-                })
-        );
+        ).useComponentsV2(true).queue();
+
+        if (sessionManager.getControlMessages(account.getId()) != null) {
+            event.getHook().editMessageEmbedsById(
+                    sessionManager
+                            .getControlMessages(account.getId())
+                            .getId(),
+                    panelBuilder.buildTrackEmbed(
+                            account,
+                            sessionManager.getCurrentApostle(account.getId())
+                    )
+            ).queue(message ->
+                    sessionManager.setControlMessages(
+                            account.getId(),
+                            message
+                    )
+            );
+        }
     }
 
     // ==================== SWITCH APOSTLE SEARCH ====================
@@ -162,11 +160,9 @@ public class PrickcalModalHandler {
             factory.getRepos().accounts().save(account);
         }
 
-        event.deferEdit().queue(i ->
-                i.editOriginalComponents(
+        event.deferEdit().complete().editOriginalComponents(
                         panelBuilder.buildProfileComponent(account)
-                ).useComponentsV2(true).queue()
-        );
+        ).useComponentsV2(true).queue();
 
         event.getHook().editMessageEmbedsById(
                 sessionManager.getControlMessages(account.getId()).getId(),

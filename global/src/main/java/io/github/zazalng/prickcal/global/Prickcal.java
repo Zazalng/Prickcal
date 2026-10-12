@@ -694,7 +694,7 @@ public class Prickcal {
                 .queue(channel ->
                         channel.sendMessage(
                                 "Operation Error: " + reason
-                        ).queue(m -> m.delete().queueAfter(5, TimeUnit.SECONDS))
+                        ).queue(m -> m.delete().queueAfter(1, TimeUnit.MINUTES))
                 );
     }
 }

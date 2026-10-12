@@ -122,6 +122,8 @@ public class PrickcalButtonHandler {
         } else if (buttonId.startsWith("profile")) {
             if(buttonId.endsWith("_leak")) {
                 handleProfileLeak(event);
+            } else if (buttonId.endsWith("_upload")) {
+                handleProfileUpload(event);
             } else if (buttonId.contains("_")) {
                 // {ign, code, format}
                 handleProfileUpdate(event, buttonId.substring("profile_".length()));
@@ -437,6 +439,13 @@ public class PrickcalButtonHandler {
         factory.getRepos().accounts().save(account);
 
         showProfilePanel(event, account);
+    }
+
+    private void handleProfileUpload(ButtonInteractionEvent event) {
+        Account account = sessionManager.getAccountCache(event.getUser().getId());
+        /*event.replyModal(
+                Modal.create(modalPrefix + "profile_upload")
+        )*/
     }
 
     // ==================== DEEP SEARCH ====================

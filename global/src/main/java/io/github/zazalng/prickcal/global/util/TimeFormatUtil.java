@@ -16,7 +16,6 @@ public final class TimeFormatUtil {
         return switch (obj.getType()) {
             case 'f' -> fullDateTime(time, obj);
             case 's' -> shortDateTime(time, obj);
-            case 'd' -> shortDate(time, obj);
             case 'r' -> relativeTime(time, obj);
             default -> shortDate(time, obj);
         };

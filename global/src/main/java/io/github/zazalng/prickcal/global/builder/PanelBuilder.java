@@ -468,7 +468,7 @@ public class PanelBuilder {
                         account.isLeak() ? Button.danger(btnPrefix + "profile_leak", "Leak?") : Button.success(btnPrefix + "profile_leak", "Leak?")
                 ),
                 ActionRow.of(
-                        Button.primary(btnPrefix + "upload_pdf", "Upload Templated").withDisabled(!account.isActionable(Operator.DEV))
+                        Button.primary(btnPrefix + "profile_upload", "Upload Templated")
                 ),
                 ActionRow.of(
                         Button.secondary(btnPrefix + "back_main", "⬅️ Back"),
@@ -521,9 +521,9 @@ public class PanelBuilder {
             sb.append("_No recent activity._");
         } else {
             for (Log log : recentLogs) {
-                sb.append("* <t:%s:R> `[%s - %s]` %s\n"
+                sb.append("* <t:%d:R> `[%s - %s]` %s\n"
                         .formatted(
-                                log.getCreatedAt(),
+                                log.getCreatedAt().getEpochSecond(),
                                 log.getAction(),
                                 log.getTableName(),
                                 log.getToString()
