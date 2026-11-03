@@ -42,8 +42,10 @@ public enum StarUpAmount implements DiscordEnumLabelInterface {
     S3((short) 3, 20),
     /** Raising to star 2 costs 12 pieces. */
     S2((short) 2, 12),
-    /** Raising to star 1 costs 25 pieces. */
-    S1((short) 1, 25);
+    /**
+     * Raising to star 1 costs 5 pieces.
+     */
+    S1((short) 1, 5);
 
     /** The target star number, the value {@link #fromStar(short)} looks up. */
     private final short star;

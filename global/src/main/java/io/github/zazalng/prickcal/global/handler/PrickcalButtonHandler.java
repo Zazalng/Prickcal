@@ -621,18 +621,16 @@ public class PrickcalButtonHandler {
     }
 
     /**
-     * Serves the {@code post_profile} button by posting the caller's profile summary embed to the channel.
+     * Handles the post profile button interaction by sending a filled user template
+     * or a main menu embed, and then displaying the profile panel.
      *
-     * @param event the {@code post_profile} button interaction
+     * @param event the button interaction event triggering the action
      */
     private void handlePostProfile(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
         if (account == null) return;
 
-        File template = null;
-        if (accountManager.hasUserTemplate(account)) {
-            template = accountManager.fillUserTemplate(account);
-        }
+        File template = accountManager.fillUserTemplate(account);
 
         if (template != null) {
             event.getInteraction().getChannel().sendFiles(

@@ -7,6 +7,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 
+/**
+ * Utility class for formatting {@link Instant} objects into localized string representations
+ * based on a specified format type and locale.
+ */
 public final class TimeFormatUtil {
     private static final ZoneId ZONE = ZoneId.systemDefault();
 
@@ -21,7 +25,7 @@ public final class TimeFormatUtil {
         };
     }
 
-    // Equivalent to :f (Short Date/Time) -> "October 7, 2026 9:44 AM"
+    // Equivalent to :s (Short Date/Time) -> "October 7, 2026 9:44 AM"
     private static String shortDateTime(Instant time, LocaleFormat format) {
         return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
                 .withLocale(format.getLocale())
@@ -29,7 +33,7 @@ public final class TimeFormatUtil {
                 .format(time);
     }
 
-    // Equivalent to :F (Long Date/Time) -> "Wednesday, October 7, 2026 9:44 AM"
+    // Equivalent to :f (Long Date/Time) -> "Wednesday, October 7, 2026 9:44 AM"
     private static String fullDateTime(Instant time, LocaleFormat format) {
         return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.SHORT)
                 .withLocale(format.getLocale())
@@ -45,6 +49,7 @@ public final class TimeFormatUtil {
                 .format(time);
     }
 
+    // Equivalent to :r (Relative Time) -> "5 mins ago"
     private static String relativeTime(Instant target, LocaleFormat format) {
         Duration duration = Duration.between(Instant.now(), target);
         boolean isFuture = !duration.isNegative();

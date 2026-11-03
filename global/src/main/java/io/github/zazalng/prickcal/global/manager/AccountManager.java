@@ -289,31 +289,25 @@ public class AccountManager extends AbstractManager {
     }
 
     /**
-     * Checks if the specified account has a profile PDF template.
+     * Fills a PDF user template with account data and converts the result into a PNG image.
      *
-     * @param account the account to check for a template
-     * @return {@code true} if a profile template exists for the user, {@code false} otherwise
+     * @param account the account whose data will be used to populate the template
+     * @return a file containing the rendered PNG image of the filled template, or {@code null} if the template is not found or an error occurs
      */
-    public boolean hasUserTemplate(Account account) {
-        return repos.templateUsers().query()
-                .where("uid", account.getId())
-                .where("type", PdfTemplate.PROFILE.name())
-                .findOne()
-                .isPresent();
-    }
-
     public File fillUserTemplate(Account account) {
-        TemplateUser template = repos.templateUsers().query()
+        TemplateUser t = repos.templateUsers().query()
                 .where("uid", account.getId())
                 .where("type", PdfTemplate.PROFILE.name())
                 .findOne()
-                .get();
+                .orElse(null);
+
+        if (t == null) return null;
 
         try {
             File pdfFile = new File("temp_template_" + account.getUid() + ".pdf");
 
             factory.getCtx().getJDA().openPrivateChannelById(account.getUid())
-                    .submit().get().retrieveMessageById(template.getMessageId())
+                    .submit().get().retrieveMessageById(t.getMessageId())
                     .submit().get().getAttachments().getFirst().getProxy().downloadToFile(pdfFile)
                     .get();
 

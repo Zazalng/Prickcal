@@ -112,7 +112,7 @@ public class Prickcal {
     /**
      * Plugin entry point: migrates the schema, wires the services, then logs readiness.
      * <p>
-     * Builds the schema-scoped custom ID prefixes from the database schema name, initialises the repositories
+     * Builds the schema-scoped custom ID prefixes from the database schema name, initializes the repositories
      * and every manager, and constructs the {@link PanelBuilder} and the three thin interaction handlers.
      *
      * @param ctx the plugin context supplied by Pudel for this enable cycle

@@ -1,5 +1,9 @@
 package io.github.zazalng.prickcal.global.contract.template;
 
+/**
+ * Defines the available placeholders used for user-related data fields and their
+ * corresponding values.
+ */
 public enum UserPlaceholder {
     //BASIC
     IGN("ign"),
