@@ -669,7 +669,7 @@ public class PanelBuilder {
 
         StringSelectMenu.Builder menu =
                 StringSelectMenu.create(stringMenuPrefix + "select_apostle")
-                        .setPlaceholder("Select an Apostle to view (Found: %d apostles)".formatted(searchResult.size()))
+                        .setPlaceholder("Select an Apostle to view")
                         .setRequiredRange(1, 1)
                         .setRequired(true);
 
@@ -699,7 +699,7 @@ public class PanelBuilder {
         return Container.of(
                 TextDisplay.of(
                         "# 🔀 Switch Apostle\n" +
-                                "Select an apostle to view its crayon grid:"
+                                "Select an apostle to view (Found: %d apostles)".formatted(searchResult.size())
                 ),
                 Separator.create(
                         true,

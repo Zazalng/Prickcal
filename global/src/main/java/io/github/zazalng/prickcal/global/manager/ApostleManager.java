@@ -154,7 +154,7 @@ public class ApostleManager extends AbstractManager {
     }
 
     /**
-     * Apply chained filters: name, then race, then color, then position. Stops early when 1 result.
+     * Apply chained filters: name, then race, then , then color. Stops early when 1 result.
      * Every stage after the name lookup is skipped while the previous stage still matched more
      * than one apostle, and the filters accumulate on a single query.
      *
@@ -177,6 +177,11 @@ public class ApostleManager extends AbstractManager {
             results = query.list();
         }
 
+        if (results.size() > 1 && !config.getSfPositionFilter().isEmpty()) {
+            query.whereIn("position", config.getSfPositionFilter());
+            results = query.list();
+        }
+
         if (results.size() > 1 && !config.getSfColorFilter().isEmpty()) {
             results = results.stream()
                     .filter(a -> {
@@ -185,11 +190,6 @@ public class ApostleManager extends AbstractManager {
                                 .anyMatch(f -> (color & f) != 0);
                     })
                     .collect(Collectors.toList());
-        }
-
-        if (results.size() > 1 && !config.getSfPositionFilter().isEmpty()) {
-            query.whereIn("position", config.getSfPositionFilter());
-            results = query.list();
         }
 
         return results;

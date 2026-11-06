@@ -28,12 +28,14 @@ import io.github.zazalng.prickcal.global.entities.ApostleTrack;
 import io.github.zazalng.prickcal.global.entities.Log;
 import io.github.zazalng.prickcal.global.manager.*;
 import io.github.zazalng.prickcal.global.util.LabelByEnum;
+import net.dv8tion.jda.api.components.attachmentupload.AttachmentUpload;
 import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.FileType;
 import net.dv8tion.jda.api.modals.Modal;
 import net.dv8tion.jda.api.utils.AttachedFile;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
@@ -443,9 +445,17 @@ public class PrickcalButtonHandler {
 
     private void handleProfileUpload(ButtonInteractionEvent event) {
         Account account = sessionManager.getAccountCache(event.getUser().getId());
-        /*event.replyModal(
-                Modal.create(modalPrefix + "profile_upload")
-        )*/
+        event.replyModal(
+                Modal.create(modalPrefix + "profile_upload", "Uploading File")
+                        .addComponents(Label.of("Select File to Load",
+                                        AttachmentUpload.create("upload_profile")
+                                                .setFileTypes(FileType.ofExtension("pdf"))
+                                                .setRequiredRange(1, 1)
+                                                .build()
+                                )
+                        )
+                        .build()
+        ).queue();
     }
 
     // ==================== DEEP SEARCH ====================
